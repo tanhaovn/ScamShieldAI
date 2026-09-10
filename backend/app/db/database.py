@@ -4,6 +4,7 @@ Mặc định dùng SQLite cho local test/dev để app vẫn chạy khi MySQL c
 Nếu muốn dùng MySQL thật, set USE_SQLITE=false và điền biến DB_* trong .env.
 """
 import os
+from urllib.parse import quote_plus
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
@@ -22,7 +23,8 @@ if USE_SQLITE:
     DATABASE_URL = "sqlite:///./scam_detector.db"
 else:
     DATABASE_URL = (
-        f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4"
+        f"mysql+pymysql://{quote_plus(DB_USER)}:{quote_plus(DB_PASSWORD)}@"
+        f"{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4"
     )
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_recycle=3600)

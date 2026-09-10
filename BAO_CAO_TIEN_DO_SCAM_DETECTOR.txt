@@ -1,0 +1,136 @@
+BAO CAO TOM TAT DU AN SCAM DETECTOR
+====================================
+
+1. TINH TRANG HIEN TAI
+
+Du an da co ban demo end-to-end gom frontend React, backend FastAPI va
+MySQL database.
+
+BACKEND FASTAPI
+- Ket noi MySQL database: scam_detector.
+- Dang ky tai khoan.
+- Dang nhap bang JWT.
+- Phan quyen user/admin.
+- Kiem tra anh nghi ngo.
+- OCR tieng Viet bang Tesseract.
+- Phan tich tu khoa lua dao.
+- Phan tich EXIF, ELA va heuristic hinh anh.
+- Tinh diem rui ro theo 3 muc:
+  + an_toan
+  + nghi_ngo
+  + nguy_hiem
+- Luu lich su kiem tra vao MySQL.
+- Quan ly danh muc scam.
+- Quan ly dataset huan luyen.
+- Quan ly AI model.
+- Luu danh gia model.
+- Ghi log hoat dong he thong.
+- Co API health tai /health.
+
+FRONTEND REACT
+- Giao dien sang, responsive.
+- Thanh dieu huong tach tung chuc nang thanh trang rieng:
+  + Tong quan
+  + Kiem tra anh
+  + Lich su
+  + Dataset
+  + AI Models
+  + Danh gia Model
+  + Nhat ky he thong
+- Xem truoc anh truoc khi upload.
+- Hien thi diem rui ro va giai thich ket qua.
+- Chi admin moi xem duoc cac trang quan tri.
+- Ket noi dung API backend.
+
+DATABASE
+Database scam_detector dang co cac bang:
+- users
+- scan_history
+- scam_categories
+- training_dataset
+- ai_models
+- model_evaluations
+- system_activity_logs
+
+2. KET QUA KIEM TRA
+
+Da xac nhan:
+- MySQL dang nhap thanh cong.
+- SQLAlchemy ket noi dung database scam_detector.
+- API /health hoat dong.
+- Dang ky tai khoan hoat dong.
+- Lay thong tin nguoi dung tai /me hoat dong.
+- Lay danh muc scam hoat dong.
+- Lay lich su kiem tra hoat dong.
+- Backend compile khong loi.
+- Frontend build thanh cong.
+- JSX va CSS khong co loi editor.
+
+3. CACH CHAY VA DEMO
+
+KHOI DONG BACKEND
+cd D:\scam-detector
+.\.venv\Scripts\uvicorn.exe backend.app.main:app --host 127.0.0.1 --port 8000
+
+KHOI DONG FRONTEND
+cd D:\scam-detector\frontend-react
+npm.cmd run dev
+
+MO GIAO DIEN
+http://127.0.0.1:5173/
+
+API DOCUMENTATION
+http://127.0.0.1:8000/docs
+
+TAI KHOAN ADMIN DEMO
+Email: admin@scamdetector.local
+Mat khau: Admin@123
+
+CAC BUOC DEMO
+1. Dang nhap bang tai khoan admin.
+2. Vao trang Tong quan.
+3. Chuyen sang trang Kiem tra anh.
+4. Chon mot anh hoa don, tin nhan hoac link dang ngo.
+5. Chon danh muc scam.
+6. Xem preview anh.
+7. Bam nut Kiem tra.
+8. Xem diem rui ro, muc do nguy hiem, OCR, loai scam, giai thich va hanh dong de xuat.
+9. Vao trang Lich su de xem cac lan kiem tra.
+10. Vao cac trang Dataset, AI Models, Danh gia Model va Nhat ky de demo chuc nang admin.
+
+4. CONG VIEC DU KIEN TIEP THEO
+
+UU TIEN CAO
+- Cap nhat README theo trang thai moi.
+- Thay thong bao alert bang thong bao dep tren giao dien.
+- Bo sung loading va trang thai rong ro rang.
+- Test upload voi nhieu dinh dang anh.
+- Them test API cho luong kiem tra anh.
+- Bo sung test phan quyen admin.
+
+UU TIEN TRUNG BINH
+- Thay risk engine rule-based bang model machine learning that.
+- Huan luyen model voi du lieu trong phishing_dataset.
+- Cai thien OCR tieng Viet.
+- Tich hop model deepfake that thay cho heuristic.
+- Cho phep admin quan ly tu khoa scam tren giao dien.
+- Them bieu do thong ke luot kiem tra va muc do rui ro.
+
+TRUOC KHI TRIEN KHAI THAT
+- Doi JWT_SECRET.
+- Khong dung tai khoan admin mac dinh.
+- Bo sung HTTPS.
+- Gioi han kich thuoc va loai file upload.
+- Kiem tra virus/file doc hai.
+- Bao mat thong tin database bang secret manager.
+- Bo sung logging va monitoring.
+- Dong goi Docker hoac trien khai len server/cloud.
+
+5. KET LUAN
+
+Du an da hoan thanh ban demo end-to-end: nguoi dung dang nhap, upload anh,
+he thong phan tich rui ro, luu ket qua vao MySQL va hien thi lich su tren
+giao dien React.
+
+Phan can phat trien tiep chu yeu la nang do chinh xac AI, tang bao mat va
+hoan thien giao dien production.

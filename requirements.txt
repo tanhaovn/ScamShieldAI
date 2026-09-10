@@ -9,6 +9,7 @@ python-multipart==0.0.9
 pydantic==2.9.2
 python-dotenv==1.0.1
 numpy==2.1.1
+PyJWT==2.9.0
 
 # Model deepfake pretrained. Cặp phiên bản này tương thích với nhau trên Windows.
 # Cần có mạng internet để tải model lần đầu (~100-300MB).
