@@ -13,6 +13,7 @@ import os
 import shutil
 import uuid
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import jwt
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, Header
@@ -33,19 +34,22 @@ app = FastAPI(title="Vietnamese Scam Detection - Image Module")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-UPLOAD_DIR = "uploads"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+FRONTEND_DIR = PROJECT_ROOT / "frontend-react"
+UPLOAD_DIR = PROJECT_ROOT / "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 USE_DEEPFAKE_MODEL = os.getenv("USE_DEEPFAKE_MODEL", "false").lower() == "true"
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-key-change-me")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "1440"))
 
-app.mount("/static", StaticFiles(directory="frontend"), name="static")
+app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
@@ -151,7 +155,7 @@ def get_current_user(
 
 @app.get("/", include_in_schema=False)
 def dashboard():
-    return FileResponse("frontend/index.html")
+    return FileResponse(FRONTEND_DIR / "index.html")
 
 
 def seed_default_categories(db: Session):
@@ -284,7 +288,10 @@ def list_scan_history(
             "risk_score": row.risk_score,
             "risk_level": row.risk_level,
             "scam_category_id": row.scam_category_id,
+            "extracted_text": row.extracted_text,
             "explanation": row.explanation,
+            "suggested_action": row.suggested_action,
+            "highlighted_regions": row.highlighted_regions,
             "created_at": row.created_at,
         }
         for row in rows

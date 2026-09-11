@@ -317,6 +317,69 @@ select:focus {
   background: #fff;
 }
 
+.camera-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid #c7ddd3;
+  border-radius: 6px;
+  background: #e7f0eb;
+  color: #245a58;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.camera-button:hover {
+  background: #d9e9e1;
+}
+
+.camera-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(18, 62, 67, 0.5);
+}
+
+.camera-modal {
+  width: min(640px, 100%);
+  padding: clamp(18px, 3vw, 28px);
+  background: #fff;
+  border: 1px solid #d9e6df;
+  border-radius: 8px;
+  box-shadow: 0 18px 42px rgba(18, 62, 67, 0.2);
+}
+
+.camera-video {
+  display: block;
+  width: 100%;
+  max-height: 65vh;
+  min-height: 240px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #18333a;
+}
+
+.camera-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.camera-error {
+  margin: 16px 0;
+  padding: 12px;
+  color: #9c3c2c;
+  background: #fff1ed;
+  border: 1px solid #f0c5b8;
+  border-radius: 6px;
+}
+
 .result-box {
   margin-top: 18px;
   padding: 17px;
@@ -372,6 +435,101 @@ select:focus {
   white-space: nowrap;
 }
 
+.history-item {
+  align-items: center;
+}
+
+.history-detail-button {
+  grid-column: 1 / -1;
+  justify-self: start;
+  padding: 7px 10px;
+  background: #e7f0eb;
+  color: #245a58;
+  font-size: 0.86rem;
+}
+
+.history-detail-button:hover:not(:disabled) {
+  background: #d9e9e1;
+  box-shadow: none;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(18, 62, 67, 0.42);
+}
+
+.history-modal {
+  width: min(720px, 100%);
+  max-height: min(760px, 90vh);
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.modal-header h3 {
+  margin-bottom: 14px;
+}
+
+.close-button {
+  padding: 7px 10px;
+  background: #e7f0eb;
+  color: #245a58;
+  font-size: 0.86rem;
+}
+
+.history-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.history-detail-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  background: #f5f9f6;
+  border: 1px solid #e3eee8;
+  border-radius: 6px;
+}
+
+.detail-label {
+  color: #78908a;
+  font-size: 0.8rem;
+}
+
+.detail-image {
+  display: block;
+  width: min(100%, 420px);
+  max-height: 300px;
+  object-fit: contain;
+  margin: 0 auto 16px;
+  border: 1px solid #d9e6df;
+  border-radius: 6px;
+}
+
+.detail-copy {
+  padding: 13px 15px;
+  background: #fff8ee;
+  border-left: 4px solid #ef7d5c;
+  border-radius: 6px;
+}
+
+.detail-copy p {
+  margin: 7px 0;
+}
+
 .admin-form {
   margin-bottom: 16px;
 }
@@ -415,6 +573,10 @@ select:focus {
 
   .topbar-actions {
     width: 100%;
+  }
+
+  .history-detail-grid {
+    grid-template-columns: 1fr;
   }
 
   .topbar-actions button {

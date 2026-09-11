@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 
@@ -9,10 +9,15 @@ function App() {
   const [form, setForm] = useState({ email: "", password: "", full_name: "" });
   const [file, setFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [cameraError, setCameraError] = useState("");
+  const videoRef = useRef(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [categories, setCategories] = useState([]);
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState([]);
+  const [selectedHistory, setSelectedHistory] = useState(null);
   const [datasets, setDatasets] = useState([]);
   const [models, setModels] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
@@ -68,6 +73,18 @@ function App() {
       fetchLogs();
     }
   }, [token, me?.role]);
+
+  useEffect(() => {
+    if (videoRef.current && cameraStream) {
+      videoRef.current.srcObject = cameraStream;
+    }
+  }, [cameraStream]);
+
+  useEffect(() => {
+    return () => {
+      cameraStream?.getTracks().forEach((track) => track.stop());
+    };
+  }, [cameraStream]);
 
   async function fetchCategories() {
     const res = await fetch(`${API_BASE}/scam-categories`, {
@@ -178,6 +195,75 @@ function App() {
 
     setResult(data);
     fetchHistory();
+  }
+
+  function handleImageSelect(event) {
+    const selectedFile = event.target.files[0];
+    setFile(selectedFile || null);
+    setImagePreview(selectedFile ? URL.createObjectURL(selectedFile) : "");
+    setResult(null);
+  }
+
+  async function openCamera() {
+    setCameraError("");
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError("Trình duyệt này không hỗ trợ mở camera trực tiếp.");
+      setIsCameraOpen(true);
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      });
+      setCameraStream(stream);
+      setIsCameraOpen(true);
+    } catch {
+      setCameraError(
+        "Không thể mở camera. Hãy cấp quyền camera cho trình duyệt rồi thử lại.",
+      );
+      setIsCameraOpen(true);
+    }
+  }
+
+  function closeCamera() {
+    cameraStream?.getTracks().forEach((track) => track.stop());
+    setCameraStream(null);
+    setIsCameraOpen(false);
+    setCameraError("");
+  }
+
+  function capturePhoto() {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth || !video.videoHeight) {
+      setCameraError(
+        "Camera chưa sẵn sàng. Vui lòng đợi một chút rồi chụp lại.",
+      );
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0);
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          setCameraError("Không thể tạo ảnh từ camera.");
+          return;
+        }
+        const capturedFile = new File([blob], `camera-${Date.now()}.jpg`, {
+          type: "image/jpeg",
+        });
+        setFile(capturedFile);
+        setImagePreview(URL.createObjectURL(capturedFile));
+        setResult(null);
+        closeCamera();
+      },
+      "image/jpeg",
+      0.92,
+    );
   }
 
   async function handleCreateDataset(e) {
@@ -473,15 +559,15 @@ function App() {
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => {
-                  const selectedFile = e.target.files[0];
-                  setFile(selectedFile || null);
-                  setImagePreview(
-                    selectedFile ? URL.createObjectURL(selectedFile) : "",
-                  );
-                  setResult(null);
-                }}
+                onChange={handleImageSelect}
               />
+              <button
+                type="button"
+                className="camera-button"
+                onClick={openCamera}
+              >
+                Chụp ảnh bằng camera
+              </button>
               {imagePreview && (
                 <img src={imagePreview} alt="Preview" className="preview" />
               )}
@@ -489,6 +575,58 @@ function App() {
                 {loading ? "Đang phân tích..." : "Kiểm tra"}
               </button>
             </form>
+
+            {isCameraOpen && (
+              <div className="camera-modal-backdrop">
+                <section
+                  className="camera-modal"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="camera-title"
+                >
+                  <div className="modal-header">
+                    <h3 id="camera-title">Chụp ảnh</h3>
+                    <button
+                      type="button"
+                      className="close-button"
+                      onClick={closeCamera}
+                    >
+                      Đóng
+                    </button>
+                  </div>
+                  {cameraStream ? (
+                    <video
+                      ref={videoRef}
+                      className="camera-video"
+                      autoPlay
+                      playsInline
+                      muted
+                    />
+                  ) : (
+                    <p className="camera-error">{cameraError}</p>
+                  )}
+                  {cameraStream && cameraError && (
+                    <p className="camera-error">{cameraError}</p>
+                  )}
+                  <div className="camera-actions">
+                    <button
+                      type="button"
+                      onClick={capturePhoto}
+                      disabled={!cameraStream}
+                    >
+                      Chụp ảnh
+                    </button>
+                    <button
+                      type="button"
+                      className="ghost"
+                      onClick={closeCamera}
+                    >
+                      Hủy
+                    </button>
+                  </div>
+                </section>
+              </div>
+            )}
 
             {result && (
               <div className="result-box">
@@ -541,17 +679,100 @@ function App() {
           <ul className="list">
             {history.length === 0 && <li>Chưa có lịch sử</li>}
             {history.map((item) => (
-              <li key={item.id}>
+              <li key={item.id} className="history-item">
                 <span>{item.risk_level}</span>
                 <strong>{item.risk_score}</strong>
                 <small>
                   {item.original_filename ||
                     `Category #${item.scam_category_id}`}
                 </small>
+                <button
+                  type="button"
+                  className="history-detail-button"
+                  onClick={() => setSelectedHistory(item)}
+                >
+                  Xem chi tiết
+                </button>
               </li>
             ))}
           </ul>
         </section>
+      )}
+
+      {selectedHistory && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onClick={() => setSelectedHistory(null)}
+        >
+          <section
+            className="history-modal panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="history-detail-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h3 id="history-detail-title">Chi tiết lần kiểm tra</h3>
+              <button
+                type="button"
+                className="close-button"
+                aria-label="Đóng chi tiết"
+                onClick={() => setSelectedHistory(null)}
+              >
+                Đóng
+              </button>
+            </div>
+            <div className="history-detail-grid">
+              <div>
+                <span className="detail-label">Tên file</span>
+                <strong>
+                  {selectedHistory.original_filename || "Không có"}
+                </strong>
+              </div>
+              <div>
+                <span className="detail-label">Mức độ</span>
+                <strong>{selectedHistory.risk_level}</strong>
+              </div>
+              <div>
+                <span className="detail-label">Điểm rủi ro</span>
+                <strong>{selectedHistory.risk_score}</strong>
+              </div>
+              <div>
+                <span className="detail-label">Thời gian</span>
+                <strong>
+                  {selectedHistory.created_at
+                    ? new Date(selectedHistory.created_at).toLocaleString(
+                        "vi-VN",
+                      )
+                    : "Không có"}
+                </strong>
+              </div>
+            </div>
+            {selectedHistory.image_url && (
+              <img
+                src={`${API_BASE}${selectedHistory.image_url}`}
+                alt={selectedHistory.original_filename || "Ảnh đã kiểm tra"}
+                className="detail-image"
+              />
+            )}
+            <div className="detail-copy">
+              <p>
+                <strong>OCR:</strong>{" "}
+                {selectedHistory.extracted_text ||
+                  "Không nhận diện được văn bản"}
+              </p>
+              <p>
+                <strong>Giải thích:</strong>{" "}
+                {selectedHistory.explanation || "Không có"}
+              </p>
+              <p>
+                <strong>Hành động đề xuất:</strong>{" "}
+                {selectedHistory.suggested_action || "Không có"}
+              </p>
+            </div>
+          </section>
+        </div>
       )}
 
       {me.role === "admin" && activePage.startsWith("admin-") && (
