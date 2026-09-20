@@ -15,7 +15,7 @@ from PIL import Image
 import pytesseract
 
 
-_local_tessdata = Path(__file__).resolve().parents[2] / "tessdata"
+_local_tessdata = Path(__file__).resolve().parents[3] / "tessdata"
 _tesseract_path = shutil.which("tesseract") or r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 if Path(_tesseract_path).exists():
     pytesseract.pytesseract.tesseract_cmd = _tesseract_path
