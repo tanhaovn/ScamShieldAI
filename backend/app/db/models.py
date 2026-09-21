@@ -1,7 +1,7 @@
 """
 Model ORM ánh xạ tới các bảng trong schema.sql.
 """
-from sqlalchemy import Boolean, Column, DECIMAL, Integer, String, Text, JSON, ForeignKey, TIMESTAMP, Enum, func
+from sqlalchemy import Boolean, Column, DECIMAL, Integer, String, Text, JSON, ForeignKey, TIMESTAMP, Enum, UniqueConstraint, func
 from sqlalchemy.orm import relationship
 from backend.app.db.database import Base
 
@@ -21,6 +21,24 @@ class User(Base):
     scans = relationship("ScanHistory", back_populates="user")
     training_dataset = relationship("TrainingDataset", back_populates="uploader")
     logs = relationship("SystemActivityLog", back_populates="admin")
+    auth_identities = relationship("AuthIdentity", back_populates="user", cascade="all, delete-orphan")
+
+
+class AuthIdentity(Base):
+    """Liên kết tài khoản nội bộ với nhà cung cấp đăng nhập bên ngoài."""
+
+    __tablename__ = "auth_identities"
+    __table_args__ = (
+        UniqueConstraint("provider", "provider_subject", name="uq_auth_identity_provider_subject"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    provider = Column(String(50), nullable=False)
+    provider_subject = Column(String(255), nullable=False)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+    user = relationship("User", back_populates="auth_identities")
 
 
 class ScamCategory(Base):

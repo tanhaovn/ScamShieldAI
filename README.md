@@ -26,6 +26,22 @@ scam-detector/
 
 ## Cài đặt
 
+### Cách nhanh trên Windows
+
+- Lần đầu: nhấp đúp `SETUP_PROJECT.bat`.
+- Mỗi lần mở dự án: nhấp đúp `START_PROJECT.bat`.
+- Script tự mở backend, frontend và trang web `http://127.0.0.1:5173/`.
+- Để tắt: đóng hai cửa sổ **Scam Detector - Backend** và **Scam Detector - Frontend**.
+
+Nếu dùng dòng lệnh:
+
+```bat
+cd /d D:\scam-detector
+START_PROJECT.bat
+```
+
+Các bước bên dưới dành cho trường hợp cần cài hoặc chạy thủ công.
+
 ### 1. Cài MySQL và tạo database
 
 ```bash
@@ -70,6 +86,25 @@ uvicorn backend.app.main:app --reload
 Server chạy tại `http://localhost:8000`. Xem docs tự động (Swagger UI) tại
 `http://localhost:8000/docs`.
 
+### 6. Bật đăng nhập Google (tùy chọn)
+
+Tạo OAuth Client ID loại **Web application** trong Google Cloud Console, sau đó
+thêm hai JavaScript origin dùng khi chạy local:
+
+- `http://localhost:5173`
+- `http://127.0.0.1:5173`
+
+Điền cùng một Client ID vào `.env`:
+
+```env
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+```
+
+Khởi động lại cả backend và frontend sau khi sửa `.env`. Frontend nhận Google ID
+token, backend xác minh chữ ký và audience trước khi tạo tài khoản nội bộ. Không
+dùng access token hoặc thông tin email từ frontend làm bằng chứng đăng nhập.
+
 ## Test nhanh
 
 ```bash
@@ -112,6 +147,36 @@ Endpoint `/check-image` giờ trả về **2 điểm rủi ro riêng biệt**, c
    Việt chưa đủ tốt.
 3. **Visual forensics**: thêm module kiểm tra layout/metadata cho hóa đơn giả,
    và model phát hiện deepfake cho ảnh chân dung.
-4. **Auth**: hiện `user_id` đang truyền tay qua form — cần thêm JWT auth thật.
+4. **Auth**: bổ sung luồng liên kết Google với tài khoản email đã tồn tại sau khi
+   người dùng xác thực lại bằng mật khẩu.
 5. **Từ khóa động**: chuyển `SCAM_KEYWORDS` từ hardcode sang load từ bảng
    `scam_keywords` trong MySQL để admin cập nhật được qua dashboard.
+
+## Phân tích URL trong nội dung OCR bằng PhishVN
+
+Backend tích hợp **PhishVN v3.1.0** theo đúng phạm vi của bộ dữ liệu:
+
+1. Tesseract trích văn bản từ ảnh.
+2. `phishvn_url_model.py` tìm URL/tên miền trong văn bản OCR.
+3. Mỗi URL được chuyển thành 21 đặc trưng lexical theo schema CompPhish.
+4. HistGradientBoosting dự đoán mức phishing/abuse và trả về URL, xác suất,
+   điểm rủi ro cùng các dấu hiệu dễ hiểu cho giao diện.
+5. Risk Engine từ khóa hiện tại tiếp tục phân tích câu tiếng Việt; PhishVN không
+   được dùng như một model phân loại SMS/email vì bản phát hành này chỉ có nhãn URL.
+
+Model tham chiếu có sẵn tại
+`PhishVN A Time-Stamped Vietnamese URL Phishing Dat/p1a_results_bundle/models/HistGB_seed0.joblib`.
+Để huấn luyện lại theo official gold/silver temporal split:
+
+```bash
+python -m backend.app.ai.train_phishvn_url_model
+```
+
+Model mới được lưu tại `models/phishvn_url_histgb.joblib` và sẽ được backend ưu
+tiên tự động. Có thể chỉ định model khác bằng `PHISHVN_MODEL_PATH`.
+
+Lưu ý: điểm model là tín hiệu cảnh báo, không phải bằng chứng chắc chắn. Dataset
+có cả credential phishing và các dạng abuse khác; ngưỡng ứng dụng được đặt bảo
+thủ để giảm cảnh báo sai.
+
+Nguồn dữ liệu: **PhishVN v3.1.0**, DOI `10.17632/b97hxbxtpd.4`, giấy phép CC BY 4.0.

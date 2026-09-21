@@ -43,6 +43,7 @@ export default function useAppController() {
   });
   const [logForm, setLogForm] = useState({ action_type: "", description: "" });
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
   const [activePage, setActivePage] = useState(
     window.location.hash.replace("#", "") || "overview",
   );
@@ -54,6 +55,12 @@ export default function useAppController() {
     }),
     [token],
   );
+
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+
+  useEffect(() => {
+    setAuthError("");
+  }, [mode]);
 
   useEffect(() => {
     if (!token) return;
@@ -130,9 +137,19 @@ export default function useAppController() {
     if (res.ok) setLogs(await res.json());
   }
 
+  function completeAuth(data) {
+    localStorage.setItem("token", data.token);
+    setToken(data.token);
+    setMe(data.user);
+    setMode("login");
+    setForm({ email: "", password: "", full_name: "" });
+    setAuthError("");
+  }
+
   async function handleAuth(event) {
     event.preventDefault();
     setLoading(true);
+    setAuthError("");
     const endpoint = mode === "login" ? "/login" : "/register";
     const payload =
       mode === "login"
@@ -142,22 +159,59 @@ export default function useAppController() {
             password: form.password,
             full_name: form.full_name,
           };
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAuthError(data.detail || "Không thể xác thực tài khoản");
+        return;
+      }
+      completeAuth(data);
+    } catch {
+      setAuthError("Không kết nối được máy chủ. Hãy kiểm tra backend.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogleAuth(credential) {
+    setLoading(true);
+    setAuthError("");
+    try {
+      const res = await fetch(`${API_BASE}/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAuthError(data.detail || "Không thể đăng nhập bằng Google");
+        return;
+      }
+      completeAuth(data);
+    } catch {
+      setAuthError("Không kết nối được máy chủ để xác thực Google.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function updateProfile(fullName) {
+    const res = await fetch(`${API_BASE}/me`, {
+      method: "PATCH",
+      headers: authHeaders,
+      body: JSON.stringify({ full_name: fullName }),
     });
     const data = await res.json();
-    setLoading(false);
     if (!res.ok) {
-      alert(data.detail || "Lỗi xác thực");
-      return;
+      throw new Error(data.detail || "Không thể cập nhật hồ sơ");
     }
-    localStorage.setItem("token", data.token);
-    setToken(data.token);
-    setMe(data.user);
-    setMode("login");
-    setForm({ email: "", password: "", full_name: "" });
+    setMe(data);
+    return data;
   }
 
   async function handleScan(event) {
@@ -378,7 +432,11 @@ export default function useAppController() {
     form,
     setForm,
     loading,
+    authError,
+    googleClientId,
     handleAuth,
+    handleGoogleAuth,
+    updateProfile,
     activePage,
     navigate,
     logout,

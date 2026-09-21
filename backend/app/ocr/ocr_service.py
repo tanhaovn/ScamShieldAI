@@ -9,6 +9,7 @@ Nếu muốn độ chính xác cao hơn cho tiếng Việt, có thể thay bằn
 (pip install paddleocr paddlepaddle) — API tương tự, chỉ cần đổi hàm extract_text().
 """
 import shutil
+import subprocess
 from pathlib import Path
 
 from PIL import Image
@@ -36,19 +37,33 @@ def extract_text(image_path: str) -> str:
     Returns:
         Chuỗi văn bản trích được (đã strip khoảng trắng thừa).
     """
-    image = Image.open(image_path)
-
-    # lang="vie" yêu cầu đã cài gói ngôn ngữ tesseract-ocr-vie
-    # dùng "vie+eng" để bắt được cả số/ký tự latin lẫn tiếng Việt có dấu
-    try:
-        raw_text = pytesseract.image_to_string(
-            image, lang="vie+eng", config=_tessdata_config
-        )
-    except pytesseract.TesseractNotFoundError:
+    if not Path(_tesseract_path).exists():
         # Visual analysis can still run when the optional system OCR binary is absent.
         return ""
 
-    return raw_text.strip()
+    # Gọi executable trực tiếp để tránh lỗi pytesseract tạo ảnh tạm trên Windows
+    # (một số PNG RGBA có thể làm Tesseract báo std::bad_alloc khi đi qua file tạm).
+    command = [
+        str(_tesseract_path),
+        str(Path(image_path).resolve()),
+        "stdout",
+        "-l",
+        "vie+eng",
+    ]
+    if (_local_tessdata / "vie.traineddata").exists():
+        command.extend(["--tessdata-dir", str(_local_tessdata)])
+
+    try:
+        completed = subprocess.run(
+            command,
+            capture_output=True,
+            check=True,
+            timeout=60,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ""
+
+    return completed.stdout.decode("utf-8", errors="replace").strip()
 
 
 def extract_text_with_boxes(image_path: str):

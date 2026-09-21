@@ -24,9 +24,11 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from backend.app.ai.phishing_model import analyze_phishing_image
+from backend.app.ai.phishvn_url_model import analyze_urls_in_text
 from backend.app.db.database import get_db, engine, Base, SessionLocal
-from backend.app.db.models import ScanHistory, User, ScamCategory, TrainingDataset, AiModel, ModelEvaluation, SystemActivityLog
+from backend.app.db.models import AuthIdentity, ScanHistory, User, ScamCategory, TrainingDataset, AiModel, ModelEvaluation, SystemActivityLog
 from backend.app.ocr.ocr_service import extract_text
+from backend.app.risk.explanation_builder import build_analysis_explanation
 from backend.app.risk.risk_engine import analyze_text
 from backend.app.visual.visual_forensics import analyze_image_visual
 
@@ -48,6 +50,7 @@ USE_DEEPFAKE_MODEL = os.getenv("USE_DEEPFAKE_MODEL", "false").lower() == "true"
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-key-change-me")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "1440"))
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
 
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
@@ -62,6 +65,14 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+
+class GoogleAuthRequest(BaseModel):
+    credential: str = Field(min_length=20)
+
+
+class ProfileUpdateRequest(BaseModel):
+    full_name: str = Field(min_length=2, max_length=100)
 
 
 class ScanImageRequest(BaseModel):
@@ -132,6 +143,18 @@ def _create_token(user_id: int) -> str:
 def _decode_token(token: str) -> int:
     payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
     return int(payload["sub"])
+
+
+def _auth_response(user: User) -> dict:
+    return {
+        "token": _create_token(user.id),
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "full_name": user.full_name,
+            "role": user.role,
+        },
+    }
 
 
 def get_current_user(
@@ -215,16 +238,7 @@ def register_user(payload: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    token = _create_token(user.id)
-    return {
-        "token": token,
-        "user": {
-            "id": user.id,
-            "email": user.email,
-            "full_name": user.full_name,
-            "role": user.role,
-        },
-    }
+    return _auth_response(user)
 
 
 @app.post("/login")
@@ -233,16 +247,98 @@ def login_user(payload: LoginRequest, db: Session = Depends(get_db)):
     if not user or not _verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Email hoặc mật khẩu không đúng")
 
-    token = _create_token(user.id)
-    return {
-        "token": token,
-        "user": {
-            "id": user.id,
-            "email": user.email,
-            "full_name": user.full_name,
-            "role": user.role,
-        },
-    }
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Tài khoản đã bị vô hiệu hóa")
+
+    return _auth_response(user)
+
+
+@app.post("/auth/google")
+def authenticate_with_google(payload: GoogleAuthRequest, db: Session = Depends(get_db)):
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(
+            status_code=503,
+            detail="Google Sign-In chưa được cấu hình trên máy chủ",
+        )
+
+    try:
+        from google.auth.transport import requests as google_requests
+        from google.oauth2 import id_token as google_id_token
+    except ImportError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Máy chủ chưa cài thư viện google-auth",
+        ) from exc
+
+    try:
+        identity_data = google_id_token.verify_oauth2_token(
+            payload.credential,
+            google_requests.Request(),
+            GOOGLE_CLIENT_ID,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=401, detail="Google ID token không hợp lệ") from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Không thể xác minh tài khoản Google lúc này",
+        ) from exc
+
+    subject = str(identity_data.get("sub") or "").strip()
+    email = str(identity_data.get("email") or "").strip().lower()
+    email_verified = identity_data.get("email_verified") in {True, "true"}
+    if not subject or not email or not email_verified:
+        raise HTTPException(
+            status_code=401,
+            detail="Tài khoản Google chưa xác minh email",
+        )
+
+    identity = (
+        db.query(AuthIdentity)
+        .filter(
+            AuthIdentity.provider == "google",
+            AuthIdentity.provider_subject == subject,
+        )
+        .first()
+    )
+    if identity:
+        user = identity.user
+    else:
+        existing_user = db.query(User).filter(User.email == email).first()
+        if existing_user:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Email này đã có tài khoản dùng mật khẩu. "
+                    "Hãy đăng nhập bằng email để tránh liên kết nhầm tài khoản."
+                ),
+            )
+
+        import secrets
+
+        user = User(
+            email=email,
+            password_hash=_hash_password(secrets.token_urlsafe(32)),
+            full_name=str(identity_data.get("name") or email.split("@")[0]),
+            role="user",
+            is_active=True,
+        )
+        db.add(user)
+        db.flush()
+        db.add(
+            AuthIdentity(
+                user_id=user.id,
+                provider="google",
+                provider_subject=subject,
+            )
+        )
+        db.commit()
+        db.refresh(user)
+
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Tài khoản đã bị vô hiệu hóa")
+
+    return _auth_response(user)
 
 
 @app.get("/me")
@@ -252,6 +348,41 @@ def get_me(current_user: User = Depends(get_current_user)):
         "email": current_user.email,
         "full_name": current_user.full_name,
         "role": current_user.role,
+        "is_active": current_user.is_active,
+        "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
+        "auth_provider": (
+            current_user.auth_identities[0].provider
+            if current_user.auth_identities
+            else "password"
+        ),
+    }
+
+
+@app.patch("/me")
+def update_me(
+    payload: ProfileUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    full_name = " ".join(payload.full_name.strip().split())
+    if len(full_name) < 2:
+        raise HTTPException(status_code=400, detail="Tên hiển thị phải có ít nhất 2 ký tự")
+
+    current_user.full_name = full_name
+    db.commit()
+    db.refresh(current_user)
+    return {
+        "id": current_user.id,
+        "email": current_user.email,
+        "full_name": current_user.full_name,
+        "role": current_user.role,
+        "is_active": current_user.is_active,
+        "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
+        "auth_provider": (
+            current_user.auth_identities[0].provider
+            if current_user.auth_identities
+            else "password"
+        ),
     }
 
 
@@ -403,6 +534,7 @@ async def check_image(
 
         extracted_text = extract_text(saved_path)
         text_result = analyze_text(extracted_text)
+        phishvn_result = analyze_urls_in_text(extracted_text)
 
         visual_result = analyze_image_visual(
             saved_path, use_deepfake_model=USE_DEEPFAKE_MODEL
@@ -411,6 +543,8 @@ async def check_image(
         image_model_score = int(image_model_result.probability * 100)
 
         component_scores = [text_result.risk_score, visual_result.visual_score]
+        if phishvn_result.available and phishvn_result.predictions:
+            component_scores.append(phishvn_result.risk_score)
         if image_model_result.available:
             component_scores.append(image_model_score)
         combined_score = max(component_scores) + int(0.3 * min(component_scores))
@@ -423,13 +557,32 @@ async def check_image(
         else:
             combined_level = "an_toan"
 
-        combined_explanation = text_result.explanation
-        if visual_result.flags:
-            combined_explanation += " Ngoài ra, phân tích hình ảnh phát detect: " + "; ".join(
-                visual_result.flags
+        combined_scam_type = text_result.scam_type
+        if phishvn_result.risk_score >= 50 and phishvn_result.risk_score >= text_result.risk_score:
+            combined_scam_type = "phishing_url"
+
+        suggested_action = text_result.suggested_action
+        if phishvn_result.risk_score >= 60:
+            suggested_action = (
+                "KHÔNG mở URL, KHÔNG đăng nhập hoặc cung cấp OTP/thông tin thanh toán. "
+                "Hãy tự nhập địa chỉ website chính thức hoặc liên hệ tổ chức qua kênh đã xác minh."
             )
-        if image_model_result.available:
-            combined_explanation += " " + image_model_result.explanation
+        elif phishvn_result.risk_score >= 25 and text_result.risk_score < 25:
+            suggested_action = (
+                "URL có dấu hiệu cần kiểm tra thêm. Không bấm trực tiếp; hãy đối chiếu tên miền "
+                "với website chính thức trước khi tiếp tục."
+            )
+
+        combined_explanation, analysis_breakdown = build_analysis_explanation(
+            extracted_text=extracted_text,
+            text_result=text_result,
+            phishvn_result=phishvn_result,
+            visual_result=visual_result,
+            image_model_result=image_model_result,
+            image_model_score=image_model_score,
+            combined_score=combined_score,
+            combined_level=combined_level,
+        )
 
         scan_record = ScanHistory(
             user_id=user_id,
@@ -440,8 +593,13 @@ async def check_image(
             risk_score=combined_score,
             risk_level=combined_level,
             explanation=combined_explanation,
-            highlighted_regions={"terms": text_result.highlighted_terms, "visual_flags": visual_result.flags},
-            suggested_action=text_result.suggested_action,
+            highlighted_regions={
+                "terms": text_result.highlighted_terms,
+                "visual_flags": visual_result.flags,
+                "phishvn_urls": phishvn_result.predictions_as_dicts(),
+                "analysis_breakdown": analysis_breakdown,
+            },
+            suggested_action=suggested_action,
         )
         db.add(scan_record)
         db.commit()
@@ -454,15 +612,20 @@ async def check_image(
             "risk_score": combined_score,
             "risk_level": combined_level,
             "text_risk_score": text_result.risk_score,
+            "phishvn_available": phishvn_result.available,
+            "phishvn_model": phishvn_result.model_name,
+            "phishvn_url_risk_score": phishvn_result.risk_score,
+            "phishvn_urls": phishvn_result.predictions_as_dicts(),
             "visual_risk_score": visual_result.visual_score,
             "image_model_available": image_model_result.available,
             "image_model_label": image_model_result.label,
             "image_model_score": image_model_score,
-            "scam_type": text_result.scam_type,
+            "scam_type": combined_scam_type,
             "highlighted_terms": text_result.highlighted_terms,
             "visual_flags": visual_result.flags,
             "explanation": combined_explanation,
-            "suggested_action": text_result.suggested_action,
+            "analysis_breakdown": analysis_breakdown,
+            "suggested_action": suggested_action,
             "scam_category_id": category_id,
         }
 

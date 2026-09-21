@@ -12,6 +12,18 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
+-- Danh tính đăng nhập ngoài (Google, có thể mở rộng thêm provider khác)
+CREATE TABLE IF NOT EXISTS auth_identities (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    provider VARCHAR(50) NOT NULL,
+    provider_subject VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_auth_identity_provider_subject (provider, provider_subject),
+    INDEX ix_auth_identities_user_id (user_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 -- Bảng lưu từng lượt kiểm tra (text, image, url, audio)
 CREATE TABLE IF NOT EXISTS scan_history (
     id INT AUTO_INCREMENT PRIMARY KEY,

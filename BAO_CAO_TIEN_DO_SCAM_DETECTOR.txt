@@ -1,136 +1,234 @@
-BAO CAO TOM TAT DU AN SCAM DETECTOR
+BAO CAO TIEN DO DU AN SCAM DETECTOR
 ====================================
+Ngay cap nhat: 13/09/2026
 
-1. TINH TRANG HIEN TAI
+1. MUC TIEU VA PHAM VI
 
-Du an da co ban demo end-to-end gom frontend React, backend FastAPI va
-MySQL database.
+Xay dung he thong ho tro nguoi dung nhan biet anh co dau hieu lua dao, dac
+biet la screenshot tin nhan, hoa don, thong bao gia mao va duong dan thanh
+toan. He thong chi dua ra canh bao va giai thich; khong thay the viec xac
+minh voi ngan hang, doanh nghiep hoac co quan chuc nang.
 
-BACKEND FASTAPI
-- Ket noi MySQL database: scam_detector.
-- Dang ky tai khoan.
-- Dang nhap bang JWT.
-- Phan quyen user/admin.
-- Kiem tra anh nghi ngo.
-- OCR tieng Viet bang Tesseract.
-- Phan tich tu khoa lua dao.
-- Phan tich EXIF, ELA va heuristic hinh anh.
-- Tinh diem rui ro theo 3 muc:
-  + an_toan
-  + nghi_ngo
-  + nguy_hiem
-- Luu lich su kiem tra vao MySQL.
-- Quan ly danh muc scam.
-- Quan ly dataset huan luyen.
-- Quan ly AI model.
-- Luu danh gia model.
-- Ghi log hoat dong he thong.
-- Co API health tai /health.
+2. THAM KHAO CAC SAN PHAM TUONG TU
 
-FRONTEND REACT
-- Giao dien sang, responsive.
-- Thanh dieu huong tach tung chuc nang thanh trang rieng:
-  + Tong quan
-  + Kiem tra anh
-  + Lich su
-  + Dataset
-  + AI Models
-  + Danh gia Model
-  + Nhat ky he thong
-- Xem truoc anh truoc khi upload.
-- Hien thi diem rui ro va giai thich ket qua.
-- Chi admin moi xem duoc cac trang quan tri.
-- Ket noi dung API backend.
+Da tham khao tai lieu mo ta va pham vi chuc nang cua cac giai phap sau:
 
-DATABASE
-Database scam_detector dang co cac bang:
-- users
-- scan_history
-- scam_categories
-- training_dataset
-- ai_models
-- model_evaluations
-- system_activity_logs
+- Google Lens: nhan dien/chuyen doi van ban trong anh va tim kiem noi dung.
+  Tham khao: https://support.google.com/websearch/answer/1325808
+- Google Safe Browsing: kiem tra URL va canh bao trang web nguy hiem.
+  Tham khao: https://safebrowsing.google.com/
+- VirusTotal URL scanner: tong hop ket qua nhieu cong cu bao mat cho URL.
+  Tham khao: https://docs.virustotal.com/docs/analysing
+- ScamAdviser: danh gia website theo diem tin cay va cac dau hieu cua domain.
+  Tham khao: https://www.scamadviser.com/check-website
+- Microsoft Lens: chup tai lieu, OCR va chuyen tai lieu sang dang co the tim
+  kiem/chinh sua. Tham khao: https://support.microsoft.com/en-us/office/
+  what-is-microsoft-lens-9e0fc5c4-4c98-4e3f-9c7e-4d0a5e6b6b1f
 
-2. KET QUA KIEM TRA
+Tu cac tham khao tren, phien ban cua nhom tap trung vao bai toan cu the hon:
+upload anh -> OCR tieng Viet -> tach URL -> phan tich noi dung, URL va dau
+hieu chinh sua anh -> tong hop diem -> giai thich va goi y hanh dong an toan.
 
-Da xac nhan:
-- MySQL dang nhap thanh cong.
-- SQLAlchemy ket noi dung database scam_detector.
-- API /health hoat dong.
-- Dang ky tai khoan hoat dong.
-- Lay thong tin nguoi dung tai /me hoat dong.
-- Lay danh muc scam hoat dong.
-- Lay lich su kiem tra hoat dong.
-- Backend compile khong loi.
-- Frontend build thanh cong.
-- JSX va CSS khong co loi editor.
+3. CAC TINH NANG SE XAY DUNG
 
-3. CACH CHAY VA DEMO
+DA CO TRONG DEMO:
+- Dang ky, dang nhap JWT, tai khoan Google tuy chon va phan quyen user/admin.
+- Upload anh, xem preview, chon danh muc scam va nhan ket qua.
+- OCR tieng Viet; phan tich tu khoa, URL/domain va dau hieu so tai khoan.
+- Phan tich EXIF, ELA va deepfake heuristic; co the thay bang model deepfake.
+- Diem 0-100 va ba muc an_toan, nghi_ngo, nguy_hiem.
+- Hien thi OCR, cum tu bi danh dau, diem thanh phan, giai thich va goi y.
+- Luu lich su quet vao MySQL; xem danh muc scam.
+- Trang admin cho dataset, AI models, model evaluations va system logs.
+- API /health va Swagger tai /docs.
 
-KHOI DONG BACKEND
-cd D:\scam-detector
-.\.venv\Scripts\uvicorn.exe backend.app.main:app --host 127.0.0.1 --port 8000
+DU KIEN HOAN THIEN:
+- Quan ly tu khoa scam tren giao dien admin thay vi hardcode.
+- Loc, tim kiem, xuat lich su va bieu do thong ke rui ro.
+- Gioi han file, kiem tra file doc hai, xu ly anh nhieu kich thuoc va nhieu
+  dinh dang.
+- Thong bao loading/empty/error ro rang, thay alert bang thong bao trong UI.
+- Mo rong input text va URL truc tiep; hien tai luong chinh la input anh.
 
-KHOI DONG FRONTEND
-cd D:\scam-detector\frontend-react
-npm.cmd run dev
+4. THIET KE TINH NANG OCR
 
-MO GIAO DIEN
-http://127.0.0.1:5173/
+INPUT:
+- File anh JPG, JPEG, PNG, WEBP hoac BMP; co the la screenshot tin nhan,
+  hoa don, ma QR kem chu, thong bao ngan hang.
 
-API DOCUMENTATION
-http://127.0.0.1:8000/docs
+QUY TRINH:
+1. Backend nhan file va luu file tam trong thu muc uploads.
+2. Pillow mo anh; pytesseract goi Tesseract voi lang vie+eng.
+3. Tesseract dung tessdata/vie.traineddata neu co, de doc tieng Viet co dau,
+   chu Latin, so tai khoan va URL.
+4. Van ban duoc trim va dua vao Risk Engine. URL/domain duoc tach rieng cho
+   PhishVN. Ham extract_text_with_boxes co the tra bounding box de highlight.
 
-TAI KHOAN ADMIN DEMO
+OUTPUT:
+- extracted_text: van ban OCR.
+- highlighted_terms: cum tu, URL hoac mau so dang ngo.
+- Cac diem text_risk_score, visual_risk_score va risk_score tong hop.
+
+GIOI HAN:
+- Anh mo, chu nho, bi lo, nghieng, font la hoac nen phuc tap co the lam OCR
+  sai. Ket qua OCR khong duoc xem la bang chung tuyet doi.
+- Can bo sung bo test OCR co ground truth tieng Viet va do CER/WER truoc khi
+  ket luan OCR da dat chat luong production.
+
+5. INPUT, OUTPUT VA LOGIC GIAI THICH/GI GOI Y
+
+INPUT CUA LOP PHAN TICH:
+- Van ban OCR va cac tu/cum tu trung tu khoa.
+- URL/domain tach duoc tu OCR va diem PhishVN.
+- Ket qua EXIF, ELA, deepfake heuristic/model.
+- Ket qua ResNet18 neu checkpoint model anh ton tai.
+
+LOGIC:
+- Risk Engine bo cong trong so cho tu khoa tieng Viet, URL dang ngo va mau
+  so tai khoan; chuan hoa bo dau truoc khi so khop.
+- PhishVN dung 21 dac trung lexical cua URL de phan loai phishing/legitimate.
+- Visual forensics cong diem tu EXIF, ELA va deepfake; heuristic deepfake bi
+  giam trong so vi do tin cay thap.
+- Lop explanation_builder tao breakdown theo tung thanh phan, chon tin hieu
+  co diem cao nhat lam ly do chinh va xep muc theo nguong 25/60.
+
+OUTPUT CHO NGUOI DUNG:
+- Ket luan va diem 0-100.
+- Muc do: An toan tuong doi, Can kiem tra them, Nguy hiem.
+- Cac thanh phan: Noi dung OCR, URL PhishVN, Dau hieu hinh anh va Model anh.
+- Cum tu/URL dang ngo, ly do, cac han che cua phuong phap.
+- Goi y: anh an toan thi van can than; anh nghi ngo thi xac minh kenh chinh
+  thuc; anh nguy hiem thi khong nhap link, khong chuyen khoan, khong cung cap
+  OTP/thong tin ca nhan va can nhac bao cao.
+
+6. BANG CHUNG VE GIAI PHAP AI VA DANH GIA
+
+6.1. Phuong phap da cai dat
+
+- PhishVN v3.1.0: model HistGradientBoosting voi 21 dac trung lexical cua URL.
+  Model bundled nam trong PhishVN A Time-Stamped Vietnamese URL Phishing Dat,
+  co the tai lai theo temporal split. DOI: 10.17632/b97hxbxtpd.4.
+- Anh phishing/legitimate: pipeline fine-tune ResNet18 pretrained tren
+  ImageNet, chi mo lop phan loai cuoi, WeightedRandomSampler va chia du lieu
+  70% train, 15% validation, 15% test. File code: backend/app/ai/
+  train_image_model.py.
+- Baseline giai thich: rule-based Risk Engine. Cac luat nay de kiem tra,
+  truy vet va lam duong co so khi so sanh voi model NLP sau nay.
+
+6.2. Cach danh gia
+
+- URL: bao cao precision, recall, F1 va confusion matrix tren gold/silver
+  temporal test; uu tien recall nhung phai theo doi false positive. Khong
+  danh dong model URL la model hieu toan bo tin nhan.
+- Anh: bao cao accuracy, precision, recall, F1 macro, confusion matrix tren
+  test set khong dung khi train. Neu mat bang lop khac nhau, dung macro F1 va
+  balanced accuracy thay vi chi dung accuracy.
+- OCR: chon mot tap anh co transcription chuan, tinh CER va WER theo tung
+  nhom anh: screenshot, hoa don, font nho, anh mo.
+- Giai thich: danh gia voi nguoi dung bang ti le ly do duoc chap nhan, muc do
+  huu ich 1-5 va ti le goi y an toan phu hop; co the luu vao
+  model_evaluations.explanation_usefulness.
+- Can ghi seed, phien ban dataset, cach chia tap, nguong va thoi gian chay de
+  ket qua tai lap duoc. Khong dung anh trung lap giua train va test.
+
+6.3. Nhan dinh ve tinh hop ly
+
+Giai phap da tang la hop ly cho prototype vi ket hop OCR, URL model, rule
+engine va visual forensics, dong thoi co fallback khi model khong san sang.
+Tuy nhien diem tong hop hien la diem canh bao, khong phai xac suat da hieu
+chinh. Truoc khi cong bo do chinh xac can chay benchmark co nhan, calibration
+nguong va kiem tra false positive tren anh hop le trong thuc te.
+
+7. CAC BUOC TAO DU LIEU TRAIN VA TEST
+
+1. Thu thap anh tu dataset cong khai, anh tu nguyen da an danh va mau tong hop
+   co kiem soat; khong thu thap thong tin ca nhan that neu khong co phep.
+2. Gan nhan legitimate/phishing va nhan phu: sms_scam, fake_invoice,
+   impersonation, payment_redirect; luu nguon, ngay thu thap va nguoi duyet.
+3. An danh thong tin: ten, so dien thoai, email, tai khoan, dia chi va QR.
+4. Kiem tra nhan boi hai nguoi; loai anh trung lap, anh loi va anh khong ro.
+5. Tach theo nguon/thoi gian/chu de: train 70%, validation 15%, test 15%.
+   Anh cua cung mot mau screenshot phai o cung mot split de tranh leakage.
+6. Augmentation chi ap dung cho train: crop nhe, xoay nho, thay doi sang/toi
+   va blur vua phai; khong lam bien doi nhan phishing.
+7. Luu manifest CSV/JSON gom image_id, label, category, source, split,
+   anonymized, verified va hash file.
+8. Chay baseline rule-based, sau do train ResNet18/PhishVN va so sanh bang
+   cac metric o muc 6.2. Luu checkpoint va report metric cung version dataset.
+
+8. TRANG THAI DA KIEM CHUNG
+
+Da co test tu dong trong thu muc tests:
+- Dang ky, dang nhap, JWT va /me.
+- /check-image tra risk_score va risk_level ngay ca khi khong co MySQL/model
+  day du trong test local.
+- Seed tai khoan admin va cac endpoint dataset/evaluation/log.
+- Tach URL, tao dac trung PhishVN va nhan dien URL test phishing.
+- Giai thich co cau truc, chi ra thanh phan co tin hieu manh nhat.
+- Backend compile va frontend build da duoc xac nhan trong bao cao truoc.
+
+Can bo sung bang chung dinh luong:
+- Log ket qua chay full pytest va npm run build trong lan demo gan nhat.
+- Bao cao OCR CER/WER.
+- Bao cao ResNet18 tren test set va xac nhan checkpoint models/phishing_resnet18.pt.
+- Bao cao PhishVN tren temporal test theo dung giao thuc cua tai lieu tham khao.
+
+9. PHAN CONG THANH VIEN CHO BAO CAO BUOI TOI
+
+Bang duoi day la phan cong de xac nhan voi nhom va dien ten that:
+- Thanh vien A - Backend/API: FastAPI, auth, upload, luu MySQL, test API.
+- Thanh vien B - OCR va xu ly anh: Tesseract, tien xu ly, EXIF, ELA,
+  bounding box va benchmark OCR.
+- Thanh vien C - AI/Dataset: tim bai bao/dataset, PhishVN, train ResNet18,
+  chia tap du lieu va tong hop metric.
+- Thanh vien D - Frontend: React, preview, hien thi diem, giai thich, lich su
+  va trang admin.
+- Thanh vien E - QA/bao cao: test end-to-end, kiem thu phan quyen, tai lieu,
+  demo va theo doi loi.
+
+10. CACH CHAY VA DEMO
+
+Lan dau tren Windows:
+1. Nhap dup SETUP_PROJECT.bat.
+2. Cai Python/React, bat MySQL va dien .env.
+
+Moi lan demo:
+1. Nhap dup START_PROJECT.bat.
+2. Mo http://127.0.0.1:5173/; API docs o http://127.0.0.1:8000/docs.
+3. Dang nhap admin, vao Kiem tra anh, chon anh, chon danh muc va bam Kiem tra.
+4. Xem OCR, diem thanh phan, giai thich, goi y va Lich su.
+
 Email: admin@scamdetector.local
 Mat khau: Admin@123
+Can doi ngay mat khau nay va JWT_SECRET truoc khi chia se hoac trien khai.
 
-CAC BUOC DEMO
-1. Dang nhap bang tai khoan admin.
-2. Vao trang Tong quan.
-3. Chuyen sang trang Kiem tra anh.
-4. Chon mot anh hoa don, tin nhan hoac link dang ngo.
-5. Chon danh muc scam.
-6. Xem preview anh.
-7. Bam nut Kiem tra.
-8. Xem diem rui ro, muc do nguy hiem, OCR, loai scam, giai thich va hanh dong de xuat.
-9. Vao trang Lich su de xem cac lan kiem tra.
-10. Vao cac trang Dataset, AI Models, Danh gia Model va Nhat ky de demo chuc nang admin.
+11. KE HOACH TIEP THEO
 
-4. CONG VIEC DU KIEN TIEP THEO
+UU TIEN 1 - HOAN THIEN BANG CHUNG:
+- Chay va luu report pytest/npm build.
+- Tao tap OCR co ground truth; chay CER/WER.
+- Chay train ResNet18 va luu accuracy, precision, recall, macro F1.
+- Tao benchmark PhishVN temporal va luu confusion matrix.
 
-UU TIEN CAO
-- Cap nhat README theo trang thai moi.
-- Thay thong bao alert bang thong bao dep tren giao dien.
-- Bo sung loading va trang thai rong ro rang.
-- Test upload voi nhieu dinh dang anh.
-- Them test API cho luong kiem tra anh.
-- Bo sung test phan quyen admin.
+UU TIEN 2 - CHAT LUONG VA UX:
+- Them test upload nhieu dinh dang/kich thuoc va test phan quyen admin.
+- Them loading, empty state, error state va thong bao trong giao dien.
+- Hien thi bounding box OCR va bieu do diem thanh phan.
+- Chuyen tu khoa sang bang scam_keywords de admin cap nhat.
 
-UU TIEN TRUNG BINH
-- Thay risk engine rule-based bang model machine learning that.
-- Huan luyen model voi du lieu trong phishing_dataset.
-- Cai thien OCR tieng Viet.
-- Tich hop model deepfake that thay cho heuristic.
-- Cho phep admin quan ly tu khoa scam tren giao dien.
-- Them bieu do thong ke luot kiem tra va muc do rui ro.
+UU TIEN 3 - SAN SANG TRIEN KHAI:
+- Bat buoc JWT_SECRET moi, bo admin mac dinh va dung secret manager.
+- Gioi han dung luong/loai file, kiem tra virus va khong phuc vu file upload
+  tuy y.
+- HTTPS, rate limit, logging/monitoring, backup DB va Docker/deployment.
+- Calibration diem, kiem thu false positive va review an toan truoc khi goi
+  la san pham production.
 
-TRUOC KHI TRIEN KHAI THAT
-- Doi JWT_SECRET.
-- Khong dung tai khoan admin mac dinh.
-- Bo sung HTTPS.
-- Gioi han kich thuoc va loai file upload.
-- Kiem tra virus/file doc hai.
-- Bao mat thong tin database bang secret manager.
-- Bo sung logging va monitoring.
-- Dong goi Docker hoac trien khai len server/cloud.
+12. KET LUAN
 
-5. KET LUAN
-
-Du an da hoan thanh ban demo end-to-end: nguoi dung dang nhap, upload anh,
-he thong phan tich rui ro, luu ket qua vao MySQL va hien thi lich su tren
-giao dien React.
-
-Phan can phat trien tiep chu yeu la nang do chinh xac AI, tang bao mat va
-hoan thien giao dien production.
+Du an da co demo end-to-end co the chay: dang nhap, upload anh, OCR, phan tich
+nhieu lop, luu ket qua va xem lich su. Diem manh hien tai la da co code tham
+chieu AI va test cho cac luong quan trong. Phan chua du de ket luan la chat
+luong production gom benchmark co nhan, metric tai lap duoc, tap OCR danh gia,
+bao mat upload va checkpoint model anh da xac nhan. Buoi toi can tap trung vao
+bo sung bang chung dinh luong va chot phan cong/thoi han cho cac muc tren.

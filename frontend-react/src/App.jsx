@@ -7,10 +7,21 @@ import AdminPage from "./pages/Admin/AdminPage";
 import AuthPage from "./pages/Auth/AuthPage";
 import HistoryPage from "./pages/History/HistoryPage";
 import OverviewPage from "./pages/Overview/OverviewPage";
+import ProfilePage from "./pages/Profile/ProfilePage";
 import ScanPage from "./pages/Scan/ScanPage";
 
 function App() {
   const app = useAppController();
+  const pageMeta = {
+    overview: ["Tổng quan", "Theo dõi các lượt kiểm tra và mức độ rủi ro"],
+    scan: ["Kiểm tra ảnh", "Phân tích nội dung OCR, URL và dấu hiệu chỉnh sửa"],
+    history: ["Lịch sử", "Xem lại các kết quả phân tích trước đây"],
+    profile: ["Trang cá nhân", "Danh tính số, hoạt động và quyền truy cập của bạn"],
+    "admin-dataset": ["Training Dataset", "Quản lý dữ liệu phục vụ huấn luyện"],
+    "admin-models": ["AI Models", "Quản lý các phiên bản mô hình"],
+    "admin-evaluations": ["Đánh giá Model", "Theo dõi chỉ số chất lượng mô hình"],
+    "admin-logs": ["Nhật ký hệ thống", "Theo dõi hoạt động quản trị"],
+  };
 
   if (!app.token || !app.me) {
     return (
@@ -20,7 +31,10 @@ function App() {
         form={app.form}
         setForm={app.setForm}
         loading={app.loading}
+        authError={app.authError}
+        googleClientId={app.googleClientId}
         onSubmit={app.handleAuth}
+        onGoogleAuth={app.handleGoogleAuth}
       />
     );
   }
@@ -30,6 +44,7 @@ function App() {
       return (
         <OverviewPage
           history={app.history}
+          user={app.me}
           onStartScan={() => app.navigate("scan")}
         />
       );
@@ -57,6 +72,18 @@ function App() {
         />
       );
     }
+    if (app.activePage === "profile") {
+      return (
+        <ProfilePage
+          user={app.me}
+          history={app.history}
+          datasets={app.datasets}
+          models={app.models}
+          logs={app.logs}
+          onUpdateProfile={app.updateProfile}
+        />
+      );
+    }
     if (app.me.role === "admin" && app.activePage.startsWith("admin-")) {
       return <AdminPage {...app} />;
     }
@@ -68,16 +95,35 @@ function App() {
     );
   }
 
+  const [pageTitle, pageDescription] =
+    pageMeta[app.activePage] || ["Scam Detector", "Hệ thống phân tích rủi ro"];
+
   return (
-    <div className="page dashboard">
+    <div className="app-shell">
       <Navbar
         activePage={app.activePage}
         navigate={app.navigate}
         user={app.me}
         onLogout={app.logout}
       />
-      {renderPage()}
-      <Footer />
+      <section className="app-stage">
+        <header className="workspace-topbar">
+          <div>
+            <span className="workspace-kicker">SCAM DETECTOR</span>
+            <h1>{pageTitle}</h1>
+            <p>{pageDescription}</p>
+          </div>
+          <div className="workspace-status">
+            <span className="status-pulse" />
+            <div>
+              <strong>Hệ thống sẵn sàng</strong>
+              <small>{new Date().toLocaleDateString("vi-VN")}</small>
+            </div>
+          </div>
+        </header>
+        <div className="app-content">{renderPage()}</div>
+        <Footer />
+      </section>
     </div>
   );
 }
