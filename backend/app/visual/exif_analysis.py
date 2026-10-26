@@ -42,8 +42,8 @@ def analyze_exif(image_path: str) -> ExifResult:
     if not exif_data or len(exif_data) == 0:
         return ExifResult(
             has_exif=False,
-            flags=["Ảnh không có metadata EXIF (có thể đã qua re-save/chỉnh sửa, hoặc là screenshot)"],
-            risk_contribution=8,
+            flags=["Ảnh không có metadata EXIF (thường gặp ở ảnh chụp màn hình hoặc tải qua mạng xã hội)"],
+            risk_contribution=0,
         )
 
     readable_exif = {}

@@ -1,6 +1,6 @@
 BAO CAO TIEN DO DU AN SCAM DETECTOR
 ====================================
-Ngay cap nhat: 13/09/2026
+Ngay cap nhat: 23/09/2026
 
 1. MUC TIEU VA PHAM VI
 
@@ -32,13 +32,16 @@ hieu chinh sua anh -> tong hop diem -> giai thich va goi y hanh dong an toan.
 3. CAC TINH NANG SE XAY DUNG
 
 DA CO TRONG DEMO:
-- Dang ky, dang nhap JWT, tai khoan Google tuy chon va phan quyen user/admin.
+- User dung ngay khong can dang ky/dang nhap; chi Admin dang nhap bang JWT.
+- Lich su cua user luu trong localStorage tren trinh duyet, toi da 50 luot gan nhat.
 - Upload anh, xem preview, chon danh muc scam va nhan ket qua.
+- Dan truc tiep tin nhan, nhap URL, quet QR trong anh va upload PDF.
+- PDF trich text san co hoac OCR ban scan, quet QR va xu ly toi da 10 trang.
 - OCR tieng Viet; phan tich tu khoa, URL/domain va dau hieu so tai khoan.
 - Phan tich EXIF, ELA va deepfake heuristic; co the thay bang model deepfake.
 - Diem 0-100 va ba muc an_toan, nghi_ngo, nguy_hiem.
 - Hien thi OCR, cum tu bi danh dau, diem thanh phan, giai thich va goi y.
-- Luu lich su quet vao MySQL; xem danh muc scam.
+- Lich su Admin luu MySQL; lich su khach luu cuc bo tren trinh duyet.
 - Trang admin cho dataset, AI models, model evaluations va system logs.
 - API /health va Swagger tai /docs.
 
@@ -48,13 +51,14 @@ DU KIEN HOAN THIEN:
 - Gioi han file, kiem tra file doc hai, xu ly anh nhieu kich thuoc va nhieu
   dinh dang.
 - Thong bao loading/empty/error ro rang, thay alert bang thong bao trong UI.
-- Mo rong input text va URL truc tiep; hien tai luong chinh la input anh.
+- Fine-tune model NLP tren dataset tin nhan lua dao tieng Viet da gan nhan.
 
 4. THIET KE TINH NANG OCR
 
 INPUT:
 - File anh JPG, JPEG, PNG, WEBP hoac BMP; co the la screenshot tin nhan,
   hoa don, ma QR kem chu, thong bao ngan hang.
+- Van ban tin nhan toi da 20.000 ky tu, URL truc tiep va PDF toi da 15 MB.
 
 QUY TRINH:
 1. Backend nhan file va luu file tam trong thu muc uploads.
@@ -159,12 +163,13 @@ nguong va kiem tra false positive tren anh hop le trong thuc te.
 8. TRANG THAI DA KIEM CHUNG
 
 Da co test tu dong trong thu muc tests:
-- Dang ky, dang nhap, JWT va /me.
+- User khach khong can tai khoan; Admin dang nhap JWT va su dung /me.
 - /check-image tra risk_score va risk_level ngay ca khi khong co MySQL/model
   day du trong test local.
 - Seed tai khoan admin va cac endpoint dataset/evaluation/log.
 - Tach URL, tao dac trung PhishVN va nhan dien URL test phishing.
 - Giai thich co cau truc, chi ra thanh phan co tin hieu manh nhat.
+- Da kiem tra API text, URL, PDF co text va anh QR bang du lieu tao cuc bo.
 - Backend compile va frontend build da duoc xac nhan trong bao cao truoc.
 
 Can bo sung bang chung dinh luong:

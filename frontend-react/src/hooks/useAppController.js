@@ -3,13 +3,53 @@ import { useEffect, useMemo, useRef, useState } from "react";
 export const API_BASE =
   import.meta.env.VITE_API_BASE || "http://localhost:8000";
 
+const GUEST_HISTORY_KEY = "scam_detector_guest_history";
+const GUEST_NAME_KEY = "scam_detector_guest_name";
+const GUEST_SINCE_KEY = "scam_detector_guest_since";
+const MAX_GUEST_HISTORY = 50;
+
+function loadGuestHistory() {
+  try {
+    const value = JSON.parse(localStorage.getItem(GUEST_HISTORY_KEY) || "[]");
+    return Array.isArray(value) ? value : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveGuestHistory(items) {
+  const limited = items.slice(0, MAX_GUEST_HISTORY);
+  localStorage.setItem(GUEST_HISTORY_KEY, JSON.stringify(limited));
+  return limited;
+}
+
+function createGuestUser() {
+  let createdAt = localStorage.getItem(GUEST_SINCE_KEY);
+  if (!createdAt) {
+    createdAt = new Date().toISOString();
+    localStorage.setItem(GUEST_SINCE_KEY, createdAt);
+  }
+  return {
+    id: "guest-device",
+    email: "Không yêu cầu email",
+    full_name: localStorage.getItem(GUEST_NAME_KEY) || "Người dùng khách",
+    role: "guest",
+    is_active: true,
+    created_at: createdAt,
+    auth_provider: "local_device",
+  };
+}
+
 export default function useAppController() {
-  const [mode, setMode] = useState("login");
   const [token, setToken] = useState(localStorage.getItem("token") || "");
-  const [me, setMe] = useState(null);
-  const [form, setForm] = useState({ email: "", password: "", full_name: "" });
+  const [me, setMe] = useState(() => createGuestUser());
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [scanMode, setScanModeState] = useState("image");
   const [file, setFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
+  const [textInput, setTextInput] = useState("");
+  const [urlInput, setUrlInput] = useState("");
+  const [documentFile, setDocumentFile] = useState(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
   const [cameraError, setCameraError] = useState("");
@@ -17,7 +57,7 @@ export default function useAppController() {
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [categories, setCategories] = useState([]);
   const [result, setResult] = useState(null);
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState(() => loadGuestHistory());
   const [selectedHistory, setSelectedHistory] = useState(null);
   const [datasets, setDatasets] = useState([]);
   const [models, setModels] = useState([]);
@@ -56,29 +96,47 @@ export default function useAppController() {
     [token],
   );
 
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+  function setScanMode(mode) {
+    setScanModeState(mode);
+    setResult(null);
+  }
 
   useEffect(() => {
-    setAuthError("");
-  }, [mode]);
-
-  useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setMe(createGuestUser());
+      setHistory(loadGuestHistory());
+      return;
+    }
     fetch(`${API_BASE}/me`, { headers: authHeaders })
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setMe(data))
-      .catch(() => setMe(null));
+      .then((data) => {
+        if (data?.role === "admin") {
+          setMe(data);
+          return;
+        }
+        localStorage.removeItem("token");
+        setToken("");
+        setMe(createGuestUser());
+        setHistory(loadGuestHistory());
+      })
+      .catch(() => {
+        localStorage.removeItem("token");
+        setToken("");
+        setMe(createGuestUser());
+        setHistory(loadGuestHistory());
+      });
   }, [token, authHeaders]);
 
   useEffect(() => {
-    if (!token) return;
     fetchCategories();
-    fetchHistory();
     fetchModels();
-    if (me?.role === "admin") {
+    if (token && me?.role === "admin") {
+      fetchHistory();
       fetchDatasets();
       fetchEvaluations();
       fetchLogs();
+    } else if (!token) {
+      setHistory(loadGuestHistory());
     }
   }, [token, me?.role]);
 
@@ -104,11 +162,19 @@ export default function useAppController() {
   }
 
   async function fetchHistory() {
-    if (!token) return;
+    if (!token || me?.role !== "admin") {
+      setHistory(loadGuestHistory());
+      return;
+    }
     const res = await fetch(`${API_BASE}/scan-history`, {
       headers: authHeaders,
     });
-    if (res.ok) setHistory(await res.json());
+    if (res.ok) {
+      const databaseHistory = await res.json();
+      const combined = [...loadGuestHistory(), ...databaseHistory]
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      setHistory(combined);
+    }
   }
 
   async function fetchDatasets() {
@@ -138,69 +204,48 @@ export default function useAppController() {
   }
 
   function completeAuth(data) {
+    if (data.user?.role !== "admin") {
+      throw new Error("Chỉ quản trị viên mới được đăng nhập");
+    }
     localStorage.setItem("token", data.token);
     setToken(data.token);
     setMe(data.user);
-    setMode("login");
-    setForm({ email: "", password: "", full_name: "" });
+    setForm({ email: "", password: "" });
     setAuthError("");
+    navigate("overview");
   }
 
   async function handleAuth(event) {
     event.preventDefault();
     setLoading(true);
     setAuthError("");
-    const endpoint = mode === "login" ? "/login" : "/register";
-    const payload =
-      mode === "login"
-        ? { email: form.email, password: form.password }
-        : {
-            email: form.email,
-            password: form.password,
-            full_name: form.full_name,
-          };
     try {
-      const res = await fetch(`${API_BASE}${endpoint}`, {
+      const res = await fetch(`${API_BASE}/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ email: form.email, password: form.password }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setAuthError(data.detail || "Không thể xác thực tài khoản");
+        setAuthError(data.detail || "Không thể xác thực quản trị viên");
         return;
       }
       completeAuth(data);
-    } catch {
-      setAuthError("Không kết nối được máy chủ. Hãy kiểm tra backend.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleGoogleAuth(credential) {
-    setLoading(true);
-    setAuthError("");
-    try {
-      const res = await fetch(`${API_BASE}/auth/google`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ credential }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setAuthError(data.detail || "Không thể đăng nhập bằng Google");
-        return;
-      }
-      completeAuth(data);
-    } catch {
-      setAuthError("Không kết nối được máy chủ để xác thực Google.");
+    } catch (error) {
+      setAuthError(error.message || "Không kết nối được máy chủ. Hãy kiểm tra backend.");
     } finally {
       setLoading(false);
     }
   }
 
   async function updateProfile(fullName) {
+    if (me?.role !== "admin") {
+      const normalized = fullName.trim().replace(/\s+/g, " ");
+      localStorage.setItem(GUEST_NAME_KEY, normalized);
+      const guest = { ...createGuestUser(), full_name: normalized };
+      setMe(guest);
+      return guest;
+    }
     const res = await fetch(`${API_BASE}/me`, {
       method: "PATCH",
       headers: authHeaders,
@@ -216,8 +261,8 @@ export default function useAppController() {
 
   async function handleScan(event) {
     event.preventDefault();
-    if (!file || !token) {
-      alert("Chọn ảnh và đăng nhập trước");
+    if (!file) {
+      alert("Vui lòng chọn ảnh trước khi phân tích");
       return;
     }
     setLoading(true);
@@ -225,9 +270,12 @@ export default function useAppController() {
     body.append("file", file);
     if (selectedCategoryId)
       body.append("scam_category_id", String(selectedCategoryId));
+    const requestHeaders = token && me?.role === "admin"
+      ? { Authorization: `Bearer ${token}` }
+      : undefined;
     const res = await fetch(`${API_BASE}/check-image`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: requestHeaders,
       body,
     });
     const data = await res.json();
@@ -236,14 +284,109 @@ export default function useAppController() {
       alert(data.detail || "Lỗi phân tích ảnh");
       return;
     }
-    setResult(data);
-    fetchHistory();
+    finalizeAnalysis(data, file.name);
+  }
+
+  function finalizeAnalysis(data, fallbackName) {
+    const normalizedResult = {
+      ...data,
+      id: data.scan_id || Date.now(),
+      original_filename: data.original_filename || fallbackName,
+      created_at: data.created_at || new Date().toISOString(),
+    };
+    setResult(normalizedResult);
+
+    if (data.storage === "database" && token && me?.role === "admin") {
+      fetchHistory();
+      return;
+    }
+
+    try {
+      const localHistory = loadGuestHistory();
+      const updatedLocal = saveGuestHistory([normalizedResult, ...localHistory]);
+      if (me?.role === "admin") {
+        setHistory((current) => [
+          normalizedResult,
+          ...current.filter((item) => item.id !== normalizedResult.id),
+        ]);
+      } else {
+        setHistory(updatedLocal);
+      }
+    } catch {
+      alert("Trình duyệt đã đầy bộ nhớ lịch sử. Hãy xóa bớt dữ liệu cũ.");
+    }
+  }
+
+  async function handleContentScan(event) {
+    event.preventDefault();
+    let endpoint = "";
+    let options = { method: "POST" };
+    let fallbackName = "Nội dung phân tích";
+
+    if (scanMode === "text") {
+      if (!textInput.trim()) {
+        alert("Vui lòng dán nội dung tin nhắn cần kiểm tra");
+        return;
+      }
+      endpoint = "/check-text";
+      fallbackName = "Nội dung tin nhắn";
+      options.headers = { "Content-Type": "application/json" };
+      options.body = JSON.stringify({ text: textInput.trim() });
+    } else if (scanMode === "url") {
+      if (!urlInput.trim()) {
+        alert("Vui lòng nhập URL cần kiểm tra");
+        return;
+      }
+      endpoint = "/check-url";
+      fallbackName = urlInput.trim();
+      options.headers = { "Content-Type": "application/json" };
+      options.body = JSON.stringify({ url: urlInput.trim() });
+    } else if (scanMode === "pdf") {
+      if (!documentFile) {
+        alert("Vui lòng chọn file PDF cần kiểm tra");
+        return;
+      }
+      endpoint = "/check-document";
+      fallbackName = documentFile.name;
+      const body = new FormData();
+      body.append("file", documentFile);
+      options.body = body;
+    } else {
+      return handleScan(event);
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, options);
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.detail || "Không thể phân tích nội dung");
+        return;
+      }
+      finalizeAnalysis(data, fallbackName);
+    } catch {
+      alert("Không kết nối được máy chủ phân tích");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleImageSelect(event) {
     const selectedFile = event.target.files[0];
     setFile(selectedFile || null);
     setImagePreview(selectedFile ? URL.createObjectURL(selectedFile) : "");
+    setResult(null);
+  }
+
+  function handleDocumentSelect(event) {
+    const selectedFile = event.target.files[0];
+    if (selectedFile && selectedFile.size > 15 * 1024 * 1024) {
+      alert("PDF tối đa 15 MB");
+      event.target.value = "";
+      setDocumentFile(null);
+      return;
+    }
+    setDocumentFile(selectedFile || null);
     setResult(null);
   }
 
@@ -408,15 +551,15 @@ export default function useAppController() {
   function logout() {
     localStorage.removeItem("token");
     setToken("");
-    setMe(null);
-    setCategories([]);
+    setMe(createGuestUser());
     setResult(null);
     setImagePreview("");
-    setHistory([]);
+    setHistory(loadGuestHistory());
     setDatasets([]);
     setModels([]);
     setEvaluations([]);
     setLogs([]);
+    navigate("overview");
   }
 
   function navigate(page) {
@@ -425,29 +568,34 @@ export default function useAppController() {
   }
 
   return {
-    mode,
-    setMode,
     token,
     me,
     form,
     setForm,
     loading,
     authError,
-    googleClientId,
     handleAuth,
-    handleGoogleAuth,
     updateProfile,
     activePage,
     navigate,
     logout,
     categories,
+    scanMode,
+    setScanMode,
     selectedCategoryId,
     setSelectedCategoryId,
     file,
     imagePreview,
     result,
     handleScan,
+    handleContentScan,
     handleImageSelect,
+    textInput,
+    setTextInput,
+    urlInput,
+    setUrlInput,
+    documentFile,
+    handleDocumentSelect,
     isCameraOpen,
     cameraStream,
     cameraError,

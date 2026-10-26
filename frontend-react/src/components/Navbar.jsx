@@ -1,6 +1,6 @@
 const primaryItems = [
   { page: "overview", label: "Tổng quan", icon: "dashboard" },
-  { page: "scan", label: "Kiểm tra ảnh", icon: "scan" },
+  { page: "scan", label: "Kiểm tra lừa đảo", icon: "scan" },
   { page: "history", label: "Lịch sử", icon: "history" },
 ];
 
@@ -20,6 +20,7 @@ const iconPaths = {
   chart: ["M5 20V10", "M12 20V4", "M19 20v-7", "M3 20h18"],
   file: ["M6 3h8l4 4v14H6z", "M14 3v5h5", "M9 13h6", "M9 17h6"],
   logout: ["M10 17l5-5-5-5", "M15 12H3", "M15 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"],
+  login: ["m14 7 5 5-5 5", "M19 12H7", "M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"],
 };
 
 function NavIcon({ name }) {
@@ -56,7 +57,8 @@ function NavGroup({ label, items, activePage, navigate }) {
   );
 }
 
-export default function Navbar({ activePage, navigate, user, onLogout }) {
+export default function Navbar({ activePage, navigate, user, onLogout, onAdminLogin }) {
+  const isAdmin = user.role === "admin";
   const initials = (user.full_name || user.email || "U")
     .split(" ")
     .map((part) => part[0])
@@ -81,7 +83,7 @@ export default function Navbar({ activePage, navigate, user, onLogout }) {
           activePage={activePage}
           navigate={navigate}
         />
-        {user.role === "admin" && (
+        {isAdmin && (
           <NavGroup
             label="Quản trị hệ thống"
             items={adminItems}
@@ -105,11 +107,16 @@ export default function Navbar({ activePage, navigate, user, onLogout }) {
             <span className="user-avatar">{initials}</span>
             <span className="sidebar-user-copy">
               <strong>{user.full_name || "Người dùng"}</strong>
-              <small>{user.role === "admin" ? "Quản trị viên" : user.email}</small>
+              <small>{isAdmin ? "Quản trị viên" : "Lịch sử lưu trên thiết bị"}</small>
             </span>
           </button>
-          <button className="sidebar-logout" onClick={onLogout} title="Đăng xuất">
-            <NavIcon name="logout" />
+          <button
+            className="sidebar-logout"
+            onClick={isAdmin ? onLogout : onAdminLogin}
+            title={isAdmin ? "Đăng xuất" : "Đăng nhập quản trị"}
+            aria-label={isAdmin ? "Đăng xuất quản trị" : "Mở đăng nhập quản trị"}
+          >
+            <NavIcon name={isAdmin ? "logout" : "login"} />
           </button>
         </div>
       </div>

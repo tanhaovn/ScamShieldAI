@@ -58,6 +58,7 @@ export default function ProfilePage({
     .slice(0, 2)
     .toUpperCase();
   const isAdmin = user.role === "admin";
+  const isGuest = user.role === "guest";
 
   const scanStats = useMemo(() => history.reduce(
     (stats, item) => {
@@ -72,9 +73,11 @@ export default function ProfilePage({
   ), [history]);
 
   const averageRisk = scanStats.total ? Math.round(scanStats.score / scanStats.total) : 0;
-  const safeRate = scanStats.total ? Math.round((scanStats.safe / scanStats.total) * 100) : 100;
+  const safeRate = scanStats.total ? Math.round((scanStats.safe / scanStats.total) * 100) : 0;
   const activeModels = models.filter((model) => model.is_active).length;
-  const providerName = user.auth_provider === "google" ? "Google" : "Mật khẩu bảo mật";
+  const providerName = isGuest
+    ? "localStorage trên trình duyệt"
+    : user.auth_provider === "google" ? "Google" : "Mật khẩu bảo mật";
 
   const statCards = isAdmin
     ? [
@@ -127,22 +130,22 @@ export default function ProfilePage({
         </div>
 
         <div className="profile-hero-copy">
-          <div className="profile-live-label"><i /> IDENTITY VERIFIED · ONLINE</div>
-          <span className="profile-role-chip">{isAdmin ? "ADMIN CLEARANCE" : "MEMBER ACCESS"}</span>
+          <div className="profile-live-label"><i /> {isGuest ? "LOCAL IDENTITY · ONLINE" : "IDENTITY VERIFIED · ONLINE"}</div>
+          <span className="profile-role-chip">{isAdmin ? "ADMIN CLEARANCE" : "GUEST · NO LOGIN"}</span>
           <h2>{user.full_name || "Người dùng Scam Detector"}</h2>
           <p>{isAdmin
             ? "Trung tâm danh tính quản trị, giám sát AI và điều phối dữ liệu an toàn."
-            : "Không gian bảo vệ cá nhân, lưu trữ lịch sử và nhận diện rủi ro bằng AI."}</p>
+            : "Không cần tài khoản. Lịch sử phân tích được giữ riêng trên trình duyệt của thiết bị này."}</p>
           <div className="profile-hero-meta">
-            <span><Icon name="mail" /> {user.email}</span>
-            <span><Icon name="shield" /> Tài khoản đã xác thực</span>
+            <span><Icon name="mail" /> {isGuest ? "Không yêu cầu email" : user.email}</span>
+            <span><Icon name="shield" /> {isGuest ? "Dữ liệu cục bộ đang hoạt động" : "Tài khoản đã xác thực"}</span>
           </div>
         </div>
 
         <div className="profile-clearance-card">
           <span>ACCESS LEVEL</span>
-          <strong>{isAdmin ? "A-01" : "U-01"}</strong>
-          <small>{isAdmin ? "TOÀN QUYỀN HỆ THỐNG" : "KHÔNG GIAN CÁ NHÂN"}</small>
+          <strong>{isAdmin ? "A-01" : "G-01"}</strong>
+          <small>{isAdmin ? "TOÀN QUYỀN HỆ THỐNG" : "KHÁCH · LƯU CỤC BỘ"}</small>
           <div className="clearance-bars"><i /><i /><i /><i /><i /></div>
         </div>
       </section>
@@ -182,10 +185,10 @@ export default function ProfilePage({
             </form>
           ) : (
             <div className="profile-info-list">
-              <div><span className="profile-info-icon"><Icon name="mail" /></span><p><small>Email đăng nhập</small><strong>{user.email}</strong></p><b>VERIFIED</b></div>
+              <div><span className="profile-info-icon"><Icon name="mail" /></span><p><small>{isGuest ? "Yêu cầu đăng nhập" : "Email đăng nhập"}</small><strong>{isGuest ? "Không cần đăng nhập hoặc đăng ký" : user.email}</strong></p><b>{isGuest ? "OPEN" : "VERIFIED"}</b></div>
               <div><span className="profile-info-icon"><Icon name="key" /></span><p><small>Phương thức xác thực</small><strong>{providerName}</strong></p><b>SECURE</b></div>
-              <div><span className="profile-info-icon"><Icon name="calendar" /></span><p><small>Thành viên từ</small><strong>{formatDate(user.created_at)}</strong></p><b>ACTIVE</b></div>
-              <div><span className="profile-info-icon"><Icon name="shield" /></span><p><small>Vai trò hệ thống</small><strong>{isAdmin ? "Quản trị viên" : "Người dùng"}</strong></p><b>{isAdmin ? "ADMIN" : "USER"}</b></div>
+              <div><span className="profile-info-icon"><Icon name="calendar" /></span><p><small>{isGuest ? "Lưu trên thiết bị từ" : "Thành viên từ"}</small><strong>{formatDate(user.created_at)}</strong></p><b>ACTIVE</b></div>
+              <div><span className="profile-info-icon"><Icon name="shield" /></span><p><small>Vai trò hệ thống</small><strong>{isAdmin ? "Quản trị viên" : "Người dùng khách"}</strong></p><b>{isAdmin ? "ADMIN" : "GUEST"}</b></div>
             </div>
           )}
           {message && <p className="profile-form-success">{message}</p>}
@@ -197,14 +200,14 @@ export default function ProfilePage({
             <span className="profile-secure-dot">Bảo vệ</span>
           </div>
           <div className="profile-security-visual">
-            <div className="security-ring" style={{ "--security": user.auth_provider === "google" ? "100" : "92" }}>
-              <div><Icon name="shield" /><strong>{user.auth_provider === "google" ? "100" : "92"}%</strong><small>Độ tin cậy</small></div>
+            <div className="security-ring" style={{ "--security": user.auth_provider === "google" ? "100" : isGuest ? "95" : "92" }}>
+              <div><Icon name="shield" /><strong>{user.auth_provider === "google" ? "100" : isGuest ? "95" : "92"}%</strong><small>Độ tin cậy</small></div>
             </div>
           </div>
           <ul className="profile-security-list">
-            <li><i /> Phiên đăng nhập được mã hóa</li>
-            <li><i /> Email định danh duy nhất</li>
-            <li><i /> Dữ liệu kiểm tra tách biệt theo tài khoản</li>
+            <li><i /> {isGuest ? "Không thu thập email hoặc mật khẩu" : "Phiên đăng nhập được mã hóa"}</li>
+            <li><i /> {isGuest ? "Lịch sử lưu trên trình duyệt hiện tại" : "Email định danh duy nhất"}</li>
+            <li><i /> {isGuest ? "Không tạo tài khoản người dùng trên máy chủ" : "Dữ liệu kiểm tra tách biệt theo tài khoản"}</li>
           </ul>
         </section>
 
@@ -237,7 +240,7 @@ export default function ProfilePage({
             <div><span>{isAdmin ? "ADMIN MATRIX" : "ACCESS MATRIX"}</span><h3>Quyền truy cập</h3></div>
           </div>
           <div className="profile-permission-map">
-            <span className="permission-core">{isAdmin ? "ADMIN" : "USER"}<i /></span>
+            <span className="permission-core">{isAdmin ? "ADMIN" : "GUEST"}<i /></span>
             {(isAdmin
               ? ["Dataset", "AI Models", "Đánh giá", "Nhật ký"]
               : ["Kiểm tra OCR", "Phân tích URL", "Lịch sử riêng", "Cảnh báo AI"]
@@ -247,7 +250,7 @@ export default function ProfilePage({
           </div>
           <p>{isAdmin
             ? "Tài khoản có quyền cấu hình dữ liệu, mô hình và theo dõi hoạt động quản trị."
-            : "Tài khoản chỉ truy cập dữ liệu phân tích của chính bạn; lịch sử được bảo vệ độc lập."}</p>
+            : "Không cần tài khoản; lịch sử thuộc trình duyệt hiện tại và không đồng bộ sang thiết bị khác."}</p>
         </section>
       </div>
     </div>

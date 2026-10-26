@@ -1,7 +1,8 @@
-# Vietnamese Scam Detection - Image Module (Scaffold)
+# Vietnamese Scam Detection - Multi-source Scanner
 
-Module kiểm tra hình ảnh (OCR + risk scoring rule-based) cho hệ thống phát hiện
-lừa đảo tiếng Việt. Kết nối MySQL để lưu lịch sử kiểm tra.
+Hệ thống hỗ trợ phát hiện dấu hiệu lừa đảo tiếng Việt từ ảnh, mã QR, tin nhắn,
+URL và tài liệu PDF. Người dùng dùng ngay không cần tài khoản; lịch sử được lưu
+trong `localStorage`. MySQL chỉ lưu lịch sử và dữ liệu quản trị của admin.
 
 ## Cấu trúc project
 
@@ -14,8 +15,9 @@ scam-detector/
 │       │   ├── train_image_model.py # Training image classifier
 │       │   └── phishing_model.py    # AI inference khi backend nhận ảnh
 │       ├── ocr/             # Trích văn bản từ ảnh
+│       ├── document/        # Trích chữ và QR từ PDF
 │       ├── risk/            # Tính risk score từ văn bản
-│       ├── visual/          # Phân tích EXIF, ELA, deepfake
+│       ├── visual/          # EXIF, ELA, deepfake và giải mã QR
 │       └── db/              # Kết nối và model database
 ├── frontend/
 │   └── index.html            # Giao diện web (HTML/CSS/JS)
@@ -86,37 +88,48 @@ uvicorn backend.app.main:app --reload
 Server chạy tại `http://localhost:8000`. Xem docs tự động (Swagger UI) tại
 `http://localhost:8000/docs`.
 
-### 6. Bật đăng nhập Google (tùy chọn)
+### 6. Chế độ khách và đăng nhập Admin
 
-Tạo OAuth Client ID loại **Web application** trong Google Cloud Console, sau đó
-thêm hai JavaScript origin dùng khi chạy local:
-
-- `http://localhost:5173`
-- `http://127.0.0.1:5173`
-
-Điền cùng một Client ID vào `.env`:
-
-```env
-GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
-VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
-```
-
-Khởi động lại cả backend và frontend sau khi sửa `.env`. Frontend nhận Google ID
-token, backend xác minh chữ ký và audience trước khi tạo tài khoản nội bộ. Không
-dùng access token hoặc thông tin email từ frontend làm bằng chứng đăng nhập.
+- Người dùng mở web và kiểm tra ảnh ngay, không đăng nhập hoặc đăng ký.
+- Tối đa 50 kết quả gần nhất được lưu bằng `localStorage` trên trình duyệt hiện
+  tại và vẫn còn sau khi đóng/mở lại web.
+- Lịch sử khách không đồng bộ sang trình duyệt hoặc thiết bị khác.
+- Chỉ Admin đăng nhập để truy cập Dataset, AI Models, đánh giá và system logs.
+- Tài khoản mặc định cho môi trường demo được tạo lúc backend khởi động; hãy đổi
+  mật khẩu và `JWT_SECRET` trước khi triển khai thật.
 
 ## Test nhanh
 
 ```bash
 curl -X POST "http://localhost:8000/check-image" \
-  -F "file=@/duong/dan/anh_hoa_don.jpg" \
-  -F "user_id=1"
+  -F "file=@/duong/dan/anh_hoa_don.jpg"
 ```
 
-Xem lịch sử:
+Các nguồn đầu vào khác:
 
 ```bash
-curl "http://localhost:8000/history/1"
+curl -X POST "http://localhost:8000/check-text" \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Tài khoản sẽ bị khóa, hãy xác minh OTP ngay..."}'
+
+curl -X POST "http://localhost:8000/check-url" \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://example.com/login"}'
+
+curl -X POST "http://localhost:8000/check-document" \
+  -F "file=@/duong/dan/giay_bao_thanh_toan.pdf"
+```
+
+- Ảnh được OCR và tự động giải mã QR; nội dung QR không bị mở tự động.
+- PDF tối đa 15 MB và xử lý 10 trang đầu. PDF có lớp chữ được trích trực tiếp;
+  PDF scan được chuyển thành ảnh để OCR và quét QR.
+
+Kết quả khách do frontend lưu trong `localStorage`. Endpoint lịch sử máy chủ yêu
+cầu token Admin:
+
+```bash
+curl -H "Authorization: Bearer <ADMIN_JWT>" \
+  "http://localhost:8000/history/1"
 ```
 
 ## Về phần "kiểm tra ảnh giả mạo" (visual forensics)
@@ -147,10 +160,31 @@ Endpoint `/check-image` giờ trả về **2 điểm rủi ro riêng biệt**, c
    Việt chưa đủ tốt.
 3. **Visual forensics**: thêm module kiểm tra layout/metadata cho hóa đơn giả,
    và model phát hiện deepfake cho ảnh chân dung.
-4. **Auth**: bổ sung luồng liên kết Google với tài khoản email đã tồn tại sau khi
-   người dùng xác thực lại bằng mật khẩu.
+4. **Guest storage**: bổ sung nút xuất/nhập lịch sử cục bộ nếu cần chuyển dữ liệu
+   giữa hai thiết bị.
 5. **Từ khóa động**: chuyển `SCAM_KEYWORDS` từ hardcode sang load từ bảng
    `scam_keywords` trong MySQL để admin cập nhật được qua dashboard.
+
+## Dataset cần bổ sung
+
+Các luồng QR và PDF hiện tại là bài toán **giải mã/trích xuất**, không cần
+dataset mới để chạy. PhishVN đã đảm nhiệm lớp phân tích cấu trúc URL. Dataset
+quan trọng nhất cần bổ sung tiếp theo là tập tin nhắn lừa đảo tiếng Việt đã gán
+nhãn để thay dần Risk Engine rule-based bằng model NLP.
+
+Schema CSV khuyến nghị:
+
+```text
+message_id,message,label,scam_type,source,collected_at,anonymized,verified,split
+```
+
+- `label`: `legitimate` hoặc `scam`.
+- `scam_type`: giả ngân hàng, giả công an, tuyển dụng, đầu tư, giao hàng, OTP...
+- Bắt buộc ẩn danh số điện thoại, tài khoản ngân hàng, CCCD, email và tên thật.
+- Chia train/validation/test theo nguồn hoặc thời gian; không để tin gần trùng
+  lặp xuất hiện ở cả train và test.
+- Dataset hóa đơn/biên lai chỉ cần khi muốn huấn luyện hoặc đo chính xác OCR;
+  nó không tự giúp phân loại hóa đơn có phải lừa đảo hay không.
 
 ## Phân tích URL trong nội dung OCR bằng PhishVN
 
@@ -180,3 +214,47 @@ có cả credential phishing và các dạng abuse khác; ngưỡng ứng dụng
 thủ để giảm cảnh báo sai.
 
 Nguồn dữ liệu: **PhishVN v3.1.0**, DOI `10.17632/b97hxbxtpd.4`, giấy phép CC BY 4.0.
+
+### Huấn luyện model ảnh không bị leakage
+
+Model ResNet18 ảnh không được chia ngẫu nhiên từng file. Các ảnh cùng nguồn hoặc
+cùng template phải nằm trong đúng một split; nếu không, ảnh biến thể của cùng một
+mẫu có thể lọt vào test và làm metric tăng giả tạo.
+
+Tạo manifest mẫu từ thư mục ảnh:
+
+```bash
+python -m backend.app.ai.prepare_image_manifest --dataset phishing_dataset
+```
+
+Sau đó điền `phishing_dataset/manifest.csv` với các cột:
+
+```text
+path,label,source,template_id,split
+```
+
+- `source`: tên nguồn/collection cụ thể (ví dụ `public_phishpedia_01`,
+  `synthetic_bank_template_01`, `anonymized_user_02`), không chỉ ghi chung
+  `public` hoặc `synthetic`. Một source chỉ được xuất hiện trong đúng một split.
+- `template_id`: mã chung cho các ảnh cùng thiết kế/template; ảnh tự tạo từ cùng
+  một template phải dùng cùng mã.
+- `split`: chỉ dùng `train`, `validation`, hoặc `test`.
+
+Huấn luyện:
+
+```bash
+python -m backend.app.ai.train_image_model \
+  --dataset phishing_dataset \
+  --manifest phishing_dataset/manifest.csv
+```
+
+Script sẽ dừng nếu có hash ảnh trùng giữa các split hoặc một cặp
+`source/template_id` xuất hiện ở nhiều split. Augmentation chỉ chạy trên train;
+validation/test giữ nguyên phân phối ảnh. Model được chọn theo `validation_macro_f1`
+và lưu thêm `models/phishing_resnet18.metrics.json` gồm macro-F1, balanced accuracy
+và confusion matrix trên test độc lập.
+
+Thiết kế này giúp đo khả năng tổng quát hóa sang nguồn/template chưa thấy, nhưng
+không đảm bảo model tự “suy nghĩ” như con người. Model chỉ có thể học các tín hiệu
+đã xuất hiện trong dữ liệu; muốn kết luận ảnh mới tổng quát tốt cần test độc lập,
+không dùng lại template và kiểm tra thêm false positive/false negative.

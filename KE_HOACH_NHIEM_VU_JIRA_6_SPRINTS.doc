@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset="utf-8">
+<title>Kế hoạch phân chia 6 Sprint trên Jira - SFDS</title>
+<!--[if gte mso 9]>
+<xml>
+ <w:WordDocument>
+  <w:View>Print</w:View>
+  <w:Zoom>100</w:Zoom>
+  <w:DoNotOptimizeForBrowser/>
+ </w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+  body {
+    font-family: 'Arial', sans-serif;
+    font-size: 10pt;
+    line-height: 1.4;
+    color: #1E293B;
+    margin: 20px;
+  }
+  h1 {
+    font-size: 16pt;
+    color: #1F4E79;
+    text-align: center;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+  h2 {
+    font-size: 12pt;
+    color: #2E75B6;
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 15px;
+  }
+  h3 {
+    font-size: 11pt;
+    color: #1F4E79;
+    border-bottom: 2px solid #1F4E79;
+    padding-bottom: 4px;
+    margin-top: 20px;
+    margin-bottom: 8px;
+  }
+  .meta {
+    text-align: center;
+    font-style: italic;
+    color: #64748B;
+    font-size: 9pt;
+    margin-bottom: 20px;
+  }
+  .box-status {
+    background-color: #EFF6FF;
+    border-left: 4px solid #2563EB;
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    font-size: 9.5pt;
+  }
+  .box-status b {
+    color: #1E40AF;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 15px;
+    font-size: 8.5pt;
+  }
+  th {
+    background-color: #1F4E79;
+    color: #FFFFFF;
+    font-weight: bold;
+    text-align: center;
+    padding: 8px 6px;
+    border: 1px solid #CBD5E1;
+  }
+  td {
+    padding: 6px 8px;
+    border: 1px solid #CBD5E1;
+    vertical-align: middle;
+  }
+  tr:nth-child(even) td {
+    background-color: #F8FAFC;
+  }
+  .text-center { text-align: center; }
+  .text-left { text-align: left; }
+  .badge-done {
+    background-color: #DCFCE7;
+    color: #166534;
+    font-weight: bold;
+    padding: 3px 6px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+  .badge-progress {
+    background-color: #FEF3C7;
+    color: #B45309;
+    font-weight: bold;
+    padding: 3px 6px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+  .badge-todo {
+    background-color: #F1F5F9;
+    color: #475569;
+    padding: 3px 6px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+  .guide-box {
+    background-color: #F0FDF4;
+    border: 1px solid #BBF7D0;
+    padding: 12px;
+    margin-top: 15px;
+    font-size: 9pt;
+  }
+</style>
+</head>
+<body>
+
+<h1>ĐẠI HỌC DUY TÂN - VIỆN ĐÀO TẠO QUỐC TẾ (IS)</h1>
+<h2>KẾ HOẠCH CHI TIẾT 6 SPRINT TRÊN JIRA (CMU-SE 450 - C1SE.06)<br>
+HỆ THỐNG PHÁT HIỆN VÀ CẢNH BÁO ẢNH LỪA ĐẢO KÈM GIẢI THÍCH (SFDS)</h2>
+
+<div class="meta">
+  Giảng viên hướng dẫn: KS. Hà Mạnh Toàn | Ngày cập nhật: 15/10/2026<br>
+  Nhóm sinh viên thực hiện: Phạm Tấn Hào (Leader), Đào Thị Mỹ Nhung, Trần Hoàng Nhật Nam, Nguyễn Phan Đức Tuấn
+</div>
+
+<div class="box-status">
+  <b>📌 BÁO CÁO TIẾN ĐỘ THỰC TẾ & TÌNH TRẠNG CÁC PHẦN (ĐỐI CHIẾU PROPOSAL):</b><br>
+  • <b>Tài liệu Proposal (v2.0):</b> <span class="badge-done">ĐÃ HOÀN THÀNH 100%</span> (Được GVHD và Hội đồng phê duyệt).<br>
+  • <b>Sprint 1 (02/09 - 16/09/2026):</b> <span class="badge-done">DONE (100%)</span> - Khởi tạo repo, DB schema MySQL, thu thập dataset sơ bộ, wireframe Figma.<br>
+  • <b>Sprint 2 (17/09 - 01/10/2026):</b> <span class="badge-done">DONE (100%)</span> - Lõi OCR Tesseract tiếng Việt, mô hình URL PhishVN, Risk Engine tính điểm rủi ro, UI upload ảnh cơ bản, JWT auth.<br>
+  • <b>Sprint 3 (02/10 - 16/10/2026):</b> <span class="badge-progress">IN PROGRESS (GẦN XONG)</span> - Visual Forensics EXIF/ELA, Train ResNet18, Explanation Builder giải thích lý do, quét QR/PDF, lưu lịch sử localStorage.<br>
+  • <b>Sprint 4 (17/10 - 31/10/2026):</b> <span class="badge-todo">TO DO (CHƯA LÀM)</span> - Admin Dashboard hoàn chỉnh, quản lý keyword scam động, OCR Bounding Box highlight trực tiếp trên ảnh, vá bảo mật upload.<br>
+  • <b>Sprint 5 (01/11 - 15/11/2026):</b> <span class="badge-todo">TO DO (CHƯA LÀM)</span> - Đánh giá AI định lượng (Macro-F1, Recall, False Alarm, CER/WER), stress test tải, Docker & CI/CD.<br>
+  • <b>Sprint 6 (17/11 - 01/12/2026):</b> <span class="badge-todo">TO DO (CHƯA LÀM)</span> - Kiểm thử UAT cùng người dùng, tài liệu Technical Report + User Manual, hoàn thiện Demo bảo vệ đồ án.
+</div>
+
+<h3>I. DANH SÁCH 6 EPICS CẦN TẠO TRÊN JIRA</h3>
+<table>
+  <tr>
+    <th style="width: 12%;">Mã Epic</th>
+    <th style="width: 25%;">Tên Epic</th>
+    <th style="width: 48%;">Mục tiêu & Phạm vi chức năng</th>
+    <th style="width: 15%;">Yêu cầu (Proposal)</th>
+  </tr>
+  <tr>
+    <td class="text-center"><b>EPIC-1</b></td>
+    <td>Hạ tầng & Kiến trúc Hệ thống</td>
+    <td>Khởi tạo repo, base server FastAPI, MySQL DB schema, Docker & CI/CD</td>
+    <td class="text-center">NFR01, NFR03</td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>EPIC-2</b></td>
+    <td>Lõi Xử lý Ảnh & OCR Tiếng Việt</td>
+    <td>Tích hợp Tesseract OCR tiếng Việt, bóc tách text, bounding box, quét QR & PDF</td>
+    <td class="text-center">FR01, FR02</td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>EPIC-3</b></td>
+    <td>Mô hình AI & Đánh giá Rủi ro</td>
+    <td>Tích hợp PhishVN (URL), visual forensics (EXIF/ELA), model ResNet18, Risk Engine</td>
+    <td class="text-center">FR02, FR03</td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>EPIC-4</b></td>
+    <td>Giải thích & Khuyến nghị An toàn</td>
+    <td>Bóc tách lý do cảnh báo, highlight bằng chứng, khuyến nghị hành động an toàn</td>
+    <td class="text-center">FR03, FR04</td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>EPIC-5</b></td>
+    <td>Giao diện Web Người dùng & Admin</td>
+    <td>UI kiểm tra ảnh cho khách, lưu history localStorage, Dashboard quản trị DB</td>
+    <td class="text-center">FR01, FR05, FR06</td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>EPIC-6</b></td>
+    <td>Kiểm thử, Đánh giá & Hoàn thiện</td>
+    <td>Unit test, UAT, đánh giá Macro-F1, Recall, CER/WER, tài liệu kỹ thuật cuối kỳ</td>
+    <td class="text-center">NFR01, NFR02</td>
+  </tr>
+</table>
+
+<h3>II. CHI TIẾT CÁC NHIỆM VỤ THEO 6 SPRINT ĐỂ NHẬP VÀO JIRA</h3>
+
+<h4>1. SPRINT 1: Khởi tạo Nền tảng, DB Schema & Wireframe UI (02/09/2026 - 16/09/2026) - 50 SP / 200 hrs - <span class="badge-done">DONE</span></h4>
+<table>
+  <tr>
+    <th style="width: 10%;">Issue Key</th>
+    <th style="width: 10%;">Loại</th>
+    <th style="width: 10%;">Epic</th>
+    <th style="width: 38%;">Tiêu đề công việc (Summary) & Mô tả chi tiết</th>
+    <th style="width: 16%;">Assignee</th>
+    <th style="width: 6%;">SP</th>
+    <th style="width: 10%;">Status</th>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-1</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-1</td>
+    <td><b>Khởi tạo cấu trúc Backend FastAPI & Cấu hình môi trường</b><br>Setup project FastAPI, file .env.example, requirements.txt, cấu trúc thư mục module hóa.</td>
+    <td>Phạm Tấn Hào</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-done">DONE</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-2</b></td>
+    <td class="text-center">Task</td>
+    <td class="text-center">EPIC-1</td>
+    <td><b>Thiết kế & Tạo Database Schema MySQL (schema.sql)</b><br>Viết schema.sql chứa bảng admin, categories, scans, datasets, evaluations, audit_logs.</td>
+    <td>Phạm Tấn Hào</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-done">DONE</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-3</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-5</td>
+    <td><b>Thiết kế Wireframe & Prototype Figma UI/UX</b><br>Thiết kế giao diện người dùng kiểm tra ảnh và Dashboard quản trị admin trên Figma.</td>
+    <td>Đào Thị Mỹ Nhung</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-done">DONE</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-4</b></td>
+    <td class="text-center">Task</td>
+    <td class="text-center">EPIC-3</td>
+    <td><b>Khảo sát và thu thập bộ Dataset ảnh & URL lừa đảo ban đầu</b><br>Thu thập mẫu ảnh hoá đơn giả, tin nhắn SMS lừa đảo, tải dataset PhishVN từ Mendeley.</td>
+    <td>Nguyễn Phan Đức Tuấn</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-done">DONE</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-5</b></td>
+    <td class="text-center">Task</td>
+    <td class="text-center">EPIC-1</td>
+    <td><b>Khởi tạo Frontend Project (React/Vite & HTML/JS cơ bản)</b><br>Tạo cấu trúc frontend, tích hợp component upload ảnh và preview, script khởi động BAT.</td>
+    <td>Trần Hoàng Nhật Nam</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-done">DONE</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-6</b></td>
+    <td class="text-center">Task</td>
+    <td class="text-center">EPIC-6</td>
+    <td><b>Thiết lập Repository GitHub & Quy chuẩn Git Flow</b><br>Tạo repo GitHub, quy định commit message, branch dev/main, cấu hình .gitignore.</td>
+    <td>Trần Hoàng Nhật Nam</td>
+    <td class="text-center">5</td>
+    <td class="text-center"><span class="badge-done">DONE</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-7</b></td>
+    <td class="text-center">Task</td>
+    <td class="text-center">EPIC-6</td>
+    <td><b>Xây dựng kịch bản kiểm thử nền tảng và tài liệu khởi động</b><br>Viết hướng dẫn cài đặt trong README.md, script SETUP_PROJECT.bat và START_PROJECT.bat.</td>
+    <td>Đào Thị Mỹ Nhung</td>
+    <td class="text-center">5</td>
+    <td class="text-center"><span class="badge-done">DONE</span></td>
+  </tr>
+</table>
+
+<h4>2. SPRINT 2: Tích hợp Lõi OCR Tiếng Việt, PhishVN & Risk Engine Sơ bộ (17/09/2026 - 01/10/2026) - 50 SP / 200 hrs - <span class="badge-done">DONE</span></h4>
+<table>
+  <tr>
+    <th style="width: 10%;">Issue Key</th>
+    <th style="width: 10%;">Loại</th>
+    <th style="width: 10%;">Epic</th>
+    <th style="width: 38%;">Tiêu đề công việc (Summary) & Mô tả chi tiết</th>
+    <th style="width: 16%;">Assignee</th>
+    <th style="width: 6%;">SP</th>
+    <th style="width: 10%;">Status</th>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-8</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-2</td>
+    <td><b>Xây dựng Module OCR Tesseract tiếng Việt (tessdata/vie)</b><br>Tích hợp pytesseract, đọc ảnh JPG/PNG, xử lý chữ tiếng Việt có dấu và số tài khoản ngân hàng.</td>
+    <td>Nguyễn Phan Đức Tuấn</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-done">DONE</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-9</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-3</td>
+    <td><b>Tích hợp mô hình PhishVN v3.1.0 phân loại URL độc hại</b><br>Tách URL từ OCR, trích xuất 21 đặc trưng lexical, inference mô hình HistGradientBoosting.</td>
+    <td>Nguyễn Phan Đức Tuấn</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-done">DONE</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-10</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-3</td>
+    <td><b>Xây dựng Rule-based Risk Engine tính điểm rủi ro cơ sở</b><br>So khớp từ khóa nhạy cảm tiếng Việt (ngân hàng, OTP, trúng thưởng), tính điểm 0-100.</td>
+    <td>Phạm Tấn Hào</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-done">DONE</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-11</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-5</td>
+    <td><b>Xây dựng Giao diện Upload ảnh & Hiển thị kết quả sơ bộ</b><br>User upload kéo thả ảnh, chọn category, hiển thị thanh điểm rủi ro và 3 nhãn cảnh báo.</td>
+    <td>Trần Hoàng Nhật Nam</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-done">DONE</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-12</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-1</td>
+    <td><b>Xây dựng Cơ chế Đăng nhập Admin bằng JWT & Quản trị phiên</b><br>Endpoint /token và /me, mã hóa mật khẩu PBKDF2-HMAC-SHA256, bảo vệ các API admin.</td>
+    <td>Phạm Tấn Hào</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-done">DONE</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-13</b></td>
+    <td class="text-center">Task</td>
+    <td class="text-center">EPIC-6</td>
+    <td><b>Viết Unit Test cho OCR và API /check-image sơ bộ</b><br>Kiểm thử API /check-image với mock dữ liệu, test trường hợp không có MySQL vẫn chạy an toàn.</td>
+    <td>Đào Thị Mỹ Nhung</td>
+    <td class="text-center">5</td>
+    <td class="text-center"><span class="badge-done">DONE</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-14</b></td>
+    <td class="text-center">Task</td>
+    <td class="text-center">EPIC-5</td>
+    <td><b>Hoàn thiện Swagger API Documentation (/docs)</b><br>Cấu hình OpenAPI schema, mô tả đầy đủ tham số request/response cho các endpoint.</td>
+    <td>Trần Hoàng Nhật Nam</td>
+    <td class="text-center">5</td>
+    <td class="text-center"><span class="badge-done">DONE</span></td>
+  </tr>
+</table>
+
+<h4>3. SPRINT 3: Visual Forensics, Huấn luyện ResNet18 & Explanation Builder (02/10/2026 - 16/10/2026) - 50 SP / 200 hrs - <span class="badge-progress">IN PROGRESS</span></h4>
+<table>
+  <tr>
+    <th style="width: 10%;">Issue Key</th>
+    <th style="width: 10%;">Loại</th>
+    <th style="width: 10%;">Epic</th>
+    <th style="width: 38%;">Tiêu đề công việc (Summary) & Mô tả chi tiết</th>
+    <th style="width: 16%;">Assignee</th>
+    <th style="width: 6%;">SP</th>
+    <th style="width: 10%;">Status</th>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-15</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-3</td>
+    <td><b>Xây dựng Module Visual Forensics (EXIF Metadata & ELA)</b><br>Phân tích chỉnh sửa ảnh bằng Error Level Analysis (ELA), đọc metadata camera/phần mềm sửa.</td>
+    <td>Nguyễn Phan Đức Tuấn</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-progress">IN PROGRESS</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-16</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-3</td>
+    <td><b>Huấn luyện & Tích hợp Mô hình Phân loại Ảnh ResNet18</b><br>Xây dựng train_image_model.py, fine-tune ResNet18 trên bộ ảnh phishing, xuất file pt.</td>
+    <td>Nguyễn Phan Đức Tuấn</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-progress">IN PROGRESS</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-17</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-4</td>
+    <td><b>Phát triển Explanation Builder & Khuyến nghị Hành động</b><br>Bóc tách nguyên nhân rủi ro thành 4 nhóm tín hiệu, tự động sinh lời khuyên an toàn theo ngữ cảnh.</td>
+    <td>Phạm Tấn Hào</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-done">DONE</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-18</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-2</td>
+    <td><b>Bổ sung Hỗ trợ Quét QR Code và Trích xuất Tài liệu PDF</b><br>Giải mã mã QR chứa link/thanh toán trong ảnh, hỗ trợ phân tích file PDF tối đa 10 trang.</td>
+    <td>Phạm Tấn Hào</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-done">DONE</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-19</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-5</td>
+    <td><b>Xây dựng Lịch sử Quét bằng localStorage cho Khách</b><br>Lưu tối đa 50 lượt quét gần nhất tại trình duyệt, xem lại chi tiết không cần tạo tài khoản.</td>
+    <td>Trần Hoàng Nhật Nam</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-done">DONE</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-20</b></td>
+    <td class="text-center">Task</td>
+    <td class="text-center">EPIC-5</td>
+    <td><b>Cập nhật Giao diện hiển thị Bóc tách Điểm & Khuyến nghị</b><br>Hiển thị Breakdown rủi ro (Nội dung OCR, URL, Ảnh, Model) và hộp cảnh báo an toàn trực quan.</td>
+    <td>Trần Hoàng Nhật Nam</td>
+    <td class="text-center">5</td>
+    <td class="text-center"><span class="badge-done">DONE</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-21</b></td>
+    <td class="text-center">Task</td>
+    <td class="text-center">EPIC-6</td>
+    <td><b>Kiểm thử Tích hợp End-to-End quy trình Quét đa nguồn</b><br>Test upload ảnh, paste text, URL trực tiếp và file PDF; ghi nhận bug phát sinh.</td>
+    <td>Đào Thị Mỹ Nhung</td>
+    <td class="text-center">5</td>
+    <td class="text-center"><span class="badge-progress">IN PROGRESS</span></td>
+  </tr>
+</table>
+
+<h4>4. SPRINT 4: Hoàn thiện Admin Dashboard, OCR Bounding Box & Security (17/10/2026 - 31/10/2026) - 50 SP / 200 hrs - <span class="badge-todo">TO DO</span></h4>
+<table>
+  <tr>
+    <th style="width: 10%;">Issue Key</th>
+    <th style="width: 10%;">Loại</th>
+    <th style="width: 10%;">Epic</th>
+    <th style="width: 38%;">Tiêu đề công việc (Summary) & Mô tả chi tiết</th>
+    <th style="width: 16%;">Assignee</th>
+    <th style="width: 6%;">SP</th>
+    <th style="width: 10%;">Status</th>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-22</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-5</td>
+    <td><b>Phát triển Trang Quản trị Admin: Quản lý Dataset & AI Models</b><br>Giao diện quản lý danh sách tập dữ liệu huấn luyện, thông tin model checkpoints và logs.</td>
+    <td>Trần Hoàng Nhật Nam</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-23</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-5</td>
+    <td><b>Quản lý Danh mục Từ khóa Scam động trên Admin UI</b><br>Cho phép Admin thêm/sửa/xóa bộ từ khóa lừa đảo và trọng số rủi ro thay vì hardcode.</td>
+    <td>Trần Hoàng Nhật Nam</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-24</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-2</td>
+    <td><b>Nâng cấp OCR: Highlight Bounding Box vùng nghi ngờ trên ảnh</b><br>Tọa độ trích xuất từ Tesseract được gửi về frontend để vẽ khung đỏ đánh dấu từ ngữ gian lận.</td>
+    <td>Nguyễn Phan Đức Tuấn</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-25</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-1</td>
+    <td><b>Vá Lỗ hổng Bảo mật API & Kiểm tra Magic Bytes File Upload</b><br>Khắc phục các điểm trong REVIEW.md: Validate file bytes thực tế, chặn file độc, cấu hình JWT an toàn.</td>
+    <td>Phạm Tấn Hào</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-26</b></td>
+    <td class="text-center">Task</td>
+    <td class="text-center">EPIC-1</td>
+    <td><b>Tối ưu Lưu trữ Lịch sử Quét & Audit Log cho Admin trong MySQL</b><br>Lưu vết truy cập của Admin, xuất báo cáo lịch sử quét ra định dạng CSV/Excel.</td>
+    <td>Phạm Tấn Hào</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-27</b></td>
+    <td class="text-center">Task</td>
+    <td class="text-center">EPIC-6</td>
+    <td><b>Kiểm thử Bảo mật (Security & Authorization Testing)</b><br>Test kiểm tra quyền truy cập trái phép API admin, test upload file giả mạo đuôi ảnh.</td>
+    <td>Đào Thị Mỹ Nhung</td>
+    <td class="text-center">5</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-28</b></td>
+    <td class="text-center">Task</td>
+    <td class="text-center">EPIC-6</td>
+    <td><b>Cải tiến UX: Loading Skeleton, Toast Notification thay thế Alert</b><br>Thay thế hoàn toàn window.alert bằng toast messages, loading state mượt mà khi AI phân tích.</td>
+    <td>Đào Thị Mỹ Nhung</td>
+    <td class="text-center">5</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+</table>
+
+<h4>5. SPRINT 5: Đánh giá Định lượng AI, Tối ưu Hiệu năng & CI/CD Docker (01/11/2026 - 15/11/2026) - 50 SP / 200 hrs - <span class="badge-todo">TO DO</span></h4>
+<table>
+  <tr>
+    <th style="width: 10%;">Issue Key</th>
+    <th style="width: 10%;">Loại</th>
+    <th style="width: 10%;">Epic</th>
+    <th style="width: 38%;">Tiêu đề công việc (Summary) & Mô tả chi tiết</th>
+    <th style="width: 16%;">Assignee</th>
+    <th style="width: 6%;">SP</th>
+    <th style="width: 10%;">Status</th>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-29</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-3</td>
+    <td><b>Đánh giá Khoa học Mô hình PhishVN & ResNet18 (Macro-F1, Recall)</b><br>Thực hiện kiểm thử trên test set độc lập, xuất Confusion Matrix, tính Macro-F1, Recall.</td>
+    <td>Nguyễn Phan Đức Tuấn</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-30</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-2</td>
+    <td><b>Benchmark Độ chính xác OCR Tiếng Việt (Đo chỉ số CER & WER)</b><br>Tạo tập test ground-truth tiếng Việt, đo Character Error Rate (CER) và Word Error Rate (WER).</td>
+    <td>Nguyễn Phan Đức Tuấn</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-31</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-3</td>
+    <td><b>Hiệu chuẩn Ngưỡng Điểm (Threshold Calibration) Giảm False Positive</b><br>Tinh chỉnh ngưỡng an toàn (25) và nguy hiểm (60) trên tập dữ liệu ảnh hoá đơn/tin nhắn hợp lệ.</td>
+    <td>Phạm Tấn Hào</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-32</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-1</td>
+    <td><b>Đóng gói Toàn bộ Hệ thống bằng Docker & Docker Compose</b><br>Viết Dockerfile cho Backend, Frontend, cấu hình docker-compose chạy cùng MySQL & Redis.</td>
+    <td>Phạm Tấn Hào</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-33</b></td>
+    <td class="text-center">Task</td>
+    <td class="text-center">EPIC-1</td>
+    <td><b>Thiết lập Pipeline CI/CD Tự động trên GitHub Actions</b><br>Tự động chạy pytest kiểm thử và kiểm tra build frontend mỗi khi có commit mới.</td>
+    <td>Trần Hoàng Nhật Nam</td>
+    <td class="text-center">5</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-34</b></td>
+    <td class="text-center">Task</td>
+    <td class="text-center">EPIC-6</td>
+    <td><b>Stress Test & Đo Đạc Hiệu năng Tốc độ Phản hồi Hệ thống</b><br>Dùng Postman/Locust kiểm thử tải nhiều người dùng upload cùng lúc, tối ưu thời gian xử lý < 3s.</td>
+    <td>Đào Thị Mỹ Nhung</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-35</b></td>
+    <td class="text-center">Task</td>
+    <td class="text-center">EPIC-6</td>
+    <td><b>Đánh giá Mức độ Hữu ích của Lời giải thích (Explanation Usefulness)</b><br>Khảo sát và ghi nhận tỉ lệ lý do cảnh báo được người dùng chấp nhận (thang điểm 1-5).</td>
+    <td>Đào Thị Mỹ Nhung</td>
+    <td class="text-center">5</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+</table>
+
+<h4>6. SPRINT 6: Kiểm thử UAT, Triển khai Demo & Hoàn thiện Tài liệu Cuối kỳ (17/11/2026 - 01/12/2026) - 50 SP / 200 hrs - <span class="badge-todo">TO DO</span></h4>
+<table>
+  <tr>
+    <th style="width: 10%;">Issue Key</th>
+    <th style="width: 10%;">Loại</th>
+    <th style="width: 10%;">Epic</th>
+    <th style="width: 38%;">Tiêu đề công việc (Summary) & Mô tả chi tiết</th>
+    <th style="width: 16%;">Assignee</th>
+    <th style="width: 6%;">SP</th>
+    <th style="width: 10%;">Status</th>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-36</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-6</td>
+    <td><b>Tổ chức Kiểm thử Chấp nhận Người dùng (UAT - User Acceptance Testing)</b><br>Mời người dùng thử nghiệm upload các kịch bản lừa đảo thực tế, tổng hợp phản hồi và phiếu lỗi.</td>
+    <td>Đào Thị Mỹ Nhung</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-37</b></td>
+    <td class="text-center">Story</td>
+    <td class="text-center">EPIC-1</td>
+    <td><b>Triển khai Môi trường Demo Thử nghiệm (AWS EC2 / Demo Server)</b><br>Deploy hệ thống hoàn chỉnh lên server demo phục vụ báo cáo với Giảng viên và Hội đồng.</td>
+    <td>Phạm Tấn Hào</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-38</b></td>
+    <td class="text-center">Bug</td>
+    <td class="text-center">EPIC-6</td>
+    <td><b>Bug Fixing Tổng thể & Đánh bóng Giao diện Đồ án</b><br>Khắc phục triệt để các lỗi giao diện, lỗi tràn chữ, lỗi bộ nhớ khi xử lý file lớn.</td>
+    <td>Trần Hoàng Nhật Nam</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-39</b></td>
+    <td class="text-center">Task</td>
+    <td class="text-center">EPIC-6</td>
+    <td><b>Biên soạn Tài liệu Hướng dẫn Sử dụng (User Manual & Admin Manual)</b><br>Soạn tài liệu hướng dẫn trực quan kèm ảnh chụp màn hình từng bước thao tác cho người dùng.</td>
+    <td>Đào Thị Mỹ Nhung</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-40</b></td>
+    <td class="text-center">Task</td>
+    <td class="text-center">EPIC-6</td>
+    <td><b>Hoàn thiện Báo cáo Kỹ thuật Đồ án (Technical Report Capstone 1)</b><br>Viết hoàn chỉnh tài liệu kiến trúc, sơ đồ thực thể ERD, thiết kế chi tiết API và kết quả thực nghiệm.</td>
+    <td>Trần Hoàng Nhật Nam</td>
+    <td class="text-center">8</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-41</b></td>
+    <td class="text-center">Task</td>
+    <td class="text-center">EPIC-6</td>
+    <td><b>Chuẩn bị Kịch bản Báo cáo & Video Demo Đồ án</b><br>Xây dựng slide thuyết trình, kịch bản demo trực tiếp các case study nhận diện lừa đảo thành công.</td>
+    <td>Phạm Tấn Hào</td>
+    <td class="text-center">5</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+  <tr>
+    <td class="text-center"><b>SFDS-42</b></td>
+    <td class="text-center">Task</td>
+    <td class="text-center">EPIC-6</td>
+    <td><b>Nghiệm thu Codebase, Đóng gói Release Version v1.0</b><br>Gắn tag Git release v1.0, sao lưu database và kiểm tra toàn bộ checklist bàn giao.</td>
+    <td>Nguyễn Phan Đức Tuấn</td>
+    <td class="text-center">5</td>
+    <td class="text-center"><span class="badge-todo">TO DO</span></td>
+  </tr>
+</table>
+
+<div class="guide-box">
+  <b>HƯỚNG DẪN TẠO TRÊN JIRA:</b><br>
+  1. Vào Jira &gt; Backlog: bấm <b>Create Sprint</b> 6 lần.<br>
+  2. Bấm <b>...</b> ở góc mỗi Sprint &gt; <b>Edit Sprint</b>: copy Tên Sprint, Ngày bắt đầu, Ngày kết thúc và Goal ở trên.<br>
+  3. Bấm <b>+ Create Issue</b> dưới mỗi Sprint: copy Issue Type, Summary, Epic, Assignee và Story Points.<br>
+  4. Sprint 1 &amp; Sprint 2 bấm <b>Start Sprint</b> &gt; chuyển hết sang <b>DONE</b> &gt; bấm <b>Complete Sprint</b>.<br>
+  5. Sprint 3 bấm <b>Start Sprint</b> để làm Active Sprint hiện tại (task 17-20 là DONE, task 15, 16, 21 là IN PROGRESS).
+</div>
+
+</body>
+</html>

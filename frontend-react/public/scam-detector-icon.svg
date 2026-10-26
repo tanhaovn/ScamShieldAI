@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title description">
+  <title id="title">Scam Detector</title>
+  <desc id="description">Khiên bảo vệ kết hợp tia quét nhận diện lừa đảo</desc>
+  <defs>
+    <linearGradient id="surface" x1="8" y1="5" x2="56" y2="59" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#58A98A"/>
+      <stop offset="1" stop-color="#286B54"/>
+    </linearGradient>
+    <linearGradient id="scan" x1="15" y1="0" x2="50" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE291" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#FFE291"/>
+      <stop offset="1" stop-color="#FFE291" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="shadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#123C2E" flood-opacity=".28"/>
+    </filter>
+  </defs>
+
+  <rect width="64" height="64" rx="16" fill="url(#surface)"/>
+  <path d="M8 19V13a5 5 0 0 1 5-5h6M45 8h6a5 5 0 0 1 5 5v6M56 45v6a5 5 0 0 1-5 5h-6M19 56h-6a5 5 0 0 1-5-5v-6" fill="none" stroke="#BFE6D7" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>
+
+  <path d="M32 11.5 48 17v13.2c0 10.6-6.2 17.8-16 22.3-9.8-4.5-16-11.7-16-22.3V17z" fill="#fff" filter="url(#shadow)"/>
+  <path d="M32 17.5 42.5 21v9.2c0 7.1-3.8 12.2-10.5 16-6.7-3.8-10.5-8.9-10.5-16V21z" fill="#EAF6F1"/>
+
+  <path d="M22.8 31.8c2.6-3.5 5.6-5.2 9.2-5.2s6.6 1.7 9.2 5.2c-2.6 3.5-5.6 5.2-9.2 5.2s-6.6-1.7-9.2-5.2Z" fill="none" stroke="#32765D" stroke-width="2.4" stroke-linejoin="round"/>
+  <circle cx="32" cy="31.8" r="3.5" fill="#428E72"/>
+  <circle cx="33.2" cy="30.6" r="1" fill="#fff"/>
+  <path d="M14 31.8h36" stroke="url(#scan)" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="50.5" cy="14" r="3.5" fill="#FFE291" stroke="#fff" stroke-width="1.5"/>
+</svg>

@@ -6,3 +6,4 @@ __pycache__/
 uploads/
 scam_detector.db
 phishing_dataset/
+.pytest-tmp/

@@ -13,9 +13,12 @@ PyJWT==2.9.0
 google-auth>=2.29.0,<3.0.0
 scikit-learn==1.4.2
 joblib==1.4.2
+opencv-python-headless==4.10.0.84
+PyMuPDF==1.24.10
+pytest>=8.3,<9.0
 
-# Model deepfake pretrained. Cặp phiên bản này tương thích với nhau trên Windows.
-# Cần có mạng internet để tải model lần đầu (~100-300MB).
-transformers==4.44.2
+# Model deepfake pretrained và Qwen2.5-VL. Cần có mạng internet để tải model lần đầu.
+transformers>=4.49,<5.0
 torch==2.4.1
 torchvision==0.19.1
+accelerate>=1.2,<2.0

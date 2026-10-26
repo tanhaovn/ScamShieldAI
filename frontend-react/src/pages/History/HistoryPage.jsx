@@ -65,6 +65,7 @@ export default function HistoryPage({
   selectedHistory,
   setSelectedHistory,
   apiBase,
+  isGuest = false,
 }) {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -115,7 +116,7 @@ export default function HistoryPage({
       <div className="history-experience">
         <section className="history-command-center">
           <div className="history-command-copy">
-            <span className="history-live"><i /> DETECTION ARCHIVE ONLINE</span>
+            <span className="history-live"><i /> {isGuest ? "LOCAL ARCHIVE ONLINE" : "DETECTION ARCHIVE ONLINE"}</span>
             <h2>Trung tâm lịch sử phân tích</h2>
             <p>
               Theo dõi lại từng lần OCR, nhận diện URL và đánh giá hình ảnh trong
@@ -126,6 +127,12 @@ export default function HistoryPage({
               <div><strong>{stats.average}</strong><span>Điểm trung bình</span></div>
               <div><strong>{stats.danger}</strong><span>Cảnh báo cao</span></div>
             </div>
+            {isGuest && (
+              <div className="history-local-notice">
+                <i>✓</i>
+                <span><strong>Đang lưu trên trình duyệt này</strong>Dữ liệu vẫn còn khi thầy quay lại bằng cùng trình duyệt.</span>
+              </div>
+            )}
           </div>
           <div className="history-radar" aria-hidden="true">
             <div className="radar-grid" />

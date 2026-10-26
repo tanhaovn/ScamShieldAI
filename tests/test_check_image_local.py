@@ -1,11 +1,7 @@
-from pathlib import Path
-
 from fastapi.testclient import TestClient
 from PIL import Image
 
-from backend.app.db.database import SessionLocal
-from backend.app.db.models import User
-from backend.app.main import app, _hash_password
+from backend.app.main import app
 
 
 def test_check_image_runs_without_mysql(tmp_path):
@@ -29,15 +25,6 @@ def test_check_image_runs_without_mysql(tmp_path):
 
 
 def test_default_admin_is_seeded_on_startup():
-    db = SessionLocal()
-    try:
-        existing = db.query(User).filter(User.email == "admin@scamdetector.local").first()
-        if existing:
-            db.delete(existing)
-            db.commit()
-    finally:
-        db.close()
-
     with TestClient(app) as client:
         login = client.post(
             "/login",
@@ -48,26 +35,6 @@ def test_default_admin_is_seeded_on_startup():
 
 
 def test_schema_based_admin_endpoints_are_available():
-    db = SessionLocal()
-    try:
-        existing = db.query(User).filter(User.email == "admin@scamdetector.local").first()
-        if existing:
-            db.delete(existing)
-            db.commit()
-
-        admin = User(
-            email="admin@scamdetector.local",
-            password_hash=_hash_password("Admin@123"),
-            full_name="System Admin",
-            role="admin",
-            is_active=True,
-        )
-        db.add(admin)
-        db.commit()
-        db.refresh(admin)
-    finally:
-        db.close()
-
     with TestClient(app) as client:
         login = client.post(
             "/login",

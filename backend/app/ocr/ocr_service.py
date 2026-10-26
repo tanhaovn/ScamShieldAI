@@ -8,6 +8,8 @@ Yêu cầu cài đặt hệ thống (Ubuntu/Debian):
 Nếu muốn độ chính xác cao hơn cho tiếng Việt, có thể thay bằng PaddleOCR
 (pip install paddleocr paddlepaddle) — API tương tự, chỉ cần đổi hàm extract_text().
 """
+import csv
+import io
 import shutil
 import subprocess
 from pathlib import Path
@@ -74,19 +76,79 @@ def extract_text_with_boxes(image_path: str):
     Returns:
         List các dict: {"text": str, "left": int, "top": int, "width": int, "height": int, "conf": float}
     """
-    image = Image.open(image_path)
-    data = pytesseract.image_to_data(image, lang="vie+eng", output_type=pytesseract.Output.DICT)
+    if not Path(_tesseract_path).exists():
+        return []
 
+    command = [
+        str(_tesseract_path),
+        str(Path(image_path).resolve()),
+        "stdout",
+        "-l",
+        "vie+eng",
+    ]
+    if (_local_tessdata / "vie.traineddata").exists():
+        command.extend(["--tessdata-dir", str(_local_tessdata)])
+    # Do not use the bundled "tsv" config file here: ``--tessdata-dir``
+    # points to the project's language-data folder, which intentionally only
+    # contains ``vie.traineddata`` and ``eng.traineddata``. Ask Tesseract to
+    # generate TSV directly so OCR text and word coordinates are both returned.
+    command.extend(["-c", "tessedit_create_tsv=1"])
+
+    try:
+        completed = subprocess.run(
+            command,
+            capture_output=True,
+            check=True,
+            timeout=60,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return []
+
+    output = completed.stdout.decode("utf-8", errors="replace")
     boxes = []
-    for i, word in enumerate(data["text"]):
-        if word.strip() == "":
+    for row in csv.DictReader(io.StringIO(output), delimiter="\t"):
+        word = (row.get("text") or "").strip()
+        if not word or row.get("level") != "5":
             continue
-        boxes.append({
-            "text": word,
-            "left": data["left"][i],
-            "top": data["top"][i],
-            "width": data["width"][i],
-            "height": data["height"][i],
-            "conf": float(data["conf"][i]),
-        })
+        try:
+            boxes.append(
+                {
+                    "text": word,
+                    "left": int(row["left"]),
+                    "top": int(row["top"]),
+                    "width": int(row["width"]),
+                    "height": int(row["height"]),
+                    "conf": float(row.get("conf") or 0),
+                    "block_num": int(row.get("block_num") or 0),
+                    "par_num": int(row.get("par_num") or 0),
+                    "line_num": int(row.get("line_num") or 0),
+                    "word_num": int(row.get("word_num") or 0),
+                }
+            )
+        except (KeyError, TypeError, ValueError):
+            continue
     return boxes
+
+
+def extract_text_and_boxes(image_path: str) -> tuple[str, list[dict]]:
+    """Run OCR once, returning readable lines and their word coordinates."""
+    boxes = extract_text_with_boxes(image_path)
+    lines: list[str] = []
+    current_line_key = None
+    current_line_words: list[str] = []
+    for word in boxes:
+        line_key = (word["block_num"], word["par_num"], word["line_num"])
+        if current_line_key is not None and line_key != current_line_key:
+            lines.append(" ".join(current_line_words))
+            current_line_words = []
+        current_line_key = line_key
+        current_line_words.append(word["text"])
+    if current_line_words:
+        lines.append(" ".join(current_line_words))
+    return "\n".join(lines).strip(), boxes
+
+
+def get_image_dimensions(image_path: str) -> dict[str, int]:
+    with Image.open(image_path) as image:
+        width, height = image.size
+    return {"width": int(width), "height": int(height)}

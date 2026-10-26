@@ -1,21 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 function ShieldLogo() {
   return (
     <svg viewBox="0 0 48 48" aria-hidden="true">
       <path d="M24 4 40 10v12c0 10.6-6.5 17.7-16 22-9.5-4.3-16-11.4-16-22V10z" />
       <path d="m17 24 4.5 4.5L31.5 18" />
-    </svg>
-  );
-}
-
-function GoogleMark() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.5-.2-2.2H12v4.2h5.4a4.7 4.7 0 0 1-2 3v2.7h3.3c1.9-1.8 2.9-4.4 2.9-7.7Z" />
-      <path fill="#34A853" d="M12 22c2.7 0 5-.9 6.7-2.4l-3.3-2.7c-.9.6-2 1-3.4 1a5.9 5.9 0 0 1-5.5-4.1H3.1v2.8A10 10 0 0 0 12 22Z" />
-      <path fill="#FBBC05" d="M6.5 13.8a6 6 0 0 1 0-3.8V7.2H3.1a10 10 0 0 0 0 9.4z" />
-      <path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.9 1.5l2.9-2.9A9.8 9.8 0 0 0 3.1 7.2L6.5 10A5.9 5.9 0 0 1 12 5.9Z" />
     </svg>
   );
 }
@@ -27,13 +16,13 @@ function DetectionVisual() {
       <div className="auth-scan-beam" />
       <div className="auth-orbit auth-orbit-one" />
       <div className="auth-orbit auth-orbit-two" />
-      <span className="auth-data-node node-one">OCR</span>
-      <span className="auth-data-node node-two">URL</span>
+      <span className="auth-data-node node-one">DB</span>
+      <span className="auth-data-node node-two">LOG</span>
       <span className="auth-data-node node-three">AI</span>
       <div className="auth-detect-core">
         <ShieldLogo />
-        <strong>LIVE DETECT</strong>
-        <small>Phân tích đa tín hiệu</small>
+        <strong>ADMIN GATE</strong>
+        <small>Xác thực đặc quyền</small>
       </div>
       <span className="auth-signal signal-one" />
       <span className="auth-signal signal-two" />
@@ -43,71 +32,18 @@ function DetectionVisual() {
 }
 
 export default function AuthPage({
-  mode,
-  setMode,
   form,
   setForm,
   loading,
   authError,
-  googleClientId,
   onSubmit,
-  onGoogleAuth,
+  onBack,
 }) {
   const [showPassword, setShowPassword] = useState(false);
-  const googleButtonRef = useRef(null);
-  const googleCallbackRef = useRef(onGoogleAuth);
-  googleCallbackRef.current = onGoogleAuth;
-
-  useEffect(() => {
-    if (!googleClientId || !googleButtonRef.current) return undefined;
-
-    let cancelled = false;
-    const renderGoogleButton = () => {
-      if (cancelled || !window.google?.accounts?.id || !googleButtonRef.current) {
-        return;
-      }
-      googleButtonRef.current.replaceChildren();
-      window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: ({ credential }) => googleCallbackRef.current(credential),
-      });
-      window.google.accounts.id.renderButton(googleButtonRef.current, {
-        type: "standard",
-        theme: "outline",
-        size: "large",
-        shape: "rectangular",
-        text: mode === "register" ? "signup_with" : "signin_with",
-        logo_alignment: "left",
-        width: 360,
-        locale: "vi",
-      });
-    };
-
-    if (window.google?.accounts?.id) {
-      renderGoogleButton();
-    } else {
-      let script = document.getElementById("google-identity-services");
-      if (!script) {
-        script = document.createElement("script");
-        script.id = "google-identity-services";
-        script.src = "https://accounts.google.com/gsi/client?hl=vi";
-        script.async = true;
-        script.defer = true;
-        document.head.appendChild(script);
-      }
-      script.addEventListener("load", renderGoogleButton, { once: true });
-    }
-
-    return () => {
-      cancelled = true;
-    };
-  }, [googleClientId, mode]);
-
-  const isLogin = mode === "login";
 
   return (
-    <main className="auth-page">
-      <section className="auth-card" aria-label="Xác thực Scam Detector">
+    <main className="auth-page admin-auth-page">
+      <section className="auth-card" aria-label="Đăng nhập quản trị Scam Detector">
         <aside className="auth-showcase">
           <div className="auth-brand">
             <span className="auth-brand-icon"><ShieldLogo /></span>
@@ -118,24 +54,20 @@ export default function AuthPage({
           </div>
 
           <div className="auth-showcase-copy">
-            <span className="auth-live-label"><i /> AI ENGINE ONLINE</span>
-            <h1>{isLogin ? "Chào mừng bạn trở lại!" : "Bắt đầu kiểm tra an toàn"}</h1>
+            <span className="auth-live-label"><i /> ADMIN SECURITY GATE</span>
+            <h1>Khu vực quản trị hệ thống</h1>
             <p>
-              OCR nội dung, nhận diện URL lừa đảo và giải thích dấu hiệu đáng
-              ngờ trong cùng một quy trình.
+              Quyền truy cập dành riêng cho quản trị viên quản lý dataset,
+              mô hình AI, đánh giá và nhật ký hệ thống.
             </p>
           </div>
 
           <DetectionVisual />
 
-          <div className="auth-showcase-bottom">
-            <span>Chưa {isLogin ? "có" : "dùng"} tài khoản?</span>
-            <button
-              type="button"
-              className="auth-outline-button"
-              onClick={() => setMode(isLogin ? "register" : "login")}
-            >
-              {isLogin ? "Tạo tài khoản" : "Đăng nhập ngay"}
+          <div className="auth-showcase-bottom admin-auth-bottom">
+            <span>Không phải quản trị viên?</span>
+            <button type="button" className="auth-outline-button" onClick={onBack}>
+              Dùng ngay không đăng nhập
             </button>
           </div>
         </aside>
@@ -147,78 +79,28 @@ export default function AuthPage({
           </div>
 
           <header className="auth-form-heading">
-            <span className="auth-form-kicker">SECURE ACCESS</span>
-            <h2>{isLogin ? "Đăng nhập" : "Đăng ký tài khoản"}</h2>
-            <p>
-              {isLogin
-                ? "Tiếp tục vào không gian phân tích của bạn."
-                : "Lưu lịch sử kiểm tra và xem lại cảnh báo khi cần."}
-            </p>
+            <span className="auth-form-kicker">RESTRICTED ACCESS</span>
+            <h2>Đăng nhập Admin</h2>
+            <p>Người dùng thông thường không cần tài khoản để sử dụng hệ thống.</p>
           </header>
 
-          <div className="auth-mode-tabs" role="tablist" aria-label="Chọn hình thức xác thực">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={isLogin}
-              className={isLogin ? "active" : ""}
-              onClick={() => setMode("login")}
-            >
-              Đăng nhập
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={!isLogin}
-              className={!isLogin ? "active" : ""}
-              onClick={() => setMode("register")}
-            >
-              Đăng ký
-            </button>
+          <div className="admin-auth-notice">
+            <span><ShieldLogo /></span>
+            <div><strong>Chỉ dành cho quản trị viên</strong><small>Mọi lần truy cập đều được hệ thống xác thực.</small></div>
           </div>
 
-          {googleClientId ? (
-            <div className="google-auth-wrap" ref={googleButtonRef} />
-          ) : (
-            <button className="google-auth-placeholder" type="button" disabled>
-              <GoogleMark />
-              <span>Tiếp tục với Google</span>
-              <small>Cần cấu hình Client ID</small>
-            </button>
-          )}
-
-          <div className="auth-divider"><span>hoặc dùng email</span></div>
-
-          <form onSubmit={onSubmit} className="auth-form">
-            {!isLogin && (
-              <label className="auth-field">
-                <span>Họ và tên</span>
-                <div>
-                  <i aria-hidden="true">Aa</i>
-                  <input
-                    autoComplete="name"
-                    required
-                    value={form.full_name}
-                    onChange={(event) =>
-                      setForm({ ...form, full_name: event.target.value })
-                    }
-                    placeholder="Nguyễn Văn A"
-                  />
-                </div>
-              </label>
-            )}
-
+          <form onSubmit={onSubmit} className="auth-form admin-auth-form">
             <label className="auth-field">
-              <span>Email</span>
+              <span>Email quản trị</span>
               <div>
                 <i aria-hidden="true">@</i>
                 <input
                   type="email"
-                  autoComplete="email"
+                  autoComplete="username"
                   required
                   value={form.email}
                   onChange={(event) => setForm({ ...form, email: event.target.value })}
-                  placeholder="name@example.com"
+                  placeholder="admin@example.com"
                 />
               </div>
             </label>
@@ -229,12 +111,12 @@ export default function AuthPage({
                 <i aria-hidden="true">●</i>
                 <input
                   type={showPassword ? "text" : "password"}
-                  autoComplete={isLogin ? "current-password" : "new-password"}
+                  autoComplete="current-password"
                   minLength={6}
                   required
                   value={form.password}
                   onChange={(event) => setForm({ ...form, password: event.target.value })}
-                  placeholder={isLogin ? "Nhập mật khẩu" : "Tối thiểu 6 ký tự"}
+                  placeholder="Nhập mật khẩu quản trị"
                 />
                 <button
                   type="button"
@@ -250,17 +132,17 @@ export default function AuthPage({
             {authError && <p className="auth-error" role="alert">{authError}</p>}
 
             <button className="auth-submit" disabled={loading}>
-              {loading
-                ? "Đang xác thực..."
-                : isLogin
-                  ? "Đăng nhập an toàn"
-                  : "Tạo tài khoản"}
+              {loading ? "Đang xác thực..." : "Truy cập Admin Console"}
               <span aria-hidden="true">→</span>
             </button>
           </form>
 
+          <button type="button" className="admin-back-to-guest" onClick={onBack}>
+            ← Quay lại chế độ khách
+          </button>
+
           <p className="auth-security-note">
-            <span>✓</span> Dữ liệu đăng nhập được gửi trực tiếp tới máy chủ xác thực.
+            <span>✓</span> Phiên quản trị được bảo vệ bằng JWT và phân quyền máy chủ.
           </p>
         </div>
       </section>

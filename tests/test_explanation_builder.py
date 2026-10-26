@@ -45,7 +45,7 @@ def test_structured_explanation_names_the_strongest_signal():
     )
 
     assert "KẾT LUẬN: Nguy hiểm (87/100)" in explanation
-    assert "Nguồn đóng góp lớn nhất là URL PhishVN" in explanation
+    assert "Nguồn đóng góp lớn nhất là Đường link trong nội dung" in explanation
     assert breakdown["verdict"]["score"] == 87
     assert [item["key"] for item in breakdown["components"]] == ["text", "url", "visual"]
     assert "tiktok.com" in breakdown["components"][1]["findings"][1]

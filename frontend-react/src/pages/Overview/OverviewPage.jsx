@@ -93,7 +93,7 @@ export default function OverviewPage({ history, user, onStartScan }) {
           <h2>An toàn số bắt đầu từ một lần kiểm tra.</h2>
           <p>OCR, nhận diện URL lừa đảo và phân tích hình ảnh đang phối hợp để bảo vệ từng quyết định của bạn.</p>
           <div className="overview-command-actions">
-            <button onClick={onStartScan}><Icon name="scan" /> Kiểm tra ảnh ngay</button>
+            <button onClick={onStartScan}><Icon name="scan" /> Kiểm tra ngay</button>
             <span><i /> {threatStatus}</span>
           </div>
         </div>

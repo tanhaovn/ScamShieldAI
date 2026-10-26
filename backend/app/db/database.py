@@ -21,13 +21,34 @@ DB_NAME = os.getenv("DB_NAME", "scam_detector")
 
 if USE_SQLITE:
     DATABASE_URL = "sqlite:///./scam_detector.db"
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,
+        connect_args={"check_same_thread": False},
+    )
 else:
     DATABASE_URL = (
         f"mysql+pymysql://{quote_plus(DB_USER)}:{quote_plus(DB_PASSWORD)}@"
         f"{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4"
     )
+    try:
+        engine = create_engine(
+            DATABASE_URL,
+            pool_pre_ping=True,
+            pool_recycle=3600,
+            connect_args={"connect_timeout": 2},
+        )
+        with engine.connect() as _conn:
+            pass
+    except Exception:
+        # Tự động chuyển về SQLite nếu MySQL chưa khởi động
+        DATABASE_URL = "sqlite:///./scam_detector.db"
+        engine = create_engine(
+            DATABASE_URL,
+            pool_pre_ping=True,
+            connect_args={"check_same_thread": False},
+        )
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_recycle=3600)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

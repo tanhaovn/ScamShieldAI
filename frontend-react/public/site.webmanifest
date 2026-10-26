@@ -1,0 +1,17 @@
+{
+  "name": "Scam Detector",
+  "short_name": "Scam Detector",
+  "description": "Nền tảng AI hỗ trợ nhận diện nội dung và đường link lừa đảo.",
+  "start_url": "/#overview",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#428E72",
+  "icons": [
+    {
+      "src": "/scam-detector-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

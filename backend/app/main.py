@@ -14,6 +14,7 @@ import shutil
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 
 import jwt
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, Header
@@ -24,15 +25,20 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from backend.app.ai.phishing_model import analyze_phishing_image
-from backend.app.ai.phishvn_url_model import analyze_urls_in_text
+from backend.app.ai.phishvn_url_model import analyze_urls_in_text, extract_url_candidates
+from backend.app.ai.vlm_image_analyzer import analyze_image_context
 from backend.app.db.database import get_db, engine, Base, SessionLocal
 from backend.app.db.models import AuthIdentity, ScanHistory, User, ScamCategory, TrainingDataset, AiModel, ModelEvaluation, SystemActivityLog
-from backend.app.ocr.ocr_service import extract_text
+from backend.app.document.pdf_service import extract_pdf_content
+from backend.app.ocr.highlight_service import build_suspicious_regions
+from backend.app.ocr.ocr_service import extract_text_and_boxes, get_image_dimensions
 from backend.app.risk.explanation_builder import build_analysis_explanation
 from backend.app.risk.risk_engine import analyze_text
+from backend.app.risk.safety_assistant import answer_safety_question
 from backend.app.visual.visual_forensics import analyze_image_visual
+from backend.app.visual.qr_analysis import decode_qr_codes
 
-app = FastAPI(title="Vietnamese Scam Detection - Image Module")
+app = FastAPI(title="Vietnamese Scam Detection - Multi-source Scanner")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
@@ -78,6 +84,24 @@ class ProfileUpdateRequest(BaseModel):
 class ScanImageRequest(BaseModel):
     scam_category_id: int | None = None
     risk_score: int | None = None
+
+
+class TextCheckRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=20000)
+
+
+class UrlCheckRequest(BaseModel):
+    url: str = Field(min_length=3, max_length=4096)
+
+
+class AssistantQuestionRequest(BaseModel):
+    question: str = Field(min_length=2, max_length=500)
+    risk_level: str = Field(max_length=30)
+    risk_score: int = Field(ge=0, le=100)
+    highlighted_terms: list[str] = Field(default_factory=list, max_length=30)
+    urls: list[dict] = Field(default_factory=list, max_length=20)
+    suggested_action: str = Field(default="", max_length=3000)
+    verdict: str = Field(default="", max_length=3000)
 
 
 class TrainingDatasetRequest(BaseModel):
@@ -223,24 +247,16 @@ def on_startup():
 
 @app.post("/register")
 def register_user(payload: RegisterRequest, db: Session = Depends(get_db)):
-    email = payload.email.strip().lower()
-    existing = db.query(User).filter(User.email == email).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Email đã được đăng ký")
-
-    user = User(
-        email=email,
-        password_hash=_hash_password(payload.password),
-        full_name=payload.full_name or payload.email.split("@")[0],
-        role="user",
+    raise HTTPException(
+        status_code=403,
+        detail=(
+            "Ứng dụng đang dùng chế độ khách, không cần đăng ký tài khoản. "
+            "Chỉ quản trị viên mới đăng nhập."
+        ),
     )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-
-    return _auth_response(user)
 
 
+@app.post("/admin/login")
 @app.post("/login")
 def login_user(payload: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email.strip().lower()).first()
@@ -249,6 +265,12 @@ def login_user(payload: LoginRequest, db: Session = Depends(get_db)):
 
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Tài khoản đã bị vô hiệu hóa")
+
+    if user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Chỉ tài khoản quản trị viên mới được đăng nhập",
+        )
 
     return _auth_response(user)
 
@@ -301,39 +323,13 @@ def authenticate_with_google(payload: GoogleAuthRequest, db: Session = Depends(g
         )
         .first()
     )
-    if identity:
-        user = identity.user
-    else:
-        existing_user = db.query(User).filter(User.email == email).first()
-        if existing_user:
-            raise HTTPException(
-                status_code=409,
-                detail=(
-                    "Email này đã có tài khoản dùng mật khẩu. "
-                    "Hãy đăng nhập bằng email để tránh liên kết nhầm tài khoản."
-                ),
-            )
-
-        import secrets
-
-        user = User(
-            email=email,
-            password_hash=_hash_password(secrets.token_urlsafe(32)),
-            full_name=str(identity_data.get("name") or email.split("@")[0]),
-            role="user",
-            is_active=True,
+    if not identity or identity.user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="Chỉ tài khoản Google đã liên kết với quản trị viên mới được đăng nhập",
         )
-        db.add(user)
-        db.flush()
-        db.add(
-            AuthIdentity(
-                user_id=user.id,
-                provider="google",
-                provider_subject=subject,
-            )
-        )
-        db.commit()
-        db.refresh(user)
+
+    user = identity.user
 
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Tài khoản đã bị vô hiệu hóa")
@@ -497,22 +493,259 @@ def list_system_logs(
     ]
 
 
+def _analyze_content_payload(
+    content: str,
+    *,
+    image_path: str | None = None,
+    qr_codes: list[str] | None = None,
+) -> dict:
+    """Run the shared text, URL and optional visual pipeline."""
+    qr_codes = qr_codes or []
+    analysis_text = "\n".join(part for part in [content.strip(), *qr_codes] if part).strip()
+    text_result = analyze_text(analysis_text)
+    phishvn_result = analyze_urls_in_text(analysis_text)
+
+    if image_path:
+        visual_result = analyze_image_visual(
+            image_path, use_deepfake_model=USE_DEEPFAKE_MODEL
+        )
+        image_model_result = analyze_phishing_image(image_path)
+        image_model_score = int(image_model_result.probability * 100)
+        vlm_result = analyze_image_context(
+            image_path,
+            ocr_text=analysis_text,
+            qr_codes=qr_codes,
+            visual_flags=visual_result.flags,
+            image_model_probability=image_model_result.probability if image_model_result.available else None,
+            phishvn_url_score=int(phishvn_result.risk_score),
+            phishvn_predictions=phishvn_result.predictions_as_dicts() if hasattr(phishvn_result, "predictions_as_dicts") else [],
+        )
+    else:
+        visual_result = SimpleNamespace(visual_score=0, flags=[])
+        image_model_result = SimpleNamespace(
+            available=False,
+            probability=0.0,
+            label="not_applicable",
+            explanation="Không áp dụng model hình ảnh cho nguồn dữ liệu này.",
+        )
+        image_model_score = 0
+        vlm_result = SimpleNamespace(
+            available=False,
+            risk_score=0,
+            verdict="not_applicable",
+            confidence=0.0,
+            risk_indicators=[],
+            observed_text=[],
+            reasoning="",
+            recommended_action="",
+            model_name="Qwen2.5-VL",
+            note="Không áp dụng phân tích ngữ cảnh ảnh cho nguồn dữ liệu này.",
+        )
+
+    component_scores = [int(text_result.risk_score)]
+    if phishvn_result.available and phishvn_result.predictions:
+        component_scores.append(int(phishvn_result.risk_score))
+    if image_path:
+        component_scores.append(int(visual_result.visual_score))
+        if image_model_result.available:
+            component_scores.append(image_model_score)
+        if vlm_result.available:
+            component_scores.append(int(vlm_result.risk_score))
+
+    if image_path and vlm_result.available:
+        if vlm_result.verdict == "safe":
+            combined_score = min(int(vlm_result.risk_score), 20)
+        else:
+            combined_score = max(
+                int(vlm_result.risk_score),
+                int(text_result.risk_score),
+                int(phishvn_result.risk_score) if phishvn_result.available else 0,
+            )
+            if len(component_scores) > 1 and min(component_scores) > 0:
+                combined_score += int(0.2 * min(component_scores))
+    else:
+        combined_score = max(component_scores)
+        if len(component_scores) > 1 and min(component_scores) > 0:
+            combined_score += int(0.2 * min(component_scores))
+    combined_score = min(combined_score, 100)
+
+    if combined_score >= 60:
+        combined_level = "nguy_hiem"
+    elif combined_score >= 25:
+        combined_level = "nghi_ngo"
+    else:
+        combined_level = "an_toan"
+
+    combined_scam_type = text_result.scam_type
+    if phishvn_result.risk_score >= 50 and phishvn_result.risk_score >= text_result.risk_score:
+        combined_scam_type = "phishing_url"
+
+    suggested_action = text_result.suggested_action
+    if phishvn_result.risk_score >= 60:
+        suggested_action = (
+            "KHÔNG mở URL, KHÔNG đăng nhập hoặc cung cấp OTP/thông tin thanh toán. "
+            "Hãy tự nhập địa chỉ website chính thức hoặc liên hệ tổ chức qua kênh đã xác minh."
+        )
+    elif phishvn_result.risk_score >= 25 and text_result.risk_score < 25:
+        suggested_action = (
+            "URL có dấu hiệu cần kiểm tra thêm. Không bấm trực tiếp; hãy đối chiếu tên miền "
+            "với website chính thức trước khi tiếp tục."
+        )
+
+    combined_explanation, analysis_breakdown = build_analysis_explanation(
+        extracted_text=analysis_text,
+        text_result=text_result,
+        phishvn_result=phishvn_result,
+        visual_result=visual_result,
+        image_model_result=image_model_result,
+        image_model_score=image_model_score,
+        vlm_result=vlm_result,
+        combined_score=combined_score,
+        combined_level=combined_level,
+        include_visual=bool(image_path),
+    )
+
+    return {
+        "extracted_text": content,
+        "risk_score": combined_score,
+        "risk_level": combined_level,
+        "text_risk_score": text_result.risk_score,
+        "phishvn_available": phishvn_result.available,
+        "phishvn_model": phishvn_result.model_name,
+        "phishvn_url_risk_score": phishvn_result.risk_score,
+        "phishvn_urls": phishvn_result.predictions_as_dicts(),
+        "visual_risk_score": visual_result.visual_score,
+        "image_model_available": image_model_result.available,
+        "image_model_label": image_model_result.label,
+        "image_model_score": image_model_score,
+        "vlm_analysis": vlm_result.to_dict() if hasattr(vlm_result, "to_dict") else vars(vlm_result),
+        "scam_type": combined_scam_type,
+        "highlighted_terms": text_result.highlighted_terms,
+        "visual_flags": visual_result.flags,
+        "qr_codes": qr_codes,
+        "explanation": combined_explanation,
+        "analysis_breakdown": analysis_breakdown,
+        "suggested_action": suggested_action,
+    }
+
+
+def _local_analysis_response(payload: dict, source_type: str, filename: str) -> dict:
+    return {
+        **payload,
+        "scan_id": None,
+        "image_url": "",
+        "original_filename": filename,
+        "created_at": datetime.utcnow().isoformat(),
+        "storage": "local_storage",
+        "source_type": source_type,
+        "scam_category_id": None,
+    }
+
+
+@app.post("/check-text")
+def check_text(payload: TextCheckRequest):
+    content = payload.text.strip()
+    return _local_analysis_response(
+        _analyze_content_payload(content),
+        "text",
+        "Nội dung tin nhắn",
+    )
+
+
+@app.post("/check-url")
+def check_url(payload: UrlCheckRequest):
+    url = payload.url.strip()
+    if not extract_url_candidates(url):
+        raise HTTPException(
+            status_code=422,
+            detail="URL không hợp lệ. Ví dụ đúng: https://example.com/login",
+        )
+    return _local_analysis_response(
+        _analyze_content_payload(url),
+        "url",
+        url[:180],
+    )
+
+
+@app.post("/analysis-assistant")
+def analysis_assistant(payload: AssistantQuestionRequest):
+    """Answer follow-up safety questions using only the completed scan evidence."""
+    return {
+        "answer": answer_safety_question(
+            question=payload.question,
+            risk_level=payload.risk_level,
+            risk_score=payload.risk_score,
+            highlighted_terms=payload.highlighted_terms,
+            urls=payload.urls,
+            suggested_action=payload.suggested_action,
+            verdict=payload.verdict,
+        )
+    }
+
+
+@app.post("/check-document")
+async def check_document(file: UploadFile = File(...)):
+    filename = file.filename or "document.pdf"
+    if file.content_type != "application/pdf" and not filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Tài liệu phải là file PDF")
+
+    saved_path = UPLOAD_DIR / f"{uuid.uuid4().hex}.pdf"
+    try:
+        with saved_path.open("wb") as buffer:
+            received_size = 0
+            while chunk := await file.read(1024 * 1024):
+                received_size += len(chunk)
+                if received_size > 15 * 1024 * 1024:
+                    raise HTTPException(status_code=413, detail="PDF tối đa 15 MB")
+                buffer.write(chunk)
+
+        try:
+            document = extract_pdf_content(str(saved_path), max_pages=10)
+        except (RuntimeError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+        content = document["text"]
+        if not content and not document["qr_codes"]:
+            raise HTTPException(
+                status_code=422,
+                detail="Không đọc được chữ hoặc mã QR trong PDF",
+            )
+
+        response = _local_analysis_response(
+            _analyze_content_payload(content, qr_codes=document["qr_codes"]),
+            "pdf",
+            filename,
+        )
+        response["document_info"] = {
+            "page_count": document["page_count"],
+            "processed_pages": document["processed_pages"],
+            "truncated": document["truncated"],
+        }
+        return response
+    finally:
+        saved_path.unlink(missing_ok=True)
+
+
 @app.post("/check-image")
 async def check_image(
     file: UploadFile = File(...),
     scam_category_id: int | None = None,
-    user_id: int = 1,
     db: Session = Depends(get_db),
     authorization: str | None = Header(default=None, alias="Authorization"),
 ):
     """
-    Nhận 1 file ảnh, chạy OCR + phân tích rủi ro, lưu kết quả vào MySQL,
-    trả về JSON gồm risk_score, mức độ rủi ro, giải thích và hành động đề xuất.
+    Nhận ảnh và chạy đầy đủ pipeline phân tích.
+
+    Khách không cần đăng nhập và tự lưu lịch sử bằng localStorage ở frontend.
+    Chỉ lượt quét của admin đã xác thực mới được ghi vào MySQL.
     """
+    admin_user = None
     if authorization and authorization.startswith("Bearer "):
         try:
             token = authorization.replace("Bearer ", "", 1).strip()
-            user_id = int(_decode_token(token))
+            authenticated_user = db.query(User).filter(User.id == int(_decode_token(token))).first()
+            if authenticated_user and authenticated_user.role == "admin" and authenticated_user.is_active:
+                admin_user = authenticated_user
         except Exception:
             pass
 
@@ -532,101 +765,66 @@ async def check_image(
             category = db.query(ScamCategory).filter(ScamCategory.code == "phishing_screenshot").first()
             category_id = category.id if category else None
 
-        extracted_text = extract_text(saved_path)
-        text_result = analyze_text(extracted_text)
-        phishvn_result = analyze_urls_in_text(extracted_text)
-
-        visual_result = analyze_image_visual(
-            saved_path, use_deepfake_model=USE_DEEPFAKE_MODEL
+        extracted_text, ocr_words = extract_text_and_boxes(saved_path)
+        qr_codes = decode_qr_codes(saved_path)
+        analysis = _analyze_content_payload(
+            extracted_text,
+            image_path=saved_path,
+            qr_codes=qr_codes,
         )
-        image_model_result = analyze_phishing_image(saved_path)
-        image_model_score = int(image_model_result.probability * 100)
+        image_dimensions = get_image_dimensions(saved_path)
+        suspicious_urls = [
+            item.get("url") or item.get("normalized_url")
+            for item in analysis["phishvn_urls"]
+            if int(item.get("risk_score") or 0) >= 25
+            and (item.get("url") or item.get("normalized_url"))
+        ]
+        image_annotations = build_suspicious_regions(
+            ocr_words,
+            analysis["highlighted_terms"],
+            suspicious_urls,
+        )
 
-        component_scores = [text_result.risk_score, visual_result.visual_score]
-        if phishvn_result.available and phishvn_result.predictions:
-            component_scores.append(phishvn_result.risk_score)
-        if image_model_result.available:
-            component_scores.append(image_model_score)
-        combined_score = max(component_scores) + int(0.3 * min(component_scores))
-        combined_score = min(combined_score, 100)
-
-        if combined_score >= 60:
-            combined_level = "nguy_hiem"
-        elif combined_score >= 25:
-            combined_level = "nghi_ngo"
-        else:
-            combined_level = "an_toan"
-
-        combined_scam_type = text_result.scam_type
-        if phishvn_result.risk_score >= 50 and phishvn_result.risk_score >= text_result.risk_score:
-            combined_scam_type = "phishing_url"
-
-        suggested_action = text_result.suggested_action
-        if phishvn_result.risk_score >= 60:
-            suggested_action = (
-                "KHÔNG mở URL, KHÔNG đăng nhập hoặc cung cấp OTP/thông tin thanh toán. "
-                "Hãy tự nhập địa chỉ website chính thức hoặc liên hệ tổ chức qua kênh đã xác minh."
+        scan_id = None
+        created_at = datetime.utcnow()
+        if admin_user:
+            scan_record = ScanHistory(
+                user_id=admin_user.id,
+                image_url=f"/uploads/{saved_name}",
+                original_filename=file.filename,
+                extracted_text=extracted_text,
+                scam_category_id=category_id,
+                risk_score=analysis["risk_score"],
+                risk_level=analysis["risk_level"],
+                explanation=analysis["explanation"],
+                highlighted_regions={
+                    "terms": analysis["highlighted_terms"],
+                    "visual_flags": analysis["visual_flags"],
+                    "phishvn_urls": analysis["phishvn_urls"],
+                    "qr_codes": qr_codes,
+                    "image_annotations": image_annotations,
+                    "image_dimensions": image_dimensions,
+                    "analysis_breakdown": analysis["analysis_breakdown"],
+                },
+                suggested_action=analysis["suggested_action"],
             )
-        elif phishvn_result.risk_score >= 25 and text_result.risk_score < 25:
-            suggested_action = (
-                "URL có dấu hiệu cần kiểm tra thêm. Không bấm trực tiếp; hãy đối chiếu tên miền "
-                "với website chính thức trước khi tiếp tục."
-            )
-
-        combined_explanation, analysis_breakdown = build_analysis_explanation(
-            extracted_text=extracted_text,
-            text_result=text_result,
-            phishvn_result=phishvn_result,
-            visual_result=visual_result,
-            image_model_result=image_model_result,
-            image_model_score=image_model_score,
-            combined_score=combined_score,
-            combined_level=combined_level,
-        )
-
-        scan_record = ScanHistory(
-            user_id=user_id,
-            image_url=f"/uploads/{saved_name}",
-            original_filename=file.filename,
-            extracted_text=extracted_text,
-            scam_category_id=category_id,
-            risk_score=combined_score,
-            risk_level=combined_level,
-            explanation=combined_explanation,
-            highlighted_regions={
-                "terms": text_result.highlighted_terms,
-                "visual_flags": visual_result.flags,
-                "phishvn_urls": phishvn_result.predictions_as_dicts(),
-                "analysis_breakdown": analysis_breakdown,
-            },
-            suggested_action=suggested_action,
-        )
-        db.add(scan_record)
-        db.commit()
-        db.refresh(scan_record)
+            db.add(scan_record)
+            db.commit()
+            db.refresh(scan_record)
+            scan_id = scan_record.id
+            created_at = scan_record.created_at or created_at
 
         return {
-            "scan_id": scan_record.id,
-            "image_url": scan_record.image_url,
-            "extracted_text": extracted_text,
-            "risk_score": combined_score,
-            "risk_level": combined_level,
-            "text_risk_score": text_result.risk_score,
-            "phishvn_available": phishvn_result.available,
-            "phishvn_model": phishvn_result.model_name,
-            "phishvn_url_risk_score": phishvn_result.risk_score,
-            "phishvn_urls": phishvn_result.predictions_as_dicts(),
-            "visual_risk_score": visual_result.visual_score,
-            "image_model_available": image_model_result.available,
-            "image_model_label": image_model_result.label,
-            "image_model_score": image_model_score,
-            "scam_type": combined_scam_type,
-            "highlighted_terms": text_result.highlighted_terms,
-            "visual_flags": visual_result.flags,
-            "explanation": combined_explanation,
-            "analysis_breakdown": analysis_breakdown,
-            "suggested_action": suggested_action,
+            **analysis,
+            "scan_id": scan_id,
+            "image_url": f"/uploads/{saved_name}",
+            "original_filename": file.filename,
+            "created_at": created_at.isoformat(),
+            "storage": "database" if admin_user else "local_storage",
+            "source_type": "image",
             "scam_category_id": category_id,
+            "image_annotations": image_annotations,
+            "image_dimensions": image_dimensions,
         }
 
     finally:
@@ -634,8 +832,14 @@ async def check_image(
 
 
 @app.get("/history/{user_id}")
-def get_history(user_id: int, db: Session = Depends(get_db)):
-    """Lấy lịch sử kiểm tra của 1 user, mới nhất trước."""
+def get_history(
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Lấy lịch sử máy chủ; chỉ quản trị viên đã xác thực được truy cập."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Chỉ admin mới xem lịch sử máy chủ")
     records = (
         db.query(ScanHistory)
         .filter(ScanHistory.user_id == user_id)
