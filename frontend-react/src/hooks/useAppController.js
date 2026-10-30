@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-export const API_BASE =
-  import.meta.env.VITE_API_BASE || "http://localhost:8000";
+export const API_BASE = import.meta.env.VITE_API_BASE || (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1" ? "" : "http://localhost:8000");
 
 const GUEST_HISTORY_KEY = "scam_detector_guest_history";
 const GUEST_NAME_KEY = "scam_detector_guest_name";

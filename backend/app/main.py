@@ -41,8 +41,8 @@ from backend.app.visual.qr_analysis import decode_qr_codes
 app = FastAPI(title="Vietnamese Scam Detection - Multi-source Scanner")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+    allow_origins=["*"],
+    allow_origin_regex=r"https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -58,7 +58,10 @@ JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "1440"))
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
 
-app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+dist_dir = FRONTEND_DIR / "dist"
+if (dist_dir / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=dist_dir / "assets"), name="assets")
+app.mount("/static", StaticFiles(directory=dist_dir if dist_dir.exists() else FRONTEND_DIR), name="static")
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
@@ -202,6 +205,9 @@ def get_current_user(
 
 @app.get("/", include_in_schema=False)
 def dashboard():
+    dist_index = FRONTEND_DIR / "dist" / "index.html"
+    if dist_index.exists():
+        return FileResponse(dist_index)
     return FileResponse(FRONTEND_DIR / "index.html")
 
 

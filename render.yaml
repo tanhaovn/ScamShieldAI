@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: scamshieldai
+    runtime: docker
+    plan: free
+    region: singapore
+    envVars:
+      - key: USE_SQLITE
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true

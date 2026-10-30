@@ -12,7 +12,15 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+import unicodedata
 from typing import Any
+
+
+def remove_vietnamese_accents(text: str) -> str:
+    """Normalize Vietnamese text to non-accented lower characters for robust keyword matching."""
+    nfkd = unicodedata.normalize("NFKD", text)
+    stripped = "".join([c for c in nfkd if not unicodedata.combining(c)])
+    return stripped.replace("đ", "d").replace("Đ", "D").lower()
 
 
 @dataclass
@@ -86,17 +94,25 @@ def execute_multimodal_reasoning(
     visual_flags = visual_flags or []
     phishvn_predictions = phishvn_predictions or []
     clean_text = ocr_text.strip().lower()
+    clean_text_no_accents = remove_vietnamese_accents(clean_text)
 
     cot_steps: list[str] = []
     indicators: list[str] = []
     observed_snippets: list[str] = []
 
+    def matches_keyword(kw: str) -> bool:
+        kw_lower = kw.lower()
+        if kw_lower in clean_text:
+            return True
+        kw_no_accents = remove_vietnamese_accents(kw_lower)
+        return kw_no_accents in clean_text_no_accents
+
     # ---------------------------------------------------------
     # Bước 1: Trích xuất thực thể & Phân tích ngữ nghĩa (Semantic Analysis)
     # ---------------------------------------------------------
-    found_orgs = [kw for kw in ORGANIZATION_KEYWORDS if kw in clean_text]
-    found_urgent = [kw for kw in URGENT_KEYWORDS if kw in clean_text]
-    found_actions = [kw for kw in FINANCIAL_ACTION_KEYWORDS if kw in clean_text]
+    found_orgs = [kw for kw in ORGANIZATION_KEYWORDS if matches_keyword(kw)]
+    found_urgent = [kw for kw in URGENT_KEYWORDS if matches_keyword(kw)]
+    found_actions = [kw for kw in FINANCIAL_ACTION_KEYWORDS if matches_keyword(kw)]
 
     has_suspicious_url = phishvn_url_score >= 40
     has_qr = len(qr_codes) > 0
