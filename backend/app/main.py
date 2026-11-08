@@ -12,6 +12,7 @@ Yêu cầu:
 import os
 import shutil
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
@@ -26,6 +27,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.ai.phishing_model import analyze_phishing_image
 from backend.app.ai.phishvn_url_model import analyze_urls_in_text, extract_url_candidates
+from backend.app.ai.google_safe_browsing import check_urls as check_google_safe_browsing
 from backend.app.ai.vlm_image_analyzer import analyze_image_context
 from backend.app.db.database import get_db, engine, Base, SessionLocal
 from backend.app.db.models import AuthIdentity, ScanHistory, User, ScamCategory, TrainingDataset, AiModel, ModelEvaluation, SystemActivityLog
@@ -508,14 +510,33 @@ def _analyze_content_payload(
     """Run the shared text, URL and optional visual pipeline."""
     qr_codes = qr_codes or []
     analysis_text = "\n".join(part for part in [content.strip(), *qr_codes] if part).strip()
-    text_result = analyze_text(analysis_text)
-    phishvn_result = analyze_urls_in_text(analysis_text)
+
+    # These detectors do not depend on one another. Running them concurrently
+    # avoids making a network reputation lookup wait for local ML inference
+    # (and vice versa) without skipping any layer of the safety pipeline.
+    worker_count = 5 if image_path else 3
+    with ThreadPoolExecutor(max_workers=worker_count, thread_name_prefix="scan") as executor:
+        text_future = executor.submit(analyze_text, analysis_text)
+        phishvn_future = executor.submit(analyze_urls_in_text, analysis_text)
+        safe_browsing_future = executor.submit(
+            check_google_safe_browsing,
+            extract_url_candidates(analysis_text),
+        )
+        if image_path:
+            visual_future = executor.submit(
+                analyze_image_visual,
+                image_path, use_deepfake_model=USE_DEEPFAKE_MODEL
+            )
+            image_model_future = executor.submit(analyze_phishing_image, image_path)
+
+        text_result = text_future.result()
+        phishvn_result = phishvn_future.result()
+        safe_browsing_result = safe_browsing_future.result()
+        if image_path:
+            visual_result = visual_future.result()
+            image_model_result = image_model_future.result()
 
     if image_path:
-        visual_result = analyze_image_visual(
-            image_path, use_deepfake_model=USE_DEEPFAKE_MODEL
-        )
-        image_model_result = analyze_phishing_image(image_path)
         image_model_score = int(image_model_result.probability * 100)
         vlm_result = analyze_image_context(
             image_path,
@@ -551,6 +572,8 @@ def _analyze_content_payload(
     component_scores = [int(text_result.risk_score)]
     if phishvn_result.available and phishvn_result.predictions:
         component_scores.append(int(phishvn_result.risk_score))
+    if safe_browsing_result.matches:
+        component_scores.append(int(safe_browsing_result.risk_score))
     if image_path:
         component_scores.append(int(visual_result.visual_score))
         if image_model_result.available:
@@ -558,22 +581,58 @@ def _analyze_content_payload(
         if vlm_result.available:
             component_scores.append(int(vlm_result.risk_score))
 
+    # ---------------------------------------------------------
+    # Calibrated Multimodal Consensus Fusion (Soft Voting)
+    # ---------------------------------------------------------
+    primary_scores = [int(text_result.risk_score)]
+    if phishvn_result.available and phishvn_result.predictions:
+        primary_scores.append(int(phishvn_result.risk_score))
+    if safe_browsing_result.matches:
+        # A match is an independent threat-list confirmation, not a model guess.
+        primary_scores.append(int(safe_browsing_result.risk_score))
     if image_path and vlm_result.available:
-        if vlm_result.verdict == "safe":
-            combined_score = min(int(vlm_result.risk_score), 20)
+        primary_scores.append(int(vlm_result.risk_score))
+    if image_path and image_model_result.available and image_model_score >= 70:
+        # High-confidence phishing-layout matches are primary evidence. OCR can
+        # legitimately miss tiny login text or a cropped browser address bar.
+        primary_scores.append(image_model_score)
+
+    secondary_scores = []
+    if image_path:
+        secondary_scores.append(int(visual_result.visual_score))
+        if image_model_result.available:
+            secondary_scores.append(image_model_score)
+
+    max_primary = max(primary_scores)
+    avg_primary = sum(primary_scores) / max(len(primary_scores), 1)
+
+    if (
+        image_path
+        and vlm_result.available
+        and vlm_result.verdict == "safe"
+        and image_model_score < 65
+        and int(text_result.risk_score) < 25
+        and int(phishvn_result.risk_score) < 25
+        and not safe_browsing_result.matches
+    ):
+        # Domain Gating confirmed benign / everyday photo:
+        combined_score = min(int(max_primary * 0.35), 15)
+    elif max_primary >= 60:
+        corroborating = [s for s in primary_scores if s >= 40]
+        if len(corroborating) >= 2:
+            combined_score = int(0.75 * max_primary + 0.25 * (sum(corroborating) / len(corroborating)))
         else:
-            combined_score = max(
-                int(vlm_result.risk_score),
-                int(text_result.risk_score),
-                int(phishvn_result.risk_score) if phishvn_result.available else 0,
-            )
-            if len(component_scores) > 1 and min(component_scores) > 0:
-                combined_score += int(0.2 * min(component_scores))
+            combined_score = int(0.85 * max_primary + 0.15 * avg_primary)
+    elif max_primary >= 25:
+        combined_score = int(0.70 * max_primary + 0.30 * avg_primary)
     else:
-        combined_score = max(component_scores)
-        if len(component_scores) > 1 and min(component_scores) > 0:
-            combined_score += int(0.2 * min(component_scores))
-    combined_score = min(combined_score, 100)
+        combined_score = int(avg_primary)
+
+    # Corroborate with secondary signals (ELA/ResNet18)
+    if secondary_scores and max(secondary_scores) >= 50 and combined_score >= 25:
+        combined_score = min(100, combined_score + int(0.12 * max(secondary_scores)))
+
+    combined_score = max(0, min(combined_score, 100))
 
     if combined_score >= 60:
         combined_level = "nguy_hiem"
@@ -583,11 +642,20 @@ def _analyze_content_payload(
         combined_level = "an_toan"
 
     combined_scam_type = text_result.scam_type
-    if phishvn_result.risk_score >= 50 and phishvn_result.risk_score >= text_result.risk_score:
+    if safe_browsing_result.matches:
+        combined_scam_type = "verified_unsafe_url"
+    elif phishvn_result.risk_score >= 50 and phishvn_result.risk_score >= text_result.risk_score:
         combined_scam_type = "phishing_url"
+    elif image_path and image_model_result.available and image_model_score >= 65 and combined_scam_type == "none":
+        combined_scam_type = "phishing"
 
     suggested_action = text_result.suggested_action
-    if phishvn_result.risk_score >= 60:
+    if safe_browsing_result.matches:
+        suggested_action = (
+            "Google Safe Browsing đã trả về kết quả khớp với danh sách URL nguy hiểm đã biết. "
+            "Không mở URL, không đăng nhập và không cung cấp OTP hoặc thông tin thanh toán."
+        )
+    elif phishvn_result.risk_score >= 60:
         suggested_action = (
             "KHÔNG mở URL, KHÔNG đăng nhập hoặc cung cấp OTP/thông tin thanh toán. "
             "Hãy tự nhập địa chỉ website chính thức hoặc liên hệ tổ chức qua kênh đã xác minh."
@@ -597,11 +665,17 @@ def _analyze_content_payload(
             "URL có dấu hiệu cần kiểm tra thêm. Không bấm trực tiếp; hãy đối chiếu tên miền "
             "với website chính thức trước khi tiếp tục."
         )
+    elif image_path and image_model_result.available and image_model_score >= 65:
+        suggested_action = (
+            "Ảnh có bố cục tương đồng với các trang giả mạo. Không nhập mật khẩu, OTP hoặc "
+            "thông tin thanh toán; hãy tự mở ứng dụng hay website chính thức để xác minh."
+        )
 
     combined_explanation, analysis_breakdown = build_analysis_explanation(
         extracted_text=analysis_text,
         text_result=text_result,
         phishvn_result=phishvn_result,
+        safe_browsing_result=safe_browsing_result,
         visual_result=visual_result,
         image_model_result=image_model_result,
         image_model_score=image_model_score,
@@ -620,6 +694,7 @@ def _analyze_content_payload(
         "phishvn_model": phishvn_result.model_name,
         "phishvn_url_risk_score": phishvn_result.risk_score,
         "phishvn_urls": phishvn_result.predictions_as_dicts(),
+        "google_safe_browsing": safe_browsing_result.to_dict(),
         "visual_risk_score": visual_result.visual_score,
         "image_model_available": image_model_result.available,
         "image_model_label": image_model_result.label,
@@ -771,8 +846,13 @@ async def check_image(
             category = db.query(ScamCategory).filter(ScamCategory.code == "phishing_screenshot").first()
             category_id = category.id if category else None
 
-        extracted_text, ocr_words = extract_text_and_boxes(saved_path)
-        qr_codes = decode_qr_codes(saved_path)
+        # OCR and QR decoding both read the original image but are otherwise
+        # independent, so neither needs to wait for the other to finish.
+        with ThreadPoolExecutor(max_workers=2, thread_name_prefix="image-read") as executor:
+            ocr_future = executor.submit(extract_text_and_boxes, saved_path)
+            qr_future = executor.submit(decode_qr_codes, saved_path)
+            extracted_text, ocr_words = ocr_future.result()
+            qr_codes = qr_future.result()
         analysis = _analyze_content_payload(
             extracted_text,
             image_path=saved_path,

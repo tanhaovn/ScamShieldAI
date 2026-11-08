@@ -9,7 +9,7 @@ function ShieldLogo() {
   );
 }
 
-function DetectionVisual() {
+function DetectionVisual({ language }) {
   return (
     <div className="auth-detection" aria-hidden="true">
       <div className="auth-tech-grid" />
@@ -22,7 +22,7 @@ function DetectionVisual() {
       <div className="auth-detect-core">
         <ShieldLogo />
         <strong>ADMIN GATE</strong>
-        <small>Xác thực đặc quyền</small>
+        <small>{language === "en" ? "Privileged authentication" : "Xác thực đặc quyền"}</small>
       </div>
       <span className="auth-signal signal-one" />
       <span className="auth-signal signal-two" />
@@ -38,36 +38,37 @@ export default function AuthPage({
   authError,
   onSubmit,
   onBack,
+  language = "vi",
 }) {
+  const en = language === "en";
   const [showPassword, setShowPassword] = useState(false);
 
   return (
     <main className="auth-page admin-auth-page">
-      <section className="auth-card" aria-label="Đăng nhập quản trị Scam Detector">
+      <section className="auth-card" aria-label={en ? "Scam Detector administrator sign in" : "Đăng nhập quản trị Scam Detector"}>
         <aside className="auth-showcase">
           <div className="auth-brand">
             <span className="auth-brand-icon"><ShieldLogo /></span>
             <div>
               <strong>Scam Detector</strong>
-              <small>Vietnamese AI Safety</small>
+              <small>{en ? "AI Safety Platform" : "Nền tảng AI an toàn"}</small>
             </div>
           </div>
 
           <div className="auth-showcase-copy">
             <span className="auth-live-label"><i /> ADMIN SECURITY GATE</span>
-            <h1>Khu vực quản trị hệ thống</h1>
+            <h1>{en ? "System administration" : "Khu vực quản trị hệ thống"}</h1>
             <p>
-              Quyền truy cập dành riêng cho quản trị viên quản lý dataset,
-              mô hình AI, đánh giá và nhật ký hệ thống.
+              {en ? "Restricted access for administrators who manage datasets, AI models, evaluations and system logs." : "Quyền truy cập dành riêng cho quản trị viên quản lý dataset, mô hình AI, đánh giá và nhật ký hệ thống."}
             </p>
           </div>
 
-          <DetectionVisual />
+          <DetectionVisual language={language} />
 
           <div className="auth-showcase-bottom admin-auth-bottom">
-            <span>Không phải quản trị viên?</span>
+            <span>{en ? "Not an administrator?" : "Không phải quản trị viên?"}</span>
             <button type="button" className="auth-outline-button" onClick={onBack}>
-              Dùng ngay không đăng nhập
+              {en ? "Continue without signing in" : "Dùng ngay không đăng nhập"}
             </button>
           </div>
         </aside>
@@ -80,18 +81,18 @@ export default function AuthPage({
 
           <header className="auth-form-heading">
             <span className="auth-form-kicker">RESTRICTED ACCESS</span>
-            <h2>Đăng nhập Admin</h2>
-            <p>Người dùng thông thường không cần tài khoản để sử dụng hệ thống.</p>
+            <h2>{en ? "Administrator sign in" : "Đăng nhập Admin"}</h2>
+            <p>{en ? "Standard users do not need an account to use the system." : "Người dùng thông thường không cần tài khoản để sử dụng hệ thống."}</p>
           </header>
 
           <div className="admin-auth-notice">
             <span><ShieldLogo /></span>
-            <div><strong>Chỉ dành cho quản trị viên</strong><small>Mọi lần truy cập đều được hệ thống xác thực.</small></div>
+            <div><strong>{en ? "Administrators only" : "Chỉ dành cho quản trị viên"}</strong><small>{en ? "Every access attempt is authenticated." : "Mọi lần truy cập đều được hệ thống xác thực."}</small></div>
           </div>
 
           <form onSubmit={onSubmit} className="auth-form admin-auth-form">
             <label className="auth-field">
-              <span>Email quản trị</span>
+              <span>{en ? "Administrator email" : "Email quản trị"}</span>
               <div>
                 <i aria-hidden="true">@</i>
                 <input
@@ -106,7 +107,7 @@ export default function AuthPage({
             </label>
 
             <label className="auth-field">
-              <span>Mật khẩu</span>
+              <span>{en ? "Password" : "Mật khẩu"}</span>
               <div>
                 <i aria-hidden="true">●</i>
                 <input
@@ -116,15 +117,15 @@ export default function AuthPage({
                   required
                   value={form.password}
                   onChange={(event) => setForm({ ...form, password: event.target.value })}
-                  placeholder="Nhập mật khẩu quản trị"
+                  placeholder={en ? "Enter administrator password" : "Nhập mật khẩu quản trị"}
                 />
                 <button
                   type="button"
                   className="password-toggle"
                   onClick={() => setShowPassword((value) => !value)}
-                  aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                  aria-label={showPassword ? (en ? "Hide password" : "Ẩn mật khẩu") : (en ? "Show password" : "Hiện mật khẩu")}
                 >
-                  {showPassword ? "Ẩn" : "Hiện"}
+                  {showPassword ? (en ? "Hide" : "Ẩn") : (en ? "Show" : "Hiện")}
                 </button>
               </div>
             </label>
@@ -132,17 +133,17 @@ export default function AuthPage({
             {authError && <p className="auth-error" role="alert">{authError}</p>}
 
             <button className="auth-submit" disabled={loading}>
-              {loading ? "Đang xác thực..." : "Truy cập Admin Console"}
+              {loading ? (en ? "Authenticating..." : "Đang xác thực...") : (en ? "Open Admin Console" : "Truy cập Admin Console")}
               <span aria-hidden="true">→</span>
             </button>
           </form>
 
           <button type="button" className="admin-back-to-guest" onClick={onBack}>
-            ← Quay lại chế độ khách
+            ← {en ? "Back to guest mode" : "Quay lại chế độ khách"}
           </button>
 
           <p className="auth-security-note">
-            <span>✓</span> Phiên quản trị được bảo vệ bằng JWT và phân quyền máy chủ.
+            <span>✓</span> {en ? "Administrator sessions are protected by JWT and server-side authorization." : "Phiên quản trị được bảo vệ bằng JWT và phân quyền máy chủ."}
           </p>
         </div>
       </section>

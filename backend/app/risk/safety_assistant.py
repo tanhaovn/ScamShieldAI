@@ -112,7 +112,7 @@ def _dynamic_local_reasoning(
     # 4. Kịch bản: Đã bấm vào link lạ / mở website
     if any(k in norm for k in ["da bam", "bam link", "mo link", "vao web", "nhap link"]):
         advice = [
-            "Nếu bạn chỉ mới bấm vào link mà chưa nhập gì: Hãy đóng ngay tab trình duyệt, xóa lịch sử duyệt web và cache.",
+            "Nếu bạn chỉ mới bấm vào link mà chưa nhập gì: Hãy đóng trang và tab trình duyệt ngay, sau đó xóa lịch sử duyệt web và cache.",
             "Nếu bạn đã nhập MẬT KHẨU: Dùng ngay một thiết bị khác đăng nhập vào trang chính thức và đổi mật khẩu lập tức, bật tính năng xác thực 2 lớp (2FA).",
             "Nếu đã nhập THÔNG TIN THẺ/NGÂN HÀNG: Mở app ngân hàng khóa thẻ ngay hoặc gọi tổng đài ngân hàng để khóa tài khoản khẩn cấp.",
         ]

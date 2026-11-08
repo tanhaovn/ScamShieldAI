@@ -1,14 +1,15 @@
 const primaryItems = [
-  { page: "overview", label: "Tổng quan", icon: "dashboard" },
-  { page: "scan", label: "Kiểm tra lừa đảo", icon: "scan" },
-  { page: "history", label: "Lịch sử", icon: "history" },
+  { page: "overview", vi: "Tổng quan", en: "Overview", icon: "dashboard" },
+  { page: "scan", vi: "Kiểm tra lừa đảo", en: "Scam check", icon: "scan" },
+  { page: "history", vi: "Lịch sử", en: "History", icon: "history" },
+  { page: "profile", vi: "Cá nhân", en: "Profile", icon: "user" },
 ];
 
 const adminItems = [
-  { page: "admin-dataset", label: "Dataset", icon: "database" },
-  { page: "admin-models", label: "AI Models", icon: "model" },
-  { page: "admin-evaluations", label: "Đánh giá", icon: "chart" },
-  { page: "admin-logs", label: "Nhật ký", icon: "file" },
+  { page: "admin-dataset", vi: "Dữ liệu", en: "Dataset", icon: "database" },
+  { page: "admin-models", vi: "Mô hình AI", en: "AI Models", icon: "model" },
+  { page: "admin-evaluations", vi: "Đánh giá", en: "Evaluations", icon: "chart" },
+  { page: "admin-logs", vi: "Nhật ký", en: "Logs", icon: "file" },
 ];
 
 const iconPaths = {
@@ -21,6 +22,7 @@ const iconPaths = {
   file: ["M6 3h8l4 4v14H6z", "M14 3v5h5", "M9 13h6", "M9 17h6"],
   logout: ["M10 17l5-5-5-5", "M15 12H3", "M15 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"],
   login: ["m14 7 5 5-5 5", "M19 12H7", "M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"],
+  user: ["M20 21a8 8 0 0 0-16 0", "M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z"],
 };
 
 function NavIcon({ name }) {
@@ -33,7 +35,7 @@ function NavIcon({ name }) {
   );
 }
 
-function NavGroup({ label, items, activePage, navigate }) {
+function NavGroup({ label, items, activePage, navigate, language }) {
   return (
     <section className="sidebar-group">
       <span className="sidebar-group-label">{label}</span>
@@ -49,7 +51,7 @@ function NavGroup({ label, items, activePage, navigate }) {
             onClick={() => navigate(item.page)}
           >
             <NavIcon name={item.icon} />
-            <span>{item.label}</span>
+            <span>{item[language] || item.vi}</span>
           </button>
         ))}
       </nav>
@@ -57,9 +59,11 @@ function NavGroup({ label, items, activePage, navigate }) {
   );
 }
 
-export default function Navbar({ activePage, navigate, user, onLogout, onAdminLogin }) {
+export default function Navbar({ activePage, navigate, user, onLogout, onAdminLogin, language = "vi" }) {
   const isAdmin = user.role === "admin";
-  const initials = (user.full_name || user.email || "U")
+  const isEnglish = language === "en";
+  const displayName = isEnglish && user.full_name === "Người dùng khách" ? "Guest user" : user.full_name;
+  const initials = (displayName || user.email || "U")
     .split(" ")
     .map((part) => part[0])
     .join("")
@@ -69,52 +73,56 @@ export default function Navbar({ activePage, navigate, user, onLogout, onAdminLo
   return (
     <aside className="app-sidebar">
       <button className="sidebar-brand" onClick={() => navigate("overview")}>
-        <span className="sidebar-logo" aria-hidden="true">S</span>
+        <span className="sidebar-logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6Z" /><path d="m9 12 2 2 4-5" /></svg>
+        </span>
         <span>
           <strong>Scam Detector</strong>
-          <small>AI Safety Console</small>
+          <small>{isEnglish ? "Digital safety assistant" : "Trợ lý an toàn số"}</small>
         </span>
       </button>
 
       <div className="sidebar-navigation">
         <NavGroup
-          label="Không gian làm việc"
+          label={isEnglish ? "Main menu" : "Menu chính"}
           items={primaryItems}
           activePage={activePage}
           navigate={navigate}
+          language={language}
         />
         {isAdmin && (
           <NavGroup
-            label="Quản trị hệ thống"
+            label={isEnglish ? "Administration" : "Quản trị hệ thống"}
             items={adminItems}
             activePage={activePage}
             navigate={navigate}
+            language={language}
           />
         )}
       </div>
 
       <div className="sidebar-bottom">
         <button className="sidebar-new-scan" onClick={() => navigate("scan")}>
-          <span>+</span> Tạo lượt kiểm tra
+          <span>+</span> {isEnglish ? "New check" : "Tạo lượt kiểm tra"}
         </button>
         <div className={`sidebar-user${activePage === "profile" ? " active" : ""}`}>
           <button
             className="sidebar-user-profile"
             onClick={() => navigate("profile")}
-            title="Mở trang cá nhân"
-            aria-label={`Mở trang cá nhân của ${user.full_name || user.email}`}
+            title={isEnglish ? "Open profile" : "Mở trang cá nhân"}
+            aria-label={`${isEnglish ? "Open profile for" : "Mở trang cá nhân của"} ${displayName || user.email}`}
           >
             <span className="user-avatar">{initials}</span>
             <span className="sidebar-user-copy">
-              <strong>{user.full_name || "Người dùng"}</strong>
-              <small>{isAdmin ? "Quản trị viên" : "Lịch sử lưu trên thiết bị"}</small>
+              <strong>{displayName || (isEnglish ? "User" : "Người dùng")}</strong>
+              <small>{isAdmin ? (isEnglish ? "Administrator" : "Quản trị viên") : (isEnglish ? "History saved on device" : "Lịch sử lưu trên thiết bị")}</small>
             </span>
           </button>
           <button
             className="sidebar-logout"
             onClick={isAdmin ? onLogout : onAdminLogin}
-            title={isAdmin ? "Đăng xuất" : "Đăng nhập quản trị"}
-            aria-label={isAdmin ? "Đăng xuất quản trị" : "Mở đăng nhập quản trị"}
+            title={isAdmin ? (isEnglish ? "Sign out" : "Đăng xuất") : (isEnglish ? "Administrator sign in" : "Đăng nhập quản trị")}
+            aria-label={isAdmin ? (isEnglish ? "Sign out administrator" : "Đăng xuất quản trị") : (isEnglish ? "Open administrator sign in" : "Mở đăng nhập quản trị")}
           >
             <NavIcon name={isAdmin ? "logout" : "login"} />
           </button>

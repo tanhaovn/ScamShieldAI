@@ -1,4 +1,5 @@
-function DatasetPage({ categories, form, setForm, onSubmit, items }) {
+function DatasetPage({ categories, form, setForm, onSubmit, items, language }) {
+  const en = language === "en";
   return (
     <section className="panel">
       <h3>Training dataset</h3>
@@ -16,7 +17,7 @@ function DatasetPage({ categories, form, setForm, onSubmit, items }) {
             setForm({ ...form, scam_category_id: event.target.value })
           }
         >
-          <option value="">Chọn category</option>
+          <option value="">{en ? "Choose category" : "Chọn danh mục"}</option>
           {categories.map((category) => (
             <option key={category.id} value={category.id}>
               {category.display_name}
@@ -43,10 +44,10 @@ function DatasetPage({ categories, form, setForm, onSubmit, items }) {
           />
           Verified
         </label>
-        <button type="submit">Thêm dataset</button>
+        <button type="submit">{en ? "Add dataset" : "Thêm dataset"}</button>
       </form>
       <ul className="list">
-        {items.length === 0 && <li>Chưa có dataset</li>}
+        {items.length === 0 && <li>{en ? "No datasets yet" : "Chưa có dataset"}</li>}
         {items.map((item) => (
           <li key={item.id}>
             <span>{item.scam_category_id}</span>
@@ -59,7 +60,8 @@ function DatasetPage({ categories, form, setForm, onSubmit, items }) {
   );
 }
 
-function ModelsPage({ form, setForm, onSubmit, items }) {
+function ModelsPage({ form, setForm, onSubmit, items, language }) {
+  const en = language === "en";
   return (
     <section className="panel">
       <h3>AI models</h3>
@@ -88,10 +90,10 @@ function ModelsPage({ form, setForm, onSubmit, items }) {
           />
           Active
         </label>
-        <button type="submit">Thêm model</button>
+        <button type="submit">{en ? "Add model" : "Thêm mô hình"}</button>
       </form>
       <ul className="list">
-        {items.length === 0 && <li>Chưa có model</li>}
+        {items.length === 0 && <li>{en ? "No models yet" : "Chưa có mô hình"}</li>}
         {items.map((item) => (
           <li key={item.id}>
             <span>{item.version_name}</span>
@@ -104,7 +106,8 @@ function ModelsPage({ form, setForm, onSubmit, items }) {
   );
 }
 
-function EvaluationsPage({ form, setForm, onSubmit, items }) {
+function EvaluationsPage({ form, setForm, onSubmit, items, language }) {
+  const en = language === "en";
   const fields = [
     "ai_model_id",
     "macro_f1",
@@ -128,10 +131,10 @@ function EvaluationsPage({ form, setForm, onSubmit, items }) {
             placeholder={field}
           />
         ))}
-        <button type="submit">Lưu đánh giá</button>
+        <button type="submit">{en ? "Save evaluation" : "Lưu đánh giá"}</button>
       </form>
       <ul className="list">
-        {items.length === 0 && <li>Chưa có đánh giá</li>}
+        {items.length === 0 && <li>{en ? "No evaluations yet" : "Chưa có đánh giá"}</li>}
         {items.map((item) => (
           <li key={item.id}>
             <span>Model #{item.ai_model_id}</span>
@@ -144,7 +147,8 @@ function EvaluationsPage({ form, setForm, onSubmit, items }) {
   );
 }
 
-function LogsPage({ form, setForm, onSubmit, items }) {
+function LogsPage({ form, setForm, onSubmit, items, language }) {
+  const en = language === "en";
   return (
     <section className="panel">
       <h3>System activity logs</h3>
@@ -163,10 +167,10 @@ function LogsPage({ form, setForm, onSubmit, items }) {
           }
           placeholder="description"
         />
-        <button type="submit">Ghi log</button>
+        <button type="submit">{en ? "Add log" : "Ghi nhật ký"}</button>
       </form>
       <ul className="list">
-        {items.length === 0 && <li>Chưa có log</li>}
+        {items.length === 0 && <li>{en ? "No logs yet" : "Chưa có nhật ký"}</li>}
         {items.map((item) => (
           <li key={item.id}>
             <span>{item.action_type}</span>
@@ -198,6 +202,7 @@ export default function AdminPage({
   setLogForm,
   handleCreateLog,
   logs,
+  language = "vi",
 }) {
   const pages = {
     "admin-dataset": (
@@ -207,6 +212,7 @@ export default function AdminPage({
         setForm={setDatasetForm}
         onSubmit={handleCreateDataset}
         items={datasets}
+        language={language}
       />
     ),
     "admin-models": (
@@ -215,6 +221,7 @@ export default function AdminPage({
         setForm={setModelForm}
         onSubmit={handleCreateModel}
         items={models}
+        language={language}
       />
     ),
     "admin-evaluations": (
@@ -223,6 +230,7 @@ export default function AdminPage({
         setForm={setEvaluationForm}
         onSubmit={handleCreateEvaluation}
         items={evaluations}
+        language={language}
       />
     ),
     "admin-logs": (
@@ -231,6 +239,7 @@ export default function AdminPage({
         setForm={setLogForm}
         onSubmit={handleCreateLog}
         items={logs}
+        language={language}
       />
     ),
   };

@@ -22,6 +22,34 @@ def test_everyday_photo_is_strictly_safe():
     assert "Domain Gating" in result.chain_of_thought[0]
 
 
+def test_strong_image_model_signal_is_not_gated_as_safe():
+    result = execute_multimodal_reasoning(
+        ocr_text="",
+        qr_codes=[],
+        visual_flags=[],
+        image_model_probability=0.78,
+        phishvn_url_score=0,
+    )
+    assert result.verdict in {"suspicious", "high_risk"}
+    assert result.risk_score >= 25
+    assert any("ResNet-18" in step for step in result.chain_of_thought)
+
+
+def test_authentication_surface_requires_review():
+    result = execute_multimodal_reasoning(
+        ocr_text=(
+            "Adobe Express Continue with Google Continue with Facebook "
+            "Continue with Apple Continue with email"
+        ),
+        qr_codes=[],
+        visual_flags=[],
+        image_model_probability=0.32,
+        phishvn_url_score=0,
+    )
+    assert result.verdict == "suspicious"
+    assert result.risk_score >= 25
+
+
 def test_random_image_without_text_is_safe(tmp_path):
     # Create a blank/noise test image
     image_path = tmp_path / "nature.jpg"

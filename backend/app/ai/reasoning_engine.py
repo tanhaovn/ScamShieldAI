@@ -73,6 +73,19 @@ FINANCIAL_ACTION_KEYWORDS = [
     "tiền hoa hồng", "nạp tiền", "số tài khoản", "stk"
 ]
 
+AUTH_FLOW_KEYWORDS = [
+    "continue with google", "continue with facebook", "continue with apple",
+    "continue with email", "sign in", "log in", "login", "đăng nhập",
+    "xác minh tài khoản", "xác thực tài khoản", "verify your account",
+    "verify your identity", "security check", "verify you're human",
+]
+
+ACCOUNT_THREAT_KEYWORDS = [
+    "access temporarily blocked", "failed verification attempts",
+    "account suspended", "tài khoản bị khóa", "tạm khóa", "bị khóa",
+    "giao dịch bất thường", "nghi vấn giao dịch", "sau 24h",
+]
+
 SOURCE_CODE_SYNTAX = [
     "create table", "create database", "primary key", "auto_increment",
     "varchar", "select *", "insert into", "console.log", "import react",
@@ -113,10 +126,14 @@ def execute_multimodal_reasoning(
     found_orgs = [kw for kw in ORGANIZATION_KEYWORDS if matches_keyword(kw)]
     found_urgent = [kw for kw in URGENT_KEYWORDS if matches_keyword(kw)]
     found_actions = [kw for kw in FINANCIAL_ACTION_KEYWORDS if matches_keyword(kw)]
+    found_auth_flows = [kw for kw in AUTH_FLOW_KEYWORDS if matches_keyword(kw)]
+    found_account_threats = [kw for kw in ACCOUNT_THREAT_KEYWORDS if matches_keyword(kw)]
 
     has_suspicious_url = phishvn_url_score >= 40
     has_qr = len(qr_codes) > 0
-    has_text_evidence = bool(found_orgs or found_urgent or found_actions)
+    has_text_evidence = bool(
+        found_orgs or found_urgent or found_actions or found_auth_flows or found_account_threats
+    )
 
     # ---------------------------------------------------------
     # BỘ LỌC ĐỜI THƯỜNG & MÃ NGUỒN (DOMAIN GATING)
@@ -144,7 +161,8 @@ def execute_multimodal_reasoning(
     # Nếu ảnh KHÔNG CÓ chữ nhạy cảm, KHÔNG CÓ link độc hại, KHÔNG CÓ mã QR:
     # Đây là ảnh đời thường (phong cảnh, người, động vật, tài liệu thông thường).
     # Ta không để các mô hình thị giác bị nhiễu (Domain Shift) báo nhầm!
-    if not has_text_evidence and not has_suspicious_url and not has_qr:
+    strong_image_signal = image_model_probability is not None and image_model_probability >= 0.70
+    if not has_text_evidence and not has_suspicious_url and not has_qr and not strong_image_signal:
         return ReasoningResult(
             available=True,
             verdict="safe",
@@ -169,12 +187,18 @@ def execute_multimodal_reasoning(
     if image_model_probability is not None:
         prob_pct = round(image_model_probability * 100, 1)
         # Chỉ kích hoạt ảnh hưởng thị giác khi ResNet có độ tự tin cao
-        if image_model_probability >= 0.70:
+        if image_model_probability >= 0.85:
+            cot_steps.append(
+                f"[Thị giác - ResNet-18]: Mô hình nhận diện bố cục rất tương đồng với mẫu lừa đảo ({prob_pct}%)."
+            )
+            indicators.append(f"Mô hình thị giác cảnh báo nguy cơ cao ({prob_pct}%).")
+            visual_score += 55
+        elif image_model_probability >= 0.70:
             cot_steps.append(
                 f"[Thị giác - ResNet-18]: Mô hình nhận diện bố cục giao diện tương đồng với mẫu lừa đảo ({prob_pct}%)."
             )
             indicators.append(f"Mô hình thị giác cảnh báo nguy cơ ({prob_pct}%).")
-            visual_score += 30
+            visual_score += 42
         elif image_model_probability >= 0.50:
             cot_steps.append(
                 f"[Thị giác - ResNet-18]: Hình ảnh có một số nét tương đồng với giao diện mạo danh ({prob_pct}%)."
@@ -211,6 +235,22 @@ def execute_multimodal_reasoning(
         indicators.append(f"Yêu cầu dữ liệu nhạy cảm: {act_names}")
         text_score += 35
 
+    if found_account_threats:
+        threat_names = ", ".join(found_account_threats[:3])
+        cot_steps.append(f"[Ngữ nghĩa]: Xuất hiện thông báo khóa/chặn tài khoản: {threat_names}.")
+        indicators.append(f"Thông báo đe dọa trạng thái tài khoản: {threat_names}")
+        text_score += min(45, 18 + 9 * len(found_account_threats))
+
+    if found_auth_flows:
+        auth_names = ", ".join(found_auth_flows[:4])
+        cot_steps.append(f"[Ngữ nghĩa]: Phát hiện giao diện đăng nhập/xác thực: {auth_names}.")
+        observed_snippets.append(f"Luồng xác thực: {auth_names}")
+        if len(found_auth_flows) >= 2:
+            indicators.append("Ảnh yêu cầu người dùng chọn hoặc thực hiện nhiều phương thức đăng nhập/xác thực.")
+            text_score += 25
+        else:
+            text_score += 10
+
     if has_qr:
         cot_steps.append(f"[Mã QR]: Phát hiện {len(qr_codes)} mã QR trong ảnh.")
         for qr in qr_codes[:2]:
@@ -227,30 +267,42 @@ def execute_multimodal_reasoning(
     # Bước 4: Suy luận Logic mâu thuẫn (Core Reasoning)
     # ---------------------------------------------------------
     # 1. Mạo danh cơ quan công quyền
-    is_gov_impersonation = any(kw in clean_text for kw in ["công an", "viện kiểm sát", "tòa án"]) and (found_urgent or found_actions)
+    is_gov_impersonation = any(
+        kw in found_orgs for kw in ["bộ công an", "công an", "viện kiểm sát", "tòa án"]
+    ) and (found_urgent or found_actions or found_account_threats)
     if is_gov_impersonation:
         cot_steps.append(
             "[Suy luận Logic - Cực kỳ nguy hiểm]: Cơ quan hành pháp Việt Nam không bao giờ làm việc, tống đạt văn bản, hay yêu cầu nộp phạt/chuyển tiền qua mạng xã hội/hình ảnh."
         )
         indicators.append("Mạo danh cơ quan bảo vệ pháp luật để đe dọa tống tiền.")
-        text_score += 50
+        text_score += 40
 
     # 2. Ngân hàng đòi mã OTP
-    is_bank_otp = any(kw in clean_text for kw in ["vietcombank", "techcombank", "mbbank", "ngân hàng"]) and any(kw in clean_text for kw in ["mã otp", "mật khẩu", "số thẻ"])
+    is_bank_otp = any(
+        kw in found_orgs for kw in ["vietcombank", "techcombank", "mbbank", "vietinbank", "bidv", "agribank", "vpbank", "tpbank"]
+    ) and any(kw in found_actions for kw in ["mã otp", "mật khẩu", "số thẻ", "cvv"])
     if is_bank_otp:
         cot_steps.append(
             "[Suy luận Logic - Cực kỳ nguy hiểm]: Ngân hàng không bao giờ yêu cầu khách hàng cung cấp mã OTP hoặc mật khẩu dưới bất kỳ hình thức nào."
         )
         indicators.append("Dấu hiệu chiếm quyền điều khiển tài khoản ngân hàng (đòi OTP/mật khẩu).")
-        text_score += 50
+        text_score += 40
 
     # ---------------------------------------------------------
     # Bước 5: Tính điểm tổng hợp có hiệu chuẩn (Calibrated Total)
     # ---------------------------------------------------------
-    # Điểm chỉ cao khi có bằng chứng ngữ nghĩa/URL hoặc mâu thuẫn rõ ràng
-    total_score = min(100, max(text_score, phishvn_url_score))
+    # Điểm tổng hợp có hiệu chuẩn (Weighted Soft Consensus)
+    if text_score > 0 and phishvn_url_score > 0:
+        total_score = min(100, int(0.65 * max(text_score, phishvn_url_score) + 0.35 * min(text_score, phishvn_url_score)))
+    else:
+        total_score = min(100, max(text_score, phishvn_url_score))
+
+    if visual_score >= 40:
+        # A high-confidence phishing-layout classifier is actionable even when
+        # OCR misses the small text or the address bar is cropped out.
+        total_score = max(total_score, visual_score)
     if visual_score > 0 and (text_score >= 25 or phishvn_url_score >= 40):
-        total_score = min(100, total_score + int(0.3 * visual_score))
+        total_score = min(100, total_score + int(0.25 * visual_score))
 
     if total_score >= 60:
         verdict = "high_risk"
@@ -265,7 +317,13 @@ def execute_multimodal_reasoning(
         action = "Chưa phát hiện dấu hiệu lừa đảo điển hình. Tuy nhiên vẫn nên tuân thủ các nguyên tắc an toàn số cơ bản."
         reasoning_summary = "Không phát hiện yếu tố mạo danh, thúc ép chuyển tiền hay dấu hiệu chỉnh sửa ảnh nghiêm trọng."
 
-    confidence = round(min(0.98, max(0.65, total_score / 100.0 if total_score > 0 else 0.90)), 2)
+    evidence_count = len(indicators) + len(observed_snippets)
+    if total_score >= 70:
+        confidence = round(min(0.92, 0.72 + 0.04 * evidence_count), 2)
+    elif total_score >= 25:
+        confidence = round(min(0.82, 0.60 + 0.03 * evidence_count), 2)
+    else:
+        confidence = round(0.88 if not clean_text else 0.75, 2)
 
     return ReasoningResult(
         available=True,

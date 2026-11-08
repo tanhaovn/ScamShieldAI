@@ -57,7 +57,9 @@ def analyze_phishing_image(image_path: str) -> PhishingImageResult:
         image = Image.open(image_path).convert("RGB")
         input_tensor = transform(image).unsqueeze(0)
         with torch.inference_mode():
-            probabilities = torch.softmax(model(input_tensor), dim=1)[0]
+            logits = model(input_tensor)
+            # Temperature scaling (T=1.8) to calibrate raw logits and prevent extreme 99% / 0%
+            probabilities = torch.softmax(logits / 1.8, dim=1)[0]
 
         phishing_index = class_to_idx.get("phishing")
         if phishing_index is None:

@@ -44,6 +44,7 @@ def build_analysis_explanation(
     combined_score: int,
     combined_level: str,
     include_visual: bool = True,
+    safe_browsing_result: Any = None,
 ) -> tuple[str, dict[str, Any]]:
     """Return a readable plain-text explanation and a structured UI payload."""
     components: list[dict[str, Any]] = []
@@ -79,6 +80,32 @@ def build_analysis_explanation(
             text_findings,
         )
     )
+
+    if safe_browsing_result and safe_browsing_result.matches:
+        threat_labels = sorted(
+            {
+                label
+                for match in safe_browsing_result.matches
+                for label in match.threat_labels
+            }
+        )
+        matched_urls = [match.url for match in safe_browsing_result.matches if match.url]
+        safe_browsing_findings = [
+            f"Loại đe dọa: {', '.join(threat_labels) or 'URL nguy hiểm đã biết'}.",
+            "Nguồn đối chiếu: Google Safe Browsing v5.",
+            "Kết quả không bảo đảm phát hiện được mọi URL nguy hiểm mới xuất hiện.",
+        ]
+        if matched_urls:
+            safe_browsing_findings.insert(0, f"URL khớp danh sách: {', '.join(matched_urls[:3])}.")
+        components.append(
+            _component(
+                "google_safe_browsing",
+                "Đối chiếu Google Safe Browsing",
+                int(safe_browsing_result.risk_score),
+                "Google trả về kết quả khớp với danh sách tài nguyên web nguy hiểm đã biết.",
+                safe_browsing_findings,
+            )
+        )
 
     if phishvn_result.predictions:
         top_url = phishvn_result.predictions[0]
@@ -188,6 +215,7 @@ def build_analysis_explanation(
             if include_visual else []
         ) + [
             "PhishVN nhận diện URL phishing/abuse, không tự hiểu toàn bộ ngữ nghĩa tin nhắn.",
+            "Google Safe Browsing không có kết quả khớp cũng không chứng minh URL chắc chắn an toàn.",
             "Điểm từ AI hiểu ngữ cảnh ảnh là tín hiệu hỗ trợ, không phải xác suất đã được hiệu chuẩn.",
             "Kết quả cần được đối chiếu với website hoặc tổng đài chính thức.",
         ],

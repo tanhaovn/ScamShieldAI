@@ -21,17 +21,17 @@ function Icon({ name }) {
   );
 }
 
-function formatDate(value, fallback = "Chưa ghi nhận") {
+function formatDate(value, fallback = "Chưa ghi nhận", language = "vi") {
   if (!value) return fallback;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return fallback;
-  return date.toLocaleDateString("vi-VN", { day: "2-digit", month: "long", year: "numeric" });
+  return date.toLocaleDateString(language === "en" ? "en-US" : "vi-VN", { day: "2-digit", month: "long", year: "numeric" });
 }
 
-function riskLabel(level) {
-  if (level === "nguy_hiem") return "Nguy hiểm";
-  if (level === "nghi_ngo") return "Nghi ngờ";
-  return "An toàn";
+function riskLabel(level, language) {
+  if (level === "nguy_hiem") return language === "en" ? "Dangerous" : "Nguy hiểm";
+  if (level === "nghi_ngo") return language === "en" ? "Suspicious" : "Nghi ngờ";
+  return language === "en" ? "Safe" : "An toàn";
 }
 
 export default function ProfilePage({
@@ -41,16 +41,19 @@ export default function ProfilePage({
   models = [],
   logs = [],
   onUpdateProfile,
+  language = "vi",
 }) {
+  const en = language === "en";
   const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState(user.full_name || "");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const displayName = en && user.full_name === "Người dùng khách" ? "Guest user" : user.full_name;
 
   useEffect(() => setFullName(user.full_name || ""), [user.full_name]);
 
-  const initials = (user.full_name || user.email || "U")
+  const initials = (displayName || user.email || "U")
     .split(/\s+/)
     .filter(Boolean)
     .map((part) => part[0])
@@ -76,28 +79,28 @@ export default function ProfilePage({
   const safeRate = scanStats.total ? Math.round((scanStats.safe / scanStats.total) * 100) : 0;
   const activeModels = models.filter((model) => model.is_active).length;
   const providerName = isGuest
-    ? "localStorage trên trình duyệt"
-    : user.auth_provider === "google" ? "Google" : "Mật khẩu bảo mật";
+    ? (en ? "Stored privately in this browser" : "Lưu riêng trên trình duyệt")
+    : user.auth_provider === "google" ? "Google" : (en ? "Secure password" : "Mật khẩu bảo mật");
 
   const statCards = isAdmin
     ? [
-        ["Dataset", datasets.length, "database", "Nguồn dữ liệu"],
-        ["AI Models", models.length, "cpu", `${activeModels} đang hoạt động`],
-        ["Nhật ký", logs.length, "log", "Hoạt động quản trị"],
-        ["Lượt quét", scanStats.total, "scan", "Của tài khoản này"],
+        ["Dataset", datasets.length, "database", en ? "Data sources" : "Nguồn dữ liệu"],
+        ["AI Models", models.length, "cpu", en ? `${activeModels} active` : `${activeModels} đang hoạt động`],
+        [en ? "Logs" : "Nhật ký", logs.length, "log", en ? "Admin activity" : "Hoạt động quản trị"],
+        [en ? "Checks" : "Lượt quét", scanStats.total, "scan", en ? "From this account" : "Của tài khoản này"],
       ]
     : [
-        ["Đã kiểm tra", scanStats.total, "scan", "Tổng lượt phân tích"],
-        ["Kết quả an toàn", scanStats.safe, "shield", `${safeRate}% tổng lượt`],
-        ["Cần chú ý", scanStats.suspicious, "activity", "Dấu hiệu nghi ngờ"],
-        ["Điểm rủi ro TB", averageRisk, "cpu", "Trên thang 100"],
+        [en ? "Checked" : "Đã kiểm tra", scanStats.total, "scan", en ? "Total analyses" : "Tổng lượt phân tích"],
+        [en ? "Safe results" : "Kết quả an toàn", scanStats.safe, "shield", en ? `${safeRate}% of all checks` : `${safeRate}% tổng lượt`],
+        [en ? "Needs attention" : "Cần chú ý", scanStats.suspicious, "activity", en ? "Suspicious signals" : "Dấu hiệu nghi ngờ"],
+        [en ? "Average risk" : "Điểm rủi ro TB", averageRisk, "cpu", en ? "Out of 100" : "Trên thang 100"],
       ];
 
   async function handleSave(event) {
     event.preventDefault();
     const normalized = fullName.trim().replace(/\s+/g, " ");
     if (normalized.length < 2) {
-      setError("Tên hiển thị phải có ít nhất 2 ký tự.");
+      setError(en ? "Display name must contain at least 2 characters." : "Tên hiển thị phải có ít nhất 2 ký tự.");
       return;
     }
     setSaving(true);
@@ -106,9 +109,9 @@ export default function ProfilePage({
     try {
       await onUpdateProfile(normalized);
       setEditing(false);
-      setMessage("Hồ sơ đã được cập nhật.");
+      setMessage(en ? "Profile updated." : "Hồ sơ đã được cập nhật.");
     } catch (saveError) {
-      setError(saveError.message || "Không thể cập nhật hồ sơ.");
+      setError(saveError.message || (en ? "Unable to update profile." : "Không thể cập nhật hồ sơ."));
     } finally {
       setSaving(false);
     }
@@ -117,40 +120,26 @@ export default function ProfilePage({
   return (
     <div className={`profile-page ${isAdmin ? "profile-admin" : "profile-user"}`}>
       <section className="profile-identity-hero">
-        <div className="profile-tech-grid" aria-hidden="true" />
-        <div className="profile-orbit-stage" aria-hidden="true">
-          <span className="profile-orbit orbit-a" />
-          <span className="profile-orbit orbit-b" />
-          <span className="profile-orbit orbit-c" />
-          <span className="profile-scan-line" />
+        <div className="profile-simple-avatar" aria-hidden="true">
           <span className="profile-avatar-large">{initials}</span>
-          <i className="profile-orbit-node node-a" />
-          <i className="profile-orbit-node node-b" />
-          <i className="profile-orbit-node node-c" />
         </div>
 
         <div className="profile-hero-copy">
-          <div className="profile-live-label"><i /> {isGuest ? "LOCAL IDENTITY · ONLINE" : "IDENTITY VERIFIED · ONLINE"}</div>
-          <span className="profile-role-chip">{isAdmin ? "ADMIN CLEARANCE" : "GUEST · NO LOGIN"}</span>
-          <h2>{user.full_name || "Người dùng Scam Detector"}</h2>
+          <div className="profile-live-label"><i /> {isGuest ? (en ? "Profile stored on this device" : "Hồ sơ đang lưu trên thiết bị") : (en ? "Verified account" : "Tài khoản đã xác thực")}</div>
+          <span className="profile-role-chip">{isAdmin ? (en ? "Administrator" : "Quản trị viên") : (en ? "No sign-in required" : "Không cần đăng nhập")}</span>
+          <h2>{displayName || (en ? "Scam Detector user" : "Người dùng Scam Detector")}</h2>
           <p>{isAdmin
-            ? "Trung tâm danh tính quản trị, giám sát AI và điều phối dữ liệu an toàn."
-            : "Không cần tài khoản. Lịch sử phân tích được giữ riêng trên trình duyệt của thiết bị này."}</p>
+            ? (en ? "Manage account information and monitor system activity." : "Quản lý thông tin tài khoản và theo dõi hoạt động hệ thống.")
+            : (en ? "No account required. Analysis history stays private in this device's browser." : "Không cần tài khoản. Lịch sử phân tích được giữ riêng trên trình duyệt của thiết bị này.")}</p>
           <div className="profile-hero-meta">
-            <span><Icon name="mail" /> {isGuest ? "Không yêu cầu email" : user.email}</span>
-            <span><Icon name="shield" /> {isGuest ? "Dữ liệu cục bộ đang hoạt động" : "Tài khoản đã xác thực"}</span>
+            <span><Icon name="mail" /> {isGuest ? (en ? "No email required" : "Không yêu cầu email") : user.email}</span>
+            <span><Icon name="shield" /> {isGuest ? (en ? "Local data is active" : "Dữ liệu cục bộ đang hoạt động") : (en ? "Verified account" : "Tài khoản đã xác thực")}</span>
           </div>
         </div>
 
-        <div className="profile-clearance-card">
-          <span>ACCESS LEVEL</span>
-          <strong>{isAdmin ? "A-01" : "G-01"}</strong>
-          <small>{isAdmin ? "TOÀN QUYỀN HỆ THỐNG" : "KHÁCH · LƯU CỤC BỘ"}</small>
-          <div className="clearance-bars"><i /><i /><i /><i /><i /></div>
-        </div>
       </section>
 
-      <section className="profile-stat-grid" aria-label="Thống kê tài khoản">
+      <section className="profile-stat-grid" aria-label={en ? "Account statistics" : "Thống kê tài khoản"}>
         {statCards.map(([label, value, icon, note], index) => (
           <article className="profile-stat-card" key={label} style={{ "--delay": `${index * 80}ms` }}>
             <span className="profile-stat-icon"><Icon name={icon} /></span>
@@ -163,10 +152,10 @@ export default function ProfilePage({
       <div className="profile-content-grid">
         <section className="profile-panel profile-account-panel">
           <div className="profile-panel-heading">
-            <div><span>IDENTITY CORE</span><h3>Thông tin tài khoản</h3></div>
+            <div><span>{en ? "YOUR INFORMATION" : "THÔNG TIN CỦA BẠN"}</span><h3>{en ? "Account information" : "Thông tin tài khoản"}</h3></div>
             {!editing && (
               <button className="profile-edit-button" onClick={() => { setEditing(true); setMessage(""); }}>
-                <Icon name="edit" /> Chỉnh sửa
+                <Icon name="edit" /> {en ? "Edit" : "Chỉnh sửa"}
               </button>
             )}
           </div>
@@ -174,21 +163,21 @@ export default function ProfilePage({
           {editing ? (
             <form className="profile-edit-form" onSubmit={handleSave}>
               <label>
-                <span>Tên hiển thị</span>
+                <span>{en ? "Display name" : "Tên hiển thị"}</span>
                 <input value={fullName} onChange={(event) => setFullName(event.target.value)} maxLength="100" autoFocus />
               </label>
               {error && <p className="profile-form-error">{error}</p>}
               <div className="profile-form-actions">
-                <button type="button" className="profile-cancel-button" onClick={() => { setEditing(false); setFullName(user.full_name || ""); setError(""); }}>Hủy</button>
-                <button type="submit" disabled={saving}>{saving ? "Đang lưu..." : "Lưu thay đổi"}</button>
+                <button type="button" className="profile-cancel-button" onClick={() => { setEditing(false); setFullName(user.full_name || ""); setError(""); }}>{en ? "Cancel" : "Hủy"}</button>
+                <button type="submit" disabled={saving}>{saving ? (en ? "Saving..." : "Đang lưu...") : (en ? "Save changes" : "Lưu thay đổi")}</button>
               </div>
             </form>
           ) : (
             <div className="profile-info-list">
-              <div><span className="profile-info-icon"><Icon name="mail" /></span><p><small>{isGuest ? "Yêu cầu đăng nhập" : "Email đăng nhập"}</small><strong>{isGuest ? "Không cần đăng nhập hoặc đăng ký" : user.email}</strong></p><b>{isGuest ? "OPEN" : "VERIFIED"}</b></div>
-              <div><span className="profile-info-icon"><Icon name="key" /></span><p><small>Phương thức xác thực</small><strong>{providerName}</strong></p><b>SECURE</b></div>
-              <div><span className="profile-info-icon"><Icon name="calendar" /></span><p><small>{isGuest ? "Lưu trên thiết bị từ" : "Thành viên từ"}</small><strong>{formatDate(user.created_at)}</strong></p><b>ACTIVE</b></div>
-              <div><span className="profile-info-icon"><Icon name="shield" /></span><p><small>Vai trò hệ thống</small><strong>{isAdmin ? "Quản trị viên" : "Người dùng khách"}</strong></p><b>{isAdmin ? "ADMIN" : "GUEST"}</b></div>
+              <div><span className="profile-info-icon"><Icon name="mail" /></span><p><small>{isGuest ? (en ? "Sign in" : "Đăng nhập") : (en ? "Sign-in email" : "Email đăng nhập")}</small><strong>{isGuest ? (en ? "No sign-in or registration required" : "Không yêu cầu đăng nhập hoặc đăng ký") : user.email}</strong></p><b>{isGuest ? (en ? "Not needed" : "Không cần") : (en ? "Verified" : "Đã xác minh")}</b></div>
+              <div><span className="profile-info-icon"><Icon name="key" /></span><p><small>{en ? "Data protection" : "Cách bảo vệ dữ liệu"}</small><strong>{providerName}</strong></p><b>{en ? "Secure" : "An toàn"}</b></div>
+              <div><span className="profile-info-icon"><Icon name="calendar" /></span><p><small>{isGuest ? (en ? "Started storing on device" : "Bắt đầu lưu trên thiết bị") : (en ? "Member since" : "Thành viên từ")}</small><strong>{formatDate(user.created_at, en ? "Not recorded" : "Chưa ghi nhận", language)}</strong></p><b>{en ? "Active" : "Đang dùng"}</b></div>
+              <div><span className="profile-info-icon"><Icon name="shield" /></span><p><small>{en ? "Access level" : "Quyền sử dụng"}</small><strong>{isAdmin ? (en ? "Administrator" : "Quản trị viên") : (en ? "Standard user" : "Người dùng thông thường")}</strong></p><b>{isAdmin ? (en ? "Admin" : "Quản trị") : (en ? "Basic" : "Cơ bản")}</b></div>
             </div>
           )}
           {message && <p className="profile-form-success">{message}</p>}
@@ -196,25 +185,25 @@ export default function ProfilePage({
 
         <section className="profile-panel profile-security-panel">
           <div className="profile-panel-heading">
-            <div><span>SECURITY STATUS</span><h3>Lá chắn tài khoản</h3></div>
-            <span className="profile-secure-dot">Bảo vệ</span>
+            <div><span>{en ? "PRIVACY" : "QUYỀN RIÊNG TƯ"}</span><h3>{en ? "Your data is protected" : "Dữ liệu của bạn được bảo vệ"}</h3></div>
+            <span className="profile-secure-dot">{en ? "Protected" : "Bảo vệ"}</span>
           </div>
           <div className="profile-security-visual">
             <div className="security-ring" style={{ "--security": user.auth_provider === "google" ? "100" : isGuest ? "95" : "92" }}>
-              <div><Icon name="shield" /><strong>{user.auth_provider === "google" ? "100" : isGuest ? "95" : "92"}%</strong><small>Độ tin cậy</small></div>
+              <div><Icon name="shield" /><strong>{user.auth_provider === "google" ? "100" : isGuest ? "95" : "92"}%</strong><small>{en ? "Trust score" : "Độ tin cậy"}</small></div>
             </div>
           </div>
           <ul className="profile-security-list">
-            <li><i /> {isGuest ? "Không thu thập email hoặc mật khẩu" : "Phiên đăng nhập được mã hóa"}</li>
-            <li><i /> {isGuest ? "Lịch sử lưu trên trình duyệt hiện tại" : "Email định danh duy nhất"}</li>
-            <li><i /> {isGuest ? "Không tạo tài khoản người dùng trên máy chủ" : "Dữ liệu kiểm tra tách biệt theo tài khoản"}</li>
+            <li><i /> {isGuest ? (en ? "No email or password is collected" : "Không thu thập email hoặc mật khẩu") : (en ? "Encrypted sign-in session" : "Phiên đăng nhập được mã hóa")}</li>
+            <li><i /> {isGuest ? (en ? "History stays in this browser" : "Lịch sử lưu trên trình duyệt hiện tại") : (en ? "Unique identity email" : "Email định danh duy nhất")}</li>
+            <li><i /> {isGuest ? (en ? "No user account is created on the server" : "Không tạo tài khoản người dùng trên máy chủ") : (en ? "Check data is separated by account" : "Dữ liệu kiểm tra tách biệt theo tài khoản")}</li>
           </ul>
         </section>
 
         <section className="profile-panel profile-activity-panel">
           <div className="profile-panel-heading">
-            <div><span>LIVE TRACE</span><h3>Hoạt động gần đây</h3></div>
-            <span className="profile-record-count">{history.length} bản ghi</span>
+            <div><span>{en ? "RECENT HISTORY" : "LỊCH SỬ GẦN ĐÂY"}</span><h3>{en ? "Recent activity" : "Hoạt động gần đây"}</h3></div>
+            <span className="profile-record-count">{history.length} {en ? "records" : "bản ghi"}</span>
           </div>
           {history.length ? (
             <div className="profile-timeline">
@@ -222,36 +211,31 @@ export default function ProfilePage({
                 <div className="profile-timeline-item" key={item.id}>
                   <span className={`timeline-node risk-${item.risk_level}`}><Icon name="scan" /></span>
                   <div>
-                    <strong>{item.original_filename || `Lượt kiểm tra #${item.id}`}</strong>
-                    <small>{formatDate(item.created_at, "Vừa hoàn tất")}</small>
+                    <strong>{item.original_filename || `${en ? "Check" : "Lượt kiểm tra"} #${item.id}`}</strong>
+                    <small>{formatDate(item.created_at, en ? "Just completed" : "Vừa hoàn tất", language)}</small>
                   </div>
-                  <span className={`profile-risk-pill ${item.risk_level}`}>{riskLabel(item.risk_level)}</span>
+                  <span className={`profile-risk-pill ${item.risk_level}`}>{riskLabel(item.risk_level, language)}</span>
                   <b>{item.risk_score}</b>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="profile-empty-activity"><Icon name="activity" /><strong>Chưa có hoạt động</strong><span>Các lượt phân tích mới sẽ xuất hiện tại đây.</span></div>
+            <div className="profile-empty-activity"><Icon name="activity" /><strong>{en ? "No activity yet" : "Chưa có hoạt động"}</strong><span>{en ? "New analyses will appear here." : "Các lượt phân tích mới sẽ xuất hiện tại đây."}</span></div>
           )}
         </section>
 
-        <section className="profile-panel profile-permission-panel">
+        {isAdmin && <section className="profile-panel profile-permission-panel">
           <div className="profile-panel-heading">
-            <div><span>{isAdmin ? "ADMIN MATRIX" : "ACCESS MATRIX"}</span><h3>Quyền truy cập</h3></div>
+            <div><span>{en ? "ADMIN PERMISSIONS" : "QUYỀN QUẢN TRỊ"}</span><h3>{en ? "Access permissions" : "Quyền truy cập"}</h3></div>
           </div>
           <div className="profile-permission-map">
-            <span className="permission-core">{isAdmin ? "ADMIN" : "GUEST"}<i /></span>
-            {(isAdmin
-              ? ["Dataset", "AI Models", "Đánh giá", "Nhật ký"]
-              : ["Kiểm tra OCR", "Phân tích URL", "Lịch sử riêng", "Cảnh báo AI"]
-            ).map((permission, index) => (
-              <div className={`permission-node permission-${index + 1}`} key={permission}><i />{permission}<b>ON</b></div>
+            <span className="permission-core">{en ? "Admin" : "Quản trị"}<i /></span>
+            {["Dataset", "AI Models", en ? "Evaluations" : "Đánh giá", en ? "Logs" : "Nhật ký"].map((permission, index) => (
+              <div className={`permission-node permission-${index + 1}`} key={permission}><i />{permission}<b>{en ? "On" : "Bật"}</b></div>
             ))}
           </div>
-          <p>{isAdmin
-            ? "Tài khoản có quyền cấu hình dữ liệu, mô hình và theo dõi hoạt động quản trị."
-            : "Không cần tài khoản; lịch sử thuộc trình duyệt hiện tại và không đồng bộ sang thiết bị khác."}</p>
-        </section>
+          <p>{en ? "This account can configure data and models and monitor administrative activity." : "Tài khoản có quyền cấu hình dữ liệu, mô hình và theo dõi hoạt động quản trị."}</p>
+        </section>}
       </div>
     </div>
   );

@@ -14,42 +14,85 @@ from typing import List, Dict
 # Trong thực tế nên load từ bảng scam_keywords trong MySQL thay vì hardcode,
 # để admin có thể cập nhật từ dashboard mà không cần deploy lại code.
 SCAM_KEYWORDS: Dict[str, List[tuple]] = {
-    "phishing": [
-        ("chuyển khoản gấp", 15),
-        ("tài khoản bị khóa", 15),
-        ("xác minh ngay", 12),
-        ("trúng thưởng", 15),
-        ("mã otp", 20),
-        ("cập nhật thông tin", 10),
-        ("đăng nhập ngay", 10),
-    ],
     "impersonation": [
-        ("cơ quan công an", 20),
+        ("bộ công an", 25),
+        ("công an", 20),
+        ("viện kiểm sát", 25),
+        ("tòa án", 25),
+        ("cơ quan điều tra", 25),
+        ("cơ quan công an", 25),
+        ("lệnh bắt", 25),
+        ("truy nã", 25),
+        ("phạt nguội", 20),
+        ("cục thuế", 18),
+        ("đại diện ngân hàng", 15),
         ("nợ xấu", 15),
-        ("cơ quan điều tra", 20),
-        ("đại diện ngân hàng", 12),
+    ],
+    "phishing": [
+        ("mã otp", 25),
+        ("mật khẩu", 20),
+        ("số thẻ", 15),
+        ("mã cvv", 20),
+        ("khóa tài khoản", 20),
+        ("tài khoản bị khóa", 20),
+        ("phong tỏa tài khoản", 25),
+        ("chuyển khoản gấp", 20),
+        ("chuyển tiền gấp", 20),
+        ("chuyển tiền", 12),
+        ("chuyển khoản", 10),
+        ("xác minh ngay", 15),
+        ("đăng nhập ngay", 15),
+        ("cập nhật thông tin", 12),
+        ("trúng thưởng", 20),
+        ("vui lòng đăng nhập", 15),
+        ("xác thực tài khoản", 15),
+        ("xác minh tài khoản", 15),
+        ("giao dịch bất thường", 18),
+        ("nghi vấn giao dịch", 18),
+        ("verify you're human", 12),
+        ("security check", 8),
+        ("access temporarily blocked", 20),
+        ("failed verification attempts", 15),
+        ("account suspended", 20),
+        ("contact your hosting provider", 8),
+        ("continue with google", 8),
+        ("continue with facebook", 8),
+        ("continue with apple", 8),
+        ("continue with email", 10),
+        ("verify your account", 15),
+        ("verify your identity", 15),
     ],
     "fake_invoice": [
+        ("nộp phạt", 20),
+        ("thanh toán đơn hàng", 12),
+        ("hóa đơn chưa thanh toán", 15),
         ("phí vận chuyển", 10),
-        ("shipper", 8),
-        ("thanh toán đơn hàng", 8),
-        ("hóa đơn chưa thanh toán", 12),
+        ("shipper", 10),
+        ("đặt cọc", 15),
+        ("tất toán", 12),
     ],
     "job_scam": [
+        ("làm nhiệm vụ", 22),
+        ("tiền hoa hồng", 20),
         ("tuyển nhân viên", 15),
-        ("lương hàng tháng", 12),
-        ("làm việc tại nhà", 10),
-        ("ít nhất 500k", 10),
-        ("sau 15 phút", 10),
+        ("làm việc tại nhà", 12),
+        ("nạp tiền", 18),
         ("nhận tiền", 10),
         ("phí dịch vụ", 12),
     ],
     "urgent_account_threat": [
-        ("tài khoản của bạn", 10),
-        ("bị trừ", 15),
+        ("ngay lập tức", 15),
+        ("trong 24h", 15),
+        ("trong vòng 24h", 15),
         ("trong 2 giờ", 15),
+        ("bị trừ", 15),
+        ("tài khoản của bạn", 10),
         ("nhấn vào", 10),
         ("dịch vụ tài chính", 10),
+        ("sau 24h", 12),
+        ("trong vòng 24 giờ", 15),
+        ("tạm khóa", 15),
+        ("bị khóa", 15),
     ],
 }
 
@@ -98,6 +141,21 @@ def analyze_text(text: str) -> RiskResult:
                 score += weight
                 matched_terms.append(keyword)
                 category_scores[category] = category_scores.get(category, 0) + weight
+
+    # A sign-in surface by itself may be legitimate. Multiple authentication
+    # prompts in an uploaded screenshot are still a meaningful phishing signal,
+    # especially when the browser address/domain is not available for checking.
+    auth_flow_terms = [
+        "continue with google", "continue with facebook", "continue with apple",
+        "continue with email", "sign in", "log in", "login", "dang nhap",
+        "verify your account", "verify your identity", "xac minh tai khoan",
+        "xac thuc tai khoan",
+    ]
+    auth_flow_hits = [term for term in auth_flow_terms if term in normalized_text]
+    if len(auth_flow_hits) >= 2:
+        score += 12
+        matched_terms.append("biểu mẫu đăng nhập/xác thực")
+        category_scores["phishing"] = category_scores.get("phishing", 0) + 12
 
     url_matches = SUSPICIOUS_URL_PATTERN.findall(text_lower)
     if url_matches:

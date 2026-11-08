@@ -215,6 +215,31 @@ thủ để giảm cảnh báo sai.
 
 Nguồn dữ liệu: **PhishVN v3.1.0**, DOI `10.17632/b97hxbxtpd.4`, giấy phép CC BY 4.0.
 
+## Đối chiếu nguồn độc lập bằng Google Safe Browsing
+
+Backend có thể đối chiếu URL trích từ ảnh, QR, PDF hoặc nội dung nhập trực tiếp
+với **Google Safe Browsing v5**. Đây là lớp xác nhận độc lập bổ sung cho model
+PhishVN: nếu Google trả về một threat match, hệ thống nâng URL lên mức nguy hiểm
+và hiển thị riêng nguồn `Google Safe Browsing`; cảnh báo do các model nội bộ tạo
+ra không được gắn nhãn Google.
+
+1. Bật Safe Browsing API trong Google Cloud Console và tạo API key.
+2. Điền `GOOGLE_SAFE_BROWSING_API_KEY` trong `.env`.
+3. Khởi động lại backend. Nếu không có key hoặc API tạm lỗi, hệ thống vẫn dùng
+   PhishVN và các lớp phân tích cục bộ như trước.
+
+Safe Browsing API chỉ dành cho mục đích **phi thương mại**; sản phẩm thương mại
+phải dùng Google Web Risk hoặc thỏa thuận phù hợp. URL được kiểm tra sẽ được gửi
+tới Google. Không có kết quả khớp không đồng nghĩa URL chắc chắn an toàn. Kết quả
+được cache theo thời hạn API trả về và cảnh báo URL nguy hiểm không được giữ quá
+30 phút nếu chưa đối chiếu lại, theo điều khoản của Google.
+
+Tài liệu chính thức:
+
+- Tổng quan: https://developers.google.com/safe-browsing/
+- API v5 `urls.search`: https://developers.google.com/safe-browsing/reference/rest/v5/urls/search
+- Điều khoản sử dụng: https://developers.google.com/safe-browsing/terms
+
 ### Huấn luyện model ảnh không bị leakage
 
 Model ResNet18 ảnh không được chia ngẫu nhiên từng file. Các ảnh cùng nguồn hoặc
