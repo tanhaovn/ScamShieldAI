@@ -114,13 +114,14 @@ export default function useAppController() {
 
   async function refreshBackendStatus() {
     try {
-      const response = await fetchWithTimeout(`${API_BASE}/health`, { cache: "no-store" }, 5000);
+      const response = await fetchWithTimeout(`${API_BASE}/health`, { cache: "no-store" }, 15000);
       if (!response.ok) throw new Error("health check failed");
       const data = await response.json();
       setBackendStatus({ ...data, state: data.status === "ok" ? "online" : "degraded", checkedAt: new Date().toISOString() });
       return true;
     } catch {
-      setBackendStatus((current) => ({ ...current, state: "offline", checkedAt: new Date().toISOString() }));
+      const remoteHost = !["localhost", "127.0.0.1"].includes(window.location.hostname);
+      setBackendStatus((current) => ({ ...current, state: remoteHost ? "waking" : "offline", checkedAt: new Date().toISOString() }));
       return false;
     }
   }
@@ -128,7 +129,16 @@ export default function useAppController() {
   useEffect(() => {
     refreshBackendStatus();
     const timer = window.setInterval(refreshBackendStatus, 30000);
-    return () => window.clearInterval(timer);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") refreshBackendStatus();
+    };
+    window.addEventListener("focus", refreshBackendStatus);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshBackendStatus);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, []);
 
   function setScanMode(mode) {
@@ -326,6 +336,7 @@ export default function useAppController() {
         alert(data.detail || "Lỗi phân tích ảnh");
         return;
       }
+      setBackendStatus((current) => ({ ...current, state: "online", checkedAt: new Date().toISOString() }));
       finalizeAnalysis(data, file.name);
     } catch (error) {
       alert(error.name === "AbortError" ? "Phân tích quá 90 giây. Máy chủ đã dừng chờ; vui lòng thử lại." : "Không kết nối được máy chủ phân tích");
@@ -416,6 +427,7 @@ export default function useAppController() {
         alert(data.detail || "Không thể phân tích nội dung");
         return;
       }
+      setBackendStatus((current) => ({ ...current, state: "online", checkedAt: new Date().toISOString() }));
       if (scanMode === "batch") { setBatchResults(data.results || []); return; }
       finalizeAnalysis(data, fallbackName);
     } catch (error) {

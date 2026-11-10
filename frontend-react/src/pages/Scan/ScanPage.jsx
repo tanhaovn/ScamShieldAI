@@ -597,10 +597,10 @@ export default function ScanPage({
         </div>
       </section>
 
-      {backendStatus?.state === "offline" && (
+      {["offline", "waking"].includes(backendStatus?.state) && (
         <div className="backend-offline-banner" role="alert">
           <span>!</span>
-          <div><strong>{en ? "Detector backend is offline" : "Backend phân tích đang ngoại tuyến"}</strong><small>{en ? "You can prepare content, but analysis is unavailable until the server starts." : "Bạn vẫn có thể chuẩn bị nội dung, nhưng cần khởi động máy chủ trước khi phân tích."}</small></div>
+          <div><strong>{en ? "The scanner is waking up" : "Máy chủ phân tích đang khởi động"}</strong><small>{en ? "You can still press Analyze now. The first check may take up to a minute." : "Bạn vẫn có thể bấm Phân tích ngay. Lượt đầu tiên có thể cần chờ khoảng một phút."}</small></div>
         </div>
       )}
 
@@ -692,7 +692,7 @@ export default function ScanPage({
                   <span>◎</span> {en ? "Use camera" : "Chụp bằng camera"}
                 </button>
               ) : <span className="scan-local-storage-note">✓ {en ? "Results saved in this browser" : "Kết quả lưu trên trình duyệt"}</span>}
-              <button className="scan-launch-button" disabled={loading || !sourceReady || backendStatus?.state !== "online"}>
+              <button className="scan-launch-button" disabled={loading || !sourceReady}>
                 {loading ? <><i /> {en ? "Analyzing..." : "Đang phân tích..."}</> : <>{en ? "Analyze now" : "Phân tích ngay"} <span>→</span></>}
               </button>
             </div>

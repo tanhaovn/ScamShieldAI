@@ -48,7 +48,11 @@ UPLOAD_DIR = PROJECT_ROOT / "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 USE_DEEPFAKE_MODEL = os.getenv("USE_DEEPFAKE_MODEL", "false").lower() == "true"
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-key-change-me")
-APP_ENV = os.getenv("APP_ENV", "development").strip().lower()
+render_runtime = os.getenv("RENDER", "").strip().lower() == "true"
+APP_ENV = os.getenv(
+    "APP_ENV",
+    "production" if render_runtime else "development",
+).strip().lower()
 if APP_ENV == "production" and JWT_SECRET == "dev-secret-key-change-me":
     raise RuntimeError("JWT_SECRET bắt buộc phải được cấu hình an toàn trong production")
 ADMIN_EMAIL = os.getenv(

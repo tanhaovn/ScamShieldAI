@@ -191,8 +191,8 @@ function App() {
             <div className={`workspace-status backend-${app.backendStatus.state}`}>
               <StatusRadar />
               <div>
-                <strong>{app.backendStatus.state === "online" ? (language === "en" ? "Detector online" : "Bộ quét đang hoạt động") : app.backendStatus.state === "checking" ? (language === "en" ? "Checking detector" : "Đang kiểm tra bộ quét") : (language === "en" ? "Detector offline" : "Backend đang ngoại tuyến")}</strong>
-                <small>{app.backendStatus.state === "online" ? `v${app.backendStatus.app_version || "?"} · ${app.backendStatus.git_commit || "unknown"}` : (language === "en" ? "Start the backend to analyze" : "Khởi động backend để phân tích")}</small>
+                <strong>{app.backendStatus.state === "online" ? (language === "en" ? "Detector online" : "Bộ quét đang hoạt động") : app.backendStatus.state === "checking" ? (language === "en" ? "Checking detector" : "Đang kiểm tra bộ quét") : app.backendStatus.state === "waking" ? (language === "en" ? "Scanner waking up" : "Máy chủ đang khởi động") : (language === "en" ? "Connection unavailable" : "Chưa kết nối được máy chủ")}</strong>
+                <small>{app.backendStatus.state === "online" ? `v${app.backendStatus.app_version || "?"} · ${app.backendStatus.git_commit || "unknown"}` : app.backendStatus.state === "waking" ? (language === "en" ? "You can still start a check" : "Bạn vẫn có thể bắt đầu kiểm tra") : (language === "en" ? "We will retry automatically" : "Hệ thống sẽ tự kết nối lại")}</small>
               </div>
             </div>
           </div>
