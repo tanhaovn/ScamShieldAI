@@ -79,3 +79,20 @@ INSERT INTO scam_keywords (keyword, category, weight) VALUES
 ('shipper', 'fake_invoice', 10),
 ('phí vận chuyển', 'fake_invoice', 10),
 ('mã OTP', 'phishing', 20);
+
+CREATE TABLE IF NOT EXISTS scan_feedback (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    scan_id INT NULL,
+    client_scan_id VARCHAR(100),
+    verdict ENUM('correct', 'false_alarm', 'missed_scam') NOT NULL,
+    predicted_level VARCHAR(30) NOT NULL,
+    risk_score INT NOT NULL,
+    source_type VARCHAR(30) NOT NULL,
+    original_filename VARCHAR(512),
+    note TEXT,
+    evidence_snapshot JSON,
+    review_status VARCHAR(30) NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX ix_scan_feedback_scan_id (scan_id),
+    FOREIGN KEY (scan_id) REFERENCES scan_history(id) ON DELETE SET NULL
+) ENGINE=InnoDB;

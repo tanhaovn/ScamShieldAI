@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { exportScanReport } from "../../utils/reportExport";
 
 function ScanViewport({ imageSource, loading, result, mode, textPreview, documentName, language }) {
   const en = language === "en";
@@ -221,6 +222,84 @@ function SafetyAssistant({ result, apiBase, language }) {
   );
 }
 
+function ResultFeedback({ result, apiBase, language }) {
+  const en = language === "en";
+  const [choice, setChoice] = useState("");
+  const [note, setNote] = useState("");
+  const [status, setStatus] = useState("idle");
+  const options = [
+    ["correct", en ? "Result is correct" : "Kết quả đúng", "✓"],
+    ["false_alarm", en ? "False warning" : "Cảnh báo sai", "!"],
+    ["missed_scam", en ? "Missed a scam" : "Bỏ sót lừa đảo", "+"],
+  ];
+
+  async function submitFeedback() {
+    if (!choice || status === "sending") return;
+    setStatus("sending");
+    try {
+      const response = await fetch(`${apiBase}/scan-feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scan_id: result.scan_id || null,
+          client_scan_id: String(result.id || ""),
+          verdict: choice,
+          predicted_level: result.risk_level,
+          risk_score: Number(result.risk_score) || 0,
+          source_type: result.source_type || "unknown",
+          original_filename: result.original_filename || null,
+          note: note.trim() || null,
+          highlighted_terms: result.highlighted_terms || [],
+          urls: (result.phishvn_urls || []).map((item) => item.url || item.normalized_url).filter(Boolean),
+        }),
+      });
+      if (!response.ok) throw new Error("feedback_failed");
+      setStatus("sent");
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  if (status === "sent") return <section className="scan-feedback-card is-sent"><span>✓</span><div><strong>{en ? "Thank you for validating this result" : "Cảm ơn bạn đã xác nhận kết quả"}</strong><p>{en ? "The feedback is queued for expert review and model evaluation." : "Phản hồi đã được đưa vào hàng chờ để kiểm định và đánh giá mô hình."}</p></div></section>;
+  return (
+    <section className="scan-feedback-card">
+      <header><div><small>{en ? "HUMAN VALIDATION" : "XÁC NHẬN TỪ NGƯỜI DÙNG"}</small><h3>{en ? "Was this result accurate?" : "Kết quả này có chính xác không?"}</h3></div><span>{en ? "Helps improve detection" : "Giúp cải thiện hệ thống"}</span></header>
+      <div className="scan-feedback-options">{options.map(([value, label, icon]) => <button type="button" className={choice === value ? "active" : ""} onClick={() => { setChoice(value); setStatus("idle"); }} key={value}><b>{icon}</b>{label}</button>)}</div>
+      {choice && <div className="scan-feedback-detail"><textarea value={note} onChange={(event) => setNote(event.target.value)} maxLength={1000} placeholder={en ? "Optional: tell us what was right or wrong" : "Không bắt buộc: cho biết điểm nào đúng hoặc chưa đúng"} /><button type="button" onClick={submitFeedback} disabled={status === "sending"}>{status === "sending" ? (en ? "Sending..." : "Đang gửi...") : (en ? "Submit feedback" : "Gửi phản hồi")}</button></div>}
+      {status === "error" && <p className="scan-feedback-error">{en ? "Could not save feedback. Please try again." : "Chưa lưu được phản hồi. Vui lòng thử lại."}</p>}
+    </section>
+  );
+}
+
+function EvidenceSources({ result, language }) {
+  const en = language === "en";
+  const google = result.google_safe_browsing;
+  const googleState = google?.matches?.length ? "danger" : google?.configured && google?.available ? "checked" : "unavailable";
+  const cards = [
+    {
+      key: "text", state: "checked", title: en ? "Content & OCR" : "Nội dung & OCR",
+      value: `${Number(result.text_risk_score) || 0}/100`,
+      copy: en ? "Reads visible wording and sensitive requests." : "Đọc câu chữ hiển thị và yêu cầu thông tin nhạy cảm.",
+    },
+    {
+      key: "phishvn", state: result.phishvn_available ? "checked" : "unavailable", title: "PhishVN",
+      value: result.phishvn_available ? `${Number(result.phishvn_url_risk_score) || 0}/100` : (en ? "Unavailable" : "Chưa sẵn sàng"),
+      copy: en ? "Vietnamese phishing URL model; a prediction, not an official blacklist." : "Mô hình URL lừa đảo Việt Nam; là dự đoán, không phải danh sách đen chính thức.",
+    },
+    {
+      key: "google", state: googleState, title: "Google Safe Browsing",
+      value: googleState === "danger" ? (en ? "Threat match" : "Có khớp đe dọa") : googleState === "checked" ? (en ? "No known match" : "Chưa có khớp đã biết") : (en ? "Not configured" : "Chưa cấu hình"),
+      copy: googleState === "danger" ? (en ? "Independent threat-list confirmation." : "Nguồn độc lập đã xác nhận mối đe dọa đã biết.") : (en ? "No match does not prove a URL is safe." : "Không có kết quả khớp không có nghĩa URL chắc chắn an toàn."),
+    },
+    ...(result.source_type === "image" ? [{
+      key: "vision", state: result.vlm_analysis?.available ? "checked" : "unavailable", title: en ? "Image context AI" : "AI hiểu ngữ cảnh ảnh",
+      value: result.vlm_analysis?.available ? `${Number(result.vlm_analysis.risk_score) || 0}/100` : (en ? "Unavailable" : "Chưa sẵn sàng"),
+      copy: en ? "Combines text, links, layout and visual signals." : "Tổng hợp chữ, đường link, bố cục và tín hiệu hình ảnh.",
+    }] : []),
+  ];
+  return <section className="scan-evidence-sources"><header><div><small>{en ? "EVIDENCE TRACE" : "TRUY VẾT BẰNG CHỨNG"}</small><h3>{en ? "Which systems contributed?" : "Kết quả dựa vào những nguồn nào?"}</h3></div><span>{en ? "Prediction ≠ confirmation" : "Dự đoán ≠ xác nhận"}</span></header><div>{cards.map((card) => <article className={card.state} key={card.key}><i /><small>{card.title}</small><strong>{card.value}</strong><p>{card.copy}</p></article>)}</div></section>;
+}
+
 function ResultConsole({ result, apiBase, language }) {
   const en = language === "en";
   const score = Math.min(100, Math.max(0, Number(result.risk_score) || 0));
@@ -308,8 +387,13 @@ function ResultConsole({ result, apiBase, language }) {
           <h2>{en ? "Check result" : "Kết quả kiểm tra"}</h2>
           <p>{en ? "A clear explanation to help you understand and respond safely." : "Giải thích ngắn gọn để mọi người đều có thể hiểu và xử lý an toàn."}</p>
         </div>
-        <div className="scan-result-score" style={{ "--scan-score": `${score * 3.6}deg` }}>
-          <div><strong>{score}</strong><small>/100</small></div>
+        <div className="scan-result-header-actions">
+          <button type="button" className="scan-report-button" onClick={() => exportScanReport(result, language)}>
+            <span aria-hidden="true">⇩</span> {en ? "Export PDF" : "Xuất báo cáo PDF"}
+          </button>
+          <div className="scan-result-score" style={{ "--scan-score": `${score * 3.6}deg` }}>
+            <div><strong>{score}</strong><small>/100</small></div>
+          </div>
         </div>
       </header>
 
@@ -328,6 +412,8 @@ function ResultConsole({ result, apiBase, language }) {
         <span>{en ? "Detected" : "Nhận diện"}: <strong>{scamTypeLabel}</strong></span>
         {result.phishvn_urls?.length > 0 && <span>{en ? "Links" : "Đường link"}: <strong>{result.phishvn_urls.length} {en ? "to review" : "link cần chú ý"}</strong></span>}
       </div>
+
+      <EvidenceSources result={result} language={language} />
 
       <div className="scan-simple-result-grid">
         <section className="scan-why-card">
@@ -377,6 +463,8 @@ function ResultConsole({ result, apiBase, language }) {
           )}
       </div>
 
+      <ResultFeedback result={result} apiBase={apiBase} language={language} />
+
       <SafetyAssistant result={result} apiBase={apiBase} language={language} />
 
       <details className="scan-technical-panel">
@@ -417,6 +505,13 @@ function ResultConsole({ result, apiBase, language }) {
             </details>
           )}
 
+          {result.domain_intelligence?.length > 0 && (
+            <details className="scan-phishvn-console" open>
+              <summary><div><strong>{en ? "Domain structure review" : "Kiểm tra cấu trúc tên miền"}</strong><small>{en ? "Offline analysis — the website was not opened" : "Phân tích ngoại tuyến — không mở website"}</small></div><b>{Math.max(...result.domain_intelligence.map((item) => Number(item.score) || 0))}/100</b></summary>
+              <div className="scan-phishvn-list">{result.domain_intelligence.map((item) => <article key={item.host}><div><strong>{item.host}</strong><span>{item.level === "high" ? (en ? "High risk structure" : "Cấu trúc rủi ro cao") : item.level === "review" ? (en ? "Review needed" : "Cần kiểm tra") : (en ? "Few structural signs" : "Ít dấu hiệu cấu trúc")} · {item.score}/100</span></div>{item.signals?.length ? <ul>{item.signals.map((signal) => <li key={signal}>{signal}</li>)}</ul> : <p>{en ? "No notable structural signals." : "Không có dấu hiệu cấu trúc nổi bật."}</p>}</article>)}</div>
+            </details>
+          )}
+
           {result.analysis_breakdown && (
             <details className="scan-method-console">
               <summary>{en ? "View scoring method and technical limitations" : "Xem cách tính điểm và giới hạn kỹ thuật"} <span>+</span></summary>
@@ -444,6 +539,9 @@ export default function ScanPage({
   setTextInput,
   urlInput,
   setUrlInput,
+  batchInput,
+  setBatchInput,
+  batchResults,
   documentFile,
   handleDocumentSelect,
   onOpenCamera,
@@ -456,6 +554,7 @@ export default function ScanPage({
   onCloseCamera,
   result,
   apiBase,
+  backendStatus,
   language = "vi",
 }) {
   const en = language === "en";
@@ -463,19 +562,20 @@ export default function ScanPage({
   const imageSource = imagePreview || (result?.image_url ? `${apiBase}${result.image_url}` : "");
   const textPreview = scanMode === "text"
     ? textInput.trim().slice(0, 180)
-    : scanMode === "url" ? urlInput.trim().slice(0, 180) : "";
+    : scanMode === "url" ? urlInput.trim().slice(0, 180) : scanMode === "batch" ? batchInput.trim().slice(0, 180) : "";
   const sourceReady = scanMode === "image"
     ? Boolean(imagePreview)
     : scanMode === "text"
       ? Boolean(textInput.trim())
       : scanMode === "url"
         ? Boolean(urlInput.trim())
-        : Boolean(documentFile);
+        : scanMode === "batch" ? Boolean(batchInput.trim()) : Boolean(documentFile);
   const modes = [
     ["image", en ? "Image & QR" : "Ảnh & QR", "▣"],
     ["text", en ? "Message" : "Tin nhắn", "Aa"],
     ["url", en ? "Link" : "Đường link", "⌁"],
     ["pdf", en ? "Document" : "Tài liệu", "▤"],
+    ["batch", en ? "Batch" : "Hàng loạt", "≣"],
   ];
 
   function openAssistant() {
@@ -496,6 +596,13 @@ export default function ScanPage({
           <p>{en ? "Choose a content type below. You will receive a clear result and safe next-step guidance." : "Chọn loại nội dung bên dưới. Bạn sẽ nhận được kết quả dễ hiểu và hướng dẫn xử lý an toàn."}</p>
         </div>
       </section>
+
+      {backendStatus?.state === "offline" && (
+        <div className="backend-offline-banner" role="alert">
+          <span>!</span>
+          <div><strong>{en ? "Detector backend is offline" : "Backend phân tích đang ngoại tuyến"}</strong><small>{en ? "You can prepare content, but analysis is unavailable until the server starts." : "Bạn vẫn có thể chuẩn bị nội dung, nhưng cần khởi động máy chủ trước khi phân tích."}</small></div>
+        </div>
+      )}
 
       <div className="scan-workbench">
         <section className="scan-control-panel panel">
@@ -577,13 +684,15 @@ export default function ScanPage({
               </label>
             )}
 
+            {scanMode === "batch" && <label className="scan-direct-input"><span>{en ? "Paste up to 50 URLs, one per line" : "Dán tối đa 50 URL, mỗi dòng một URL"}</span><textarea rows="10" value={batchInput} onChange={(event) => setBatchInput(event.target.value)} placeholder={"https://example.com\nhttps://suspicious-domain.top/login"} /><small>{batchInput.split(/[\r\n,;]+/).filter((value) => value.trim()).length}/50 URL</small></label>}
+
             <div className="scan-input-actions">
               {scanMode === "image" ? (
                 <button type="button" className="scan-camera-button" onClick={onOpenCamera}>
                   <span>◎</span> {en ? "Use camera" : "Chụp bằng camera"}
                 </button>
               ) : <span className="scan-local-storage-note">✓ {en ? "Results saved in this browser" : "Kết quả lưu trên trình duyệt"}</span>}
-              <button className="scan-launch-button" disabled={loading || !sourceReady}>
+              <button className="scan-launch-button" disabled={loading || !sourceReady || backendStatus?.state !== "online"}>
                 {loading ? <><i /> {en ? "Analyzing..." : "Đang phân tích..."}</> : <>{en ? "Analyze now" : "Phân tích ngay"} <span>→</span></>}
               </button>
             </div>
@@ -604,6 +713,8 @@ export default function ScanPage({
           <ScanViewport imageSource={scanMode === "image" ? imageSource : ""} loading={loading} result={result} mode={scanMode} textPreview={textPreview} documentName={scanMode === "pdf" ? documentFile?.name : ""} language={language} />
         </section>
       </div>
+
+      {batchResults?.length > 0 && <section className="batch-result-panel panel"><header><div><span className="eyebrow">BATCH SCAN</span><h3>{en ? "Batch results" : "Kết quả quét hàng loạt"}</h3></div><button type="button" onClick={() => { const rows = ["url,risk_score,risk_level", ...batchResults.map((item) => `"${String(item.url).replaceAll('"','""')}",${item.risk_score},${item.risk_level}`)]; const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8" }); const anchor = document.createElement("a"); anchor.href = URL.createObjectURL(blob); anchor.download = "scam-detector-batch.csv"; anchor.click(); URL.revokeObjectURL(anchor.href); }}>{en ? "Download CSV" : "Tải CSV"}</button></header><div>{batchResults.map((item) => <article className={item.risk_level} key={item.url}><code>{item.url}</code><strong>{item.status === "invalid" ? (en ? "Invalid" : "Không hợp lệ") : `${item.risk_score}/100`}</strong><span>{item.risk_level}</span></article>)}</div></section>}
 
       {result && <ResultConsole result={result} apiBase={apiBase} language={language} />}
 

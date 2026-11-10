@@ -9,6 +9,7 @@ const adminItems = [
   { page: "admin-dataset", vi: "Dữ liệu", en: "Dataset", icon: "database" },
   { page: "admin-models", vi: "Mô hình AI", en: "AI Models", icon: "model" },
   { page: "admin-evaluations", vi: "Đánh giá", en: "Evaluations", icon: "chart" },
+  { page: "admin-keywords", vi: "Từ khóa", en: "Keywords", icon: "keyword" },
   { page: "admin-logs", vi: "Nhật ký", en: "Logs", icon: "file" },
 ];
 
@@ -19,6 +20,7 @@ const iconPaths = {
   database: ["M4 6c0-1.1 3.6-2 8-2s8 .9 8 2-3.6 2-8 2-8-.9-8-2Z", "M4 6v6c0 1.1 3.6 2 8 2s8-.9 8-2V6", "M4 12v6c0 1.1 3.6 2 8 2s8-.9 8-2v-6"],
   model: ["M12 3 4 7v10l8 4 8-4V7z", "m4 7 8 4 8-4", "M12 11v10"],
   chart: ["M5 20V10", "M12 20V4", "M19 20v-7", "M3 20h18"],
+  keyword: ["M4 5h16v4H4z", "M4 13h10v4H4z", "M17 13h3v4h-3z"],
   file: ["M6 3h8l4 4v14H6z", "M14 3v5h5", "M9 13h6", "M9 17h6"],
   logout: ["M10 17l5-5-5-5", "M15 12H3", "M15 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"],
   login: ["m14 7 5 5-5 5", "M19 12H7", "M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"],

@@ -8,6 +8,9 @@ scam_detector.db
 phishing_dataset/
 .pytest-tmp/
 .pytest_cache/
+.pytest-work/
+.codex-work/
+outputs/
 frontend-react/node_modules/
 .DS_Store
 *.log

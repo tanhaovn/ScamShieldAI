@@ -124,3 +124,32 @@ class SystemActivityLog(Base):
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     admin = relationship("User", back_populates="logs")
+
+
+class ScanFeedback(Base):
+    """User validation used to audit false positives and missed scams."""
+
+    __tablename__ = "scan_feedback"
+
+    id = Column(Integer, primary_key=True, index=True)
+    scan_id = Column(Integer, ForeignKey("scan_history.id", ondelete="SET NULL"), nullable=True, index=True)
+    client_scan_id = Column(String(100), nullable=True, index=True)
+    verdict = Column(Enum("correct", "false_alarm", "missed_scam", name="feedback_verdict"), nullable=False)
+    predicted_level = Column(String(30), nullable=False)
+    risk_score = Column(Integer, nullable=False)
+    source_type = Column(String(30), nullable=False)
+    original_filename = Column(String(512))
+    note = Column(Text)
+    evidence_snapshot = Column(JSON)
+    review_status = Column(String(30), nullable=False, default="pending")
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+
+class ScamKeyword(Base):
+    __tablename__ = "scam_keywords"
+
+    id = Column(Integer, primary_key=True, index=True)
+    keyword = Column(String(255), nullable=False, unique=True)
+    category = Column(String(100), nullable=False)
+    weight = Column(Integer, nullable=False, default=10)
+    created_at = Column(TIMESTAMP, server_default=func.now())

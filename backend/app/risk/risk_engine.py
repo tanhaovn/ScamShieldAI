@@ -6,6 +6,7 @@ thay bằng model ML (vd fine-tune PhoBERT) mà không đổi kiến trúc hệ 
 """
 import re
 import unicodedata
+import time
 from dataclasses import dataclass, field
 from typing import List, Dict
 
@@ -74,6 +75,8 @@ SCAM_KEYWORDS: Dict[str, List[tuple]] = {
     "job_scam": [
         ("làm nhiệm vụ", 22),
         ("tiền hoa hồng", 20),
+        ("hoa hồng", 14),
+        ("cộng tác viên", 15),
         ("tuyển nhân viên", 15),
         ("làm việc tại nhà", 12),
         ("nạp tiền", 18),
@@ -95,6 +98,35 @@ SCAM_KEYWORDS: Dict[str, List[tuple]] = {
         ("bị khóa", 15),
     ],
 }
+
+_dynamic_cache = (0.0, {})
+
+
+def _active_keywords() -> Dict[str, List[tuple]]:
+    """Merge admin-managed rules with safe built-ins; database failure is non-fatal."""
+    global _dynamic_cache
+    now = time.monotonic()
+    if _dynamic_cache[0] > now:
+        dynamic = _dynamic_cache[1]
+    else:
+        dynamic: Dict[str, List[tuple]] = {}
+        try:
+            from backend.app.db.database import SessionLocal
+            from backend.app.db.models import ScamKeyword
+            db = SessionLocal()
+            try:
+                for row in db.query(ScamKeyword).all():
+                    dynamic.setdefault(row.category, []).append((row.keyword, int(row.weight)))
+            finally:
+                db.close()
+        except Exception:
+            dynamic = {}
+        _dynamic_cache = (now + 30, dynamic)
+    merged = {category: list(values) for category, values in SCAM_KEYWORDS.items()}
+    for category, values in dynamic.items():
+        existing = {keyword for keyword, _weight in merged.get(category, [])}
+        merged.setdefault(category, []).extend((keyword, weight) for keyword, weight in values if keyword not in existing)
+    return merged
 
 # Regex phát hiện URL rút gọn / đáng ngờ
 SUSPICIOUS_URL_PATTERN = re.compile(
@@ -135,9 +167,10 @@ def analyze_text(text: str) -> RiskResult:
     matched_terms: List[str] = []
     category_scores: Dict[str, int] = {}
 
-    for category, keywords in SCAM_KEYWORDS.items():
+    for category, keywords in _active_keywords().items():
         for keyword, weight in keywords:
-            if _remove_diacritics(keyword) in normalized_text:
+            normalized_keyword = _remove_diacritics(keyword)
+            if normalized_keyword in normalized_text and not _only_negated_mentions(normalized_text, normalized_keyword):
                 score += weight
                 matched_terms.append(keyword)
                 category_scores[category] = category_scores.get(category, 0) + weight
@@ -170,6 +203,25 @@ def analyze_text(text: str) -> RiskResult:
         score += 10
         matched_terms.append("số tài khoản/OTP kèm yêu cầu chuyển khoản")
 
+    # Corroboration rules capture scam intent that individual keywords cannot:
+    # an alleged authority requesting money, and a job requiring an upfront
+    # payment.  The amount/payment cue is required to avoid flagging ordinary
+    # recruitment posts or neutral mentions of public agencies.
+    transfer_cues = ("chuyen tien", "chuyen khoan", "nop phat", "dong phi", "dat coc")
+    if category_scores.get("impersonation", 0) >= 20 and any(cue in normalized_text for cue in transfer_cues):
+        score += 20
+        matched_terms.append("giả mạo cơ quan kèm yêu cầu chuyển tiền")
+        category_scores["impersonation"] = category_scores.get("impersonation", 0) + 20
+
+    job_cues = ("cong tac vien", "tuyen nhan vien", "lam nhiem vu", "lam viec tai nha", "hoa hong")
+    upfront_payment = bool(re.search(r"(?:nap|dong|chuyen|coc)\D{0,20}\d[\d\.\,]{3,}", normalized_text)) or any(
+        cue in normalized_text for cue in ("nap tien", "dong phi", "dat coc", "phi dich vu")
+    )
+    if upfront_payment and any(cue in normalized_text for cue in job_cues):
+        score += 22
+        matched_terms.append("việc làm yêu cầu nộp tiền trước")
+        category_scores["job_scam"] = category_scores.get("job_scam", 0) + 22
+
     score = min(score, 100)
 
     if score >= 60:
@@ -192,6 +244,26 @@ def analyze_text(text: str) -> RiskResult:
         explanation=explanation,
         suggested_action=suggested_action,
     )
+
+
+def _only_negated_mentions(text: str, keyword: str) -> bool:
+    """Ignore a keyword only when every mention is clearly preventive/negated."""
+    positions = [match.start() for match in re.finditer(re.escape(keyword), text)]
+    if not positions:
+        return False
+    negation_cues = (
+        "khong bao gio", "tuyet doi khong", "khong duoc", "khong nen",
+        "khong can", "khong yeu cau", "dung ", "tranh ",
+    )
+    educational_cues = ("canh bao an toan", "phong tranh lua dao", "khuyen cao")
+    for position in positions:
+        before = text[max(0, position - 65):position]
+        clause = before.split(".")[-1].split(";")[-1]
+        if not any(cue in clause for cue in negation_cues) and not (
+            any(cue in before for cue in educational_cues) and "khong" in clause
+        ):
+            return False
+    return True
 
 
 def _remove_diacritics(value: str) -> str:

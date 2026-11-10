@@ -42,6 +42,7 @@ function App() {
     "admin-dataset": ["Training Dataset", "Quản lý dữ liệu phục vụ huấn luyện"],
     "admin-models": ["AI Models", "Quản lý các phiên bản mô hình"],
     "admin-evaluations": ["Đánh giá Model", "Theo dõi chỉ số chất lượng mô hình"],
+    "admin-keywords": ["Từ khóa lừa đảo", "Quản lý quy tắc phát hiện đang hoạt động"],
     "admin-logs": ["Nhật ký hệ thống", "Theo dõi hoạt động quản trị"],
   };
   const pageMetaEn = {
@@ -53,6 +54,7 @@ function App() {
     "admin-dataset": ["Training Dataset", "Manage model training data"],
     "admin-models": ["AI Models", "Manage model versions"],
     "admin-evaluations": ["Model evaluations", "Monitor model quality metrics"],
+    "admin-keywords": ["Scam keywords", "Manage live detection rules"],
     "admin-logs": ["System logs", "Monitor administrative activity"],
   };
   const pageMeta = language === "en" ? pageMetaEn : pageMetaVi;
@@ -94,6 +96,7 @@ function App() {
           user={app.me}
           onStartScan={() => app.navigate("scan")}
           language={language}
+          backendStatus={app.backendStatus}
         />
       );
     }
@@ -185,11 +188,11 @@ function App() {
               theme={theme}
               toggleTheme={() => setTheme((current) => current === "dark" ? "light" : "dark")}
             />
-            <div className="workspace-status">
+            <div className={`workspace-status backend-${app.backendStatus.state}`}>
               <StatusRadar />
               <div>
-                <strong>{app.me.role === "admin" ? (language === "en" ? "Administrator" : "Quản trị viên") : (language === "en" ? "Protection is on" : "Bảo vệ đang bật")}</strong>
-                <small>{app.me.role === "admin" ? (language === "en" ? "Admin session" : "Phiên quản trị") : (language === "en" ? "Data saved locally" : "Dữ liệu lưu cục bộ")}</small>
+                <strong>{app.backendStatus.state === "online" ? (language === "en" ? "Detector online" : "Bộ quét đang hoạt động") : app.backendStatus.state === "checking" ? (language === "en" ? "Checking detector" : "Đang kiểm tra bộ quét") : (language === "en" ? "Detector offline" : "Backend đang ngoại tuyến")}</strong>
+                <small>{app.backendStatus.state === "online" ? `v${app.backendStatus.app_version || "?"} · ${app.backendStatus.git_commit || "unknown"}` : (language === "en" ? "Start the backend to analyze" : "Khởi động backend để phân tích")}</small>
               </div>
             </div>
           </div>

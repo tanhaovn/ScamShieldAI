@@ -39,6 +39,16 @@ function createGuestUser() {
   };
 }
 
+async function fetchWithTimeout(url, options = {}, timeoutMs = 90000) {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
 export default function useAppController() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [me, setMe] = useState(() => createGuestUser());
@@ -48,6 +58,8 @@ export default function useAppController() {
   const [imagePreview, setImagePreview] = useState("");
   const [textInput, setTextInput] = useState("");
   const [urlInput, setUrlInput] = useState("");
+  const [batchInput, setBatchInput] = useState("");
+  const [batchResults, setBatchResults] = useState([]);
   const [documentFile, setDocumentFile] = useState(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
@@ -61,7 +73,12 @@ export default function useAppController() {
   const [datasets, setDatasets] = useState([]);
   const [models, setModels] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
+  const [evaluationRun, setEvaluationRun] = useState(null);
+  const [evaluationRunning, setEvaluationRunning] = useState(false);
+  const [backendStatus, setBackendStatus] = useState({ state: "checking", checkedAt: null });
   const [logs, setLogs] = useState([]);
+  const [keywords, setKeywords] = useState([]);
+  const [keywordForm, setKeywordForm] = useState({ keyword: "", category: "phishing", weight: "10" });
   const [datasetForm, setDatasetForm] = useState({
     image_url: "",
     scam_category_id: "",
@@ -95,9 +112,29 @@ export default function useAppController() {
     [token],
   );
 
+  async function refreshBackendStatus() {
+    try {
+      const response = await fetchWithTimeout(`${API_BASE}/health`, { cache: "no-store" }, 5000);
+      if (!response.ok) throw new Error("health check failed");
+      const data = await response.json();
+      setBackendStatus({ ...data, state: data.status === "ok" ? "online" : "degraded", checkedAt: new Date().toISOString() });
+      return true;
+    } catch {
+      setBackendStatus((current) => ({ ...current, state: "offline", checkedAt: new Date().toISOString() }));
+      return false;
+    }
+  }
+
+  useEffect(() => {
+    refreshBackendStatus();
+    const timer = window.setInterval(refreshBackendStatus, 30000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   function setScanMode(mode) {
     setScanModeState(mode);
     setResult(null);
+    setBatchResults([]);
   }
 
   useEffect(() => {
@@ -134,6 +171,7 @@ export default function useAppController() {
       fetchDatasets();
       fetchEvaluations();
       fetchLogs();
+      fetchKeywords();
     } else if (!token) {
       setHistory(loadGuestHistory());
     }
@@ -200,6 +238,11 @@ export default function useAppController() {
       headers: authHeaders,
     });
     if (res.ok) setLogs(await res.json());
+  }
+
+  async function fetchKeywords() {
+    const res = await fetch(`${API_BASE}/scam-keywords`, { headers: authHeaders });
+    if (res.ok) setKeywords(await res.json());
   }
 
   function completeAuth(data) {
@@ -272,18 +315,23 @@ export default function useAppController() {
     const requestHeaders = token && me?.role === "admin"
       ? { Authorization: `Bearer ${token}` }
       : undefined;
-    const res = await fetch(`${API_BASE}/check-image`, {
-      method: "POST",
-      headers: requestHeaders,
-      body,
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (!res.ok) {
-      alert(data.detail || "Lỗi phân tích ảnh");
-      return;
+    try {
+      const res = await fetchWithTimeout(`${API_BASE}/check-image`, {
+        method: "POST",
+        headers: requestHeaders,
+        body,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.detail || "Lỗi phân tích ảnh");
+        return;
+      }
+      finalizeAnalysis(data, file.name);
+    } catch (error) {
+      alert(error.name === "AbortError" ? "Phân tích quá 90 giây. Máy chủ đã dừng chờ; vui lòng thử lại." : "Không kết nối được máy chủ phân tích");
+    } finally {
+      setLoading(false);
     }
-    finalizeAnalysis(data, file.name);
   }
 
   function finalizeAnalysis(data, fallbackName) {
@@ -350,21 +398,28 @@ export default function useAppController() {
       const body = new FormData();
       body.append("file", documentFile);
       options.body = body;
+    } else if (scanMode === "batch") {
+      const urls = batchInput.split(/[\r\n,;]+/).map((value) => value.trim()).filter(Boolean);
+      if (!urls.length) { alert("Vui lòng nhập ít nhất một URL"); return; }
+      endpoint = "/check-urls-batch";
+      options.headers = { "Content-Type": "application/json" };
+      options.body = JSON.stringify({ urls: urls.slice(0, 50) });
     } else {
       return handleScan(event);
     }
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}${endpoint}`, options);
+      const res = await fetchWithTimeout(`${API_BASE}${endpoint}`, options, scanMode === "batch" ? 180000 : 90000);
       const data = await res.json();
       if (!res.ok) {
         alert(data.detail || "Không thể phân tích nội dung");
         return;
       }
+      if (scanMode === "batch") { setBatchResults(data.results || []); return; }
       finalizeAnalysis(data, fallbackName);
-    } catch {
-      alert("Không kết nối được máy chủ phân tích");
+    } catch (error) {
+      alert(error.name === "AbortError" ? "Yêu cầu mất quá nhiều thời gian. Vui lòng thử lại với ít nội dung hơn." : "Không kết nối được máy chủ phân tích");
     } finally {
       setLoading(false);
     }
@@ -527,6 +582,30 @@ export default function useAppController() {
     fetchEvaluations();
   }
 
+  async function handleRunEvaluation() {
+    setEvaluationRunning(true);
+    try {
+      const res = await fetchWithTimeout(`${API_BASE}/model-evaluations/run`, {
+        method: "POST",
+        headers: authHeaders,
+      }, 180000);
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.detail || "Không thể chạy bộ đánh giá tự động");
+        return;
+      }
+      setEvaluationRun(data);
+      setBackendStatus({ ...data.runtime, state: "online", checkedAt: new Date().toISOString() });
+      fetchEvaluations();
+      fetchLogs();
+    } catch (error) {
+      alert(error.name === "AbortError" ? "Bộ đánh giá chạy quá 3 phút." : "Không kết nối được backend để đánh giá.");
+      refreshBackendStatus();
+    } finally {
+      setEvaluationRunning(false);
+    }
+  }
+
   async function handleCreateLog(event) {
     event.preventDefault();
     if (!logForm.action_type) {
@@ -545,6 +624,15 @@ export default function useAppController() {
     }
     setLogForm({ action_type: "", description: "" });
     fetchLogs();
+  }
+
+  async function handleCreateKeyword(event) {
+    event.preventDefault();
+    const res = await fetch(`${API_BASE}/scam-keywords`, { method: "POST", headers: authHeaders, body: JSON.stringify({ ...keywordForm, weight: Number(keywordForm.weight) }) });
+    const data = await res.json();
+    if (!res.ok) { alert(data.detail || "Không thể thêm từ khóa"); return; }
+    setKeywordForm({ keyword: "", category: "phishing", weight: "10" });
+    fetchKeywords();
   }
 
   function logout() {
@@ -593,6 +681,9 @@ export default function useAppController() {
     setTextInput,
     urlInput,
     setUrlInput,
+    batchInput,
+    setBatchInput,
+    batchResults,
     documentFile,
     handleDocumentSelect,
     isCameraOpen,
@@ -608,7 +699,16 @@ export default function useAppController() {
     datasets,
     models,
     evaluations,
+    evaluationRun,
+    evaluationRunning,
+    handleRunEvaluation,
+    backendStatus,
+    refreshBackendStatus,
     logs,
+    keywords,
+    keywordForm,
+    setKeywordForm,
+    handleCreateKeyword,
     datasetForm,
     setDatasetForm,
     modelForm,

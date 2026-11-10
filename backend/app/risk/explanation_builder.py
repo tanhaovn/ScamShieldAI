@@ -45,6 +45,8 @@ def build_analysis_explanation(
     combined_level: str,
     include_visual: bool = True,
     safe_browsing_result: Any = None,
+    phishvn_display_score: int | None = None,
+    domain_intelligence: list[dict[str, Any]] | None = None,
 ) -> tuple[str, dict[str, Any]]:
     """Return a readable plain-text explanation and a structured UI payload."""
     components: list[dict[str, Any]] = []
@@ -126,11 +128,28 @@ def build_analysis_explanation(
         _component(
             "url",
             "Đường link trong nội dung",
-            int(phishvn_result.risk_score),
+            int(phishvn_display_score if phishvn_display_score is not None else phishvn_result.risk_score),
             url_summary,
             url_findings,
         )
     )
+
+    if domain_intelligence:
+        top_domain = max(domain_intelligence, key=lambda item: int(item.get("score") or 0))
+        domain_findings = list(top_domain.get("signals") or [])
+        if top_domain.get("trusted"):
+            domain_findings.append("Tên miền khớp danh sách chính thức đã được kiểm tra hồi quy.")
+        if not domain_findings:
+            domain_findings = ["Không phát hiện dấu hiệu giả mạo nổi bật trong cấu trúc tên miền."]
+        components.append(
+            _component(
+                "domain_structure",
+                "Cấu trúc tên miền",
+                int(top_domain.get("score") or 0),
+                f"Đã phân tích ngoại tuyến tên miền {top_domain.get('host') or ''}; hệ thống không mở website.",
+                domain_findings,
+            )
+        )
 
     if include_visual:
         visual_flags = list(visual_result.flags[:6]) if visual_result.flags else []

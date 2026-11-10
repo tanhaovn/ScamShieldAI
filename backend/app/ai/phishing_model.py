@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from PIL import Image
+from PIL import Image, ImageStat
 
 MODEL_PATH = Path("models/phishing_resnet18.pt")
 
@@ -55,6 +55,18 @@ def analyze_phishing_image(image_path: str) -> PhishingImageResult:
 
         model, class_to_idx, transform = loaded
         image = Image.open(image_path).convert("RGB")
+        # A classifier trained on screenshots must not make a confident claim
+        # about a blank scan, placeholder or single-colour photograph.  These
+        # inputs carry no useful layout evidence and previously caused a strong
+        # false positive because they are outside the training distribution.
+        channel_variance = ImageStat.Stat(image.resize((128, 128))).var
+        if max(channel_variance, default=0.0) < 2.0:
+            return PhishingImageResult(
+                available=False,
+                probability=0.0,
+                label="insufficient_visual_content",
+                explanation="Ảnh gần như đồng màu nên không đủ chi tiết để model bố cục kết luận.",
+            )
         input_tensor = transform(image).unsqueeze(0)
         with torch.inference_mode():
             logits = model(input_tensor)

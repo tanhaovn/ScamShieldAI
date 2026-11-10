@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { exportScanReport } from "../../utils/reportExport";
 
 const riskMeta = {
   an_toan: { label: "An toàn", short: "An toàn", className: "safe" },
@@ -214,7 +215,10 @@ export default function HistoryPage({
                 <span className="history-live"><i /> {en ? "REVIEW RESULT" : "XEM LẠI KẾT QUẢ"}</span>
                 <h3 id="history-detail-title">{en ? "Check details" : "Chi tiết lần kiểm tra"} #{selectedHistory.id}</h3>
               </div>
-              <button type="button" className="history-modal-close" onClick={() => setSelectedHistory(null)} aria-label={en ? "Close details" : "Đóng chi tiết"}>×</button>
+              <div className="history-modal-actions">
+                <button type="button" className="history-report-button" onClick={() => exportScanReport(selectedHistory, language)}><span aria-hidden="true">⇩</span> {en ? "Export PDF" : "Xuất PDF"}</button>
+                <button type="button" className="history-modal-close" onClick={() => setSelectedHistory(null)} aria-label={en ? "Close details" : "Đóng chi tiết"}>×</button>
+              </div>
             </header>
 
             <div className="history-modal-layout">

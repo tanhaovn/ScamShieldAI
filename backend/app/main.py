@@ -10,10 +10,9 @@ Yêu cầu:
     - Đã cài tesseract-ocr + tesseract-ocr-vie ở hệ thống (xem app/ocr/ocr_service.py)
 """
 import os
-import shutil
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -24,13 +23,15 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
+from PIL import Image, UnidentifiedImageError
 
 from backend.app.ai.phishing_model import analyze_phishing_image
 from backend.app.ai.phishvn_url_model import analyze_urls_in_text, extract_url_candidates
 from backend.app.ai.google_safe_browsing import check_urls as check_google_safe_browsing
+from backend.app.ai.domain_intelligence import inspect_urls
 from backend.app.ai.vlm_image_analyzer import analyze_image_context
 from backend.app.db.database import get_db, engine, Base, SessionLocal
-from backend.app.db.models import AuthIdentity, ScanHistory, User, ScamCategory, TrainingDataset, AiModel, ModelEvaluation, SystemActivityLog
+from backend.app.db.models import AuthIdentity, ScanHistory, User, ScamCategory, TrainingDataset, AiModel, ModelEvaluation, SystemActivityLog, ScanFeedback, ScamKeyword
 from backend.app.document.pdf_service import extract_pdf_content
 from backend.app.ocr.highlight_service import build_suspicious_regions
 from backend.app.ocr.ocr_service import extract_text_and_boxes, get_image_dimensions
@@ -39,6 +40,7 @@ from backend.app.risk.risk_engine import analyze_text
 from backend.app.risk.safety_assistant import answer_safety_question
 from backend.app.visual.visual_forensics import analyze_image_visual
 from backend.app.visual.qr_analysis import decode_qr_codes
+from backend.app.evaluation.benchmark import run_detector_benchmark
 
 app = FastAPI(title="Vietnamese Scam Detection - Multi-source Scanner")
 app.add_middleware(
@@ -56,9 +58,60 @@ UPLOAD_DIR = PROJECT_ROOT / "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 USE_DEEPFAKE_MODEL = os.getenv("USE_DEEPFAKE_MODEL", "false").lower() == "true"
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-key-change-me")
+APP_ENV = os.getenv("APP_ENV", "development").strip().lower()
+if APP_ENV == "production" and JWT_SECRET == "dev-secret-key-change-me":
+    raise RuntimeError("JWT_SECRET bắt buộc phải được cấu hình an toàn trong production")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "1440"))
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+APP_VERSION = os.getenv("APP_VERSION", "1.2.0").strip() or "1.2.0"
+STARTED_AT = datetime.now(timezone.utc)
+
+
+def _read_git_commit() -> str:
+    """Resolve a short revision without invoking Git in a request handler."""
+    configured = os.getenv("GIT_COMMIT", "").strip()
+    if configured:
+        return configured[:12]
+    try:
+        git_dir = PROJECT_ROOT / ".git"
+        if git_dir.is_file():
+            target = git_dir.read_text(encoding="utf-8").strip().removeprefix("gitdir: ")
+            git_dir = (PROJECT_ROOT / target).resolve()
+        head = (git_dir / "HEAD").read_text(encoding="utf-8").strip()
+        if not head.startswith("ref: "):
+            return head[:12]
+        ref_name = head.removeprefix("ref: ")
+        ref_file = git_dir / ref_name
+        if ref_file.exists():
+            return ref_file.read_text(encoding="utf-8").strip()[:12]
+        packed = git_dir / "packed-refs"
+        if packed.exists():
+            for line in packed.read_text(encoding="utf-8").splitlines():
+                if line.endswith(f" {ref_name}"):
+                    return line.split(" ", 1)[0][:12]
+    except (OSError, ValueError):
+        pass
+    return "unknown"
+
+
+GIT_COMMIT = _read_git_commit()
+
+
+def _runtime_info() -> dict:
+    return {
+        "status": "ok",
+        "app_version": APP_VERSION,
+        "git_commit": GIT_COMMIT,
+        "environment": APP_ENV,
+        "started_at": STARTED_AT.isoformat(),
+        "services": {
+            "database": engine.url.get_backend_name(),
+            "image_model": (PROJECT_ROOT / "models" / "phishing_resnet18.pt").exists(),
+            "url_model": (PROJECT_ROOT / "models" / "phishvn_url_histgb.joblib").exists(),
+            "safe_browsing": bool(os.getenv("GOOGLE_SAFE_BROWSING_API_KEY", "").strip()),
+        },
+    }
 
 dist_dir = FRONTEND_DIR / "dist"
 if (dist_dir / "assets").exists():
@@ -99,6 +152,10 @@ class UrlCheckRequest(BaseModel):
     url: str = Field(min_length=3, max_length=4096)
 
 
+class BatchUrlRequest(BaseModel):
+    urls: list[str] = Field(min_length=1, max_length=50)
+
+
 class AssistantQuestionRequest(BaseModel):
     question: str = Field(min_length=2, max_length=500)
     risk_level: str = Field(max_length=30)
@@ -133,6 +190,25 @@ class ModelEvaluationRequest(BaseModel):
     recall: float | None = None
     false_alarm_rate: float | None = None
     explanation_usefulness: float | None = None
+
+
+class ScanFeedbackRequest(BaseModel):
+    scan_id: int | None = None
+    client_scan_id: str | None = Field(default=None, max_length=100)
+    verdict: str = Field(pattern="^(correct|false_alarm|missed_scam)$")
+    predicted_level: str = Field(max_length=30)
+    risk_score: int = Field(ge=0, le=100)
+    source_type: str = Field(max_length=30)
+    original_filename: str | None = Field(default=None, max_length=512)
+    note: str | None = Field(default=None, max_length=1000)
+    highlighted_terms: list[str] = Field(default_factory=list, max_length=30)
+    urls: list[str] = Field(default_factory=list, max_length=20)
+
+
+class ScamKeywordRequest(BaseModel):
+    keyword: str = Field(min_length=2, max_length=255)
+    category: str = Field(min_length=2, max_length=100)
+    weight: int = Field(ge=1, le=50)
 
 
 def _hash_password(password: str) -> str:
@@ -501,6 +577,25 @@ def list_system_logs(
     ]
 
 
+@app.get("/scam-keywords")
+def list_scam_keywords(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Chỉ admin mới xem từ khóa")
+    return [{"id": row.id, "keyword": row.keyword, "category": row.category, "weight": row.weight, "created_at": row.created_at} for row in db.query(ScamKeyword).order_by(ScamKeyword.category, ScamKeyword.weight.desc()).all()]
+
+
+@app.post("/scam-keywords", status_code=201)
+def create_scam_keyword(payload: ScamKeywordRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Chỉ admin mới quản lý từ khóa")
+    keyword = payload.keyword.strip().lower()
+    if db.query(ScamKeyword).filter(ScamKeyword.keyword == keyword).first():
+        raise HTTPException(status_code=409, detail="Từ khóa đã tồn tại")
+    row = ScamKeyword(keyword=keyword, category=payload.category.strip(), weight=payload.weight)
+    db.add(row); db.commit(); db.refresh(row)
+    return {"id": row.id, "keyword": row.keyword, "category": row.category, "weight": row.weight}
+
+
 def _analyze_content_payload(
     content: str,
     *,
@@ -510,31 +605,39 @@ def _analyze_content_payload(
     """Run the shared text, URL and optional visual pipeline."""
     qr_codes = qr_codes or []
     analysis_text = "\n".join(part for part in [content.strip(), *qr_codes] if part).strip()
+    url_candidates = extract_url_candidates(analysis_text)
+    domain_intelligence = inspect_urls(url_candidates)
 
-    # These detectors do not depend on one another. Running them concurrently
-    # avoids making a network reputation lookup wait for local ML inference
-    # (and vice versa) without skipping any layer of the safety pipeline.
-    worker_count = 5 if image_path else 3
-    with ThreadPoolExecutor(max_workers=worker_count, thread_name_prefix="scan") as executor:
-        text_future = executor.submit(analyze_text, analysis_text)
-        phishvn_future = executor.submit(analyze_urls_in_text, analysis_text)
+    # Only the remote reputation lookup is overlapped with local inference.
+    # Running several native ML runtimes (Torch/OpenMP/OpenCV) concurrently can
+    # oversubscribe CPUs or stall on Windows, so the accuracy-critical local
+    # models intentionally remain sequential and deterministic.
+    with ThreadPoolExecutor(max_workers=1, thread_name_prefix="reputation") as executor:
         safe_browsing_future = executor.submit(
             check_google_safe_browsing,
-            extract_url_candidates(analysis_text),
+            url_candidates,
         )
+        text_result = analyze_text(analysis_text)
+        phishvn_result = analyze_urls_in_text(analysis_text)
         if image_path:
-            visual_future = executor.submit(
-                analyze_image_visual,
+            visual_result = analyze_image_visual(
                 image_path, use_deepfake_model=USE_DEEPFAKE_MODEL
             )
-            image_model_future = executor.submit(analyze_phishing_image, image_path)
-
-        text_result = text_future.result()
-        phishvn_result = phishvn_future.result()
+            image_model_result = analyze_phishing_image(image_path)
         safe_browsing_result = safe_browsing_future.result()
-        if image_path:
-            visual_result = visual_future.result()
-            image_model_result = image_model_future.result()
+
+    domain_score = max((int(item.get("score") or 0) for item in domain_intelligence), default=0)
+    trusted_domains_only = bool(domain_intelligence) and all(bool(item.get("trusted")) for item in domain_intelligence)
+    raw_phishvn_score = int(phishvn_result.risk_score)
+    calibrated_phishvn_score = raw_phishvn_score
+    if trusted_domains_only and int(text_result.risk_score) < 25 and not safe_browsing_result.matches:
+        # An auditable exact-domain registry may suppress an isolated model
+        # false positive, but never a threat-list match or risky message text.
+        calibrated_phishvn_score = 0
+    elif raw_phishvn_score >= 60 and domain_score < 50 and int(text_result.risk_score) < 25 and not safe_browsing_result.matches:
+        # One uncorroborated URL model is enough to request review, not enough
+        # to assert danger. This model is known to be overconfident OOD.
+        calibrated_phishvn_score = 45
 
     if image_path:
         image_model_score = int(image_model_result.probability * 100)
@@ -571,7 +674,9 @@ def _analyze_content_payload(
 
     component_scores = [int(text_result.risk_score)]
     if phishvn_result.available and phishvn_result.predictions:
-        component_scores.append(int(phishvn_result.risk_score))
+        component_scores.append(calibrated_phishvn_score)
+    if domain_score:
+        component_scores.append(domain_score)
     if safe_browsing_result.matches:
         component_scores.append(int(safe_browsing_result.risk_score))
     if image_path:
@@ -585,8 +690,10 @@ def _analyze_content_payload(
     # Calibrated Multimodal Consensus Fusion (Soft Voting)
     # ---------------------------------------------------------
     primary_scores = [int(text_result.risk_score)]
-    if phishvn_result.available and phishvn_result.predictions:
-        primary_scores.append(int(phishvn_result.risk_score))
+    if phishvn_result.available and phishvn_result.predictions and calibrated_phishvn_score:
+        primary_scores.append(calibrated_phishvn_score)
+    if domain_score >= 20:
+        primary_scores.append(domain_score)
     if safe_browsing_result.matches:
         # A match is an independent threat-list confirmation, not a model guess.
         primary_scores.append(int(safe_browsing_result.risk_score))
@@ -632,6 +739,21 @@ def _analyze_content_payload(
     if secondary_scores and max(secondary_scores) >= 50 and combined_score >= 25:
         combined_score = min(100, combined_score + int(0.12 * max(secondary_scores)))
 
+    # Structural URL evidence is deliberately conservative but must never be
+    # averaged below the review threshold. Two independent medium image/text
+    # signals can promote a fake authentication surface to high risk.
+    if domain_score >= 20 and not trusted_domains_only:
+        combined_score = max(combined_score, min(domain_score, 70))
+    if (
+        image_path
+        and int(text_result.risk_score) >= 40
+        and int(vlm_result.risk_score) >= 45
+        and "biểu mẫu đăng nhập/xác thực" in text_result.highlighted_terms
+    ):
+        combined_score = max(combined_score, 60)
+    if trusted_domains_only and int(text_result.risk_score) < 25 and not safe_browsing_result.matches:
+        combined_score = min(combined_score, 15)
+
     combined_score = max(0, min(combined_score, 100))
 
     if combined_score >= 60:
@@ -644,7 +766,9 @@ def _analyze_content_payload(
     combined_scam_type = text_result.scam_type
     if safe_browsing_result.matches:
         combined_scam_type = "verified_unsafe_url"
-    elif phishvn_result.risk_score >= 50 and phishvn_result.risk_score >= text_result.risk_score:
+    elif domain_score >= 50:
+        combined_scam_type = "phishing_url"
+    elif calibrated_phishvn_score >= 50 and calibrated_phishvn_score >= text_result.risk_score:
         combined_scam_type = "phishing_url"
     elif image_path and image_model_result.available and image_model_score >= 65 and combined_scam_type == "none":
         combined_scam_type = "phishing"
@@ -655,7 +779,12 @@ def _analyze_content_payload(
             "Google Safe Browsing đã trả về kết quả khớp với danh sách URL nguy hiểm đã biết. "
             "Không mở URL, không đăng nhập và không cung cấp OTP hoặc thông tin thanh toán."
         )
-    elif phishvn_result.risk_score >= 60:
+    elif domain_score >= 50:
+        suggested_action = (
+            "Cấu trúc tên miền có dấu hiệu giả mạo mạnh. Không mở URL hoặc nhập thông tin; "
+            "hãy tự gõ địa chỉ website chính thức để xác minh."
+        )
+    elif calibrated_phishvn_score >= 60:
         suggested_action = (
             "KHÔNG mở URL, KHÔNG đăng nhập hoặc cung cấp OTP/thông tin thanh toán. "
             "Hãy tự nhập địa chỉ website chính thức hoặc liên hệ tổ chức qua kênh đã xác minh."
@@ -676,6 +805,8 @@ def _analyze_content_payload(
         text_result=text_result,
         phishvn_result=phishvn_result,
         safe_browsing_result=safe_browsing_result,
+        phishvn_display_score=calibrated_phishvn_score,
+        domain_intelligence=domain_intelligence,
         visual_result=visual_result,
         image_model_result=image_model_result,
         image_model_score=image_model_score,
@@ -692,9 +823,12 @@ def _analyze_content_payload(
         "text_risk_score": text_result.risk_score,
         "phishvn_available": phishvn_result.available,
         "phishvn_model": phishvn_result.model_name,
-        "phishvn_url_risk_score": phishvn_result.risk_score,
+        "phishvn_url_risk_score": calibrated_phishvn_score,
+        "phishvn_raw_score": raw_phishvn_score,
+        "phishvn_calibrated_score": calibrated_phishvn_score,
         "phishvn_urls": phishvn_result.predictions_as_dicts(),
         "google_safe_browsing": safe_browsing_result.to_dict(),
+        "domain_intelligence": domain_intelligence,
         "visual_risk_score": visual_result.visual_score,
         "image_model_available": image_model_result.available,
         "image_model_label": image_model_result.label,
@@ -707,6 +841,7 @@ def _analyze_content_payload(
         "explanation": combined_explanation,
         "analysis_breakdown": analysis_breakdown,
         "suggested_action": suggested_action,
+        "detector": {"app_version": APP_VERSION, "git_commit": GIT_COMMIT},
     }
 
 
@@ -748,6 +883,19 @@ def check_url(payload: UrlCheckRequest):
     )
 
 
+@app.post("/check-urls-batch")
+def check_urls_batch(payload: BatchUrlRequest):
+    unique_urls = list(dict.fromkeys(value.strip() for value in payload.urls if value.strip()))[:50]
+    results = []
+    for url in unique_urls:
+        if not extract_url_candidates(url):
+            results.append({"url": url, "status": "invalid", "risk_score": 0, "risk_level": "unknown"})
+            continue
+        analysis = _analyze_content_payload(url)
+        results.append({"url": url, "status": "checked", "risk_score": analysis["risk_score"], "risk_level": analysis["risk_level"], "domain_intelligence": analysis["domain_intelligence"], "google_safe_browsing": analysis["google_safe_browsing"]})
+    return {"total": len(results), "results": results}
+
+
 @app.post("/analysis-assistant")
 def analysis_assistant(payload: AssistantQuestionRequest):
     """Answer follow-up safety questions using only the completed scan evidence."""
@@ -762,6 +910,49 @@ def analysis_assistant(payload: AssistantQuestionRequest):
             verdict=payload.verdict,
         )
     }
+
+
+@app.post("/scan-feedback", status_code=201)
+def create_scan_feedback(payload: ScanFeedbackRequest, db: Session = Depends(get_db)):
+    """Store explicit user validation without requiring an account."""
+    feedback = ScanFeedback(
+        scan_id=payload.scan_id,
+        client_scan_id=payload.client_scan_id,
+        verdict=payload.verdict,
+        predicted_level=payload.predicted_level,
+        risk_score=payload.risk_score,
+        source_type=payload.source_type,
+        original_filename=payload.original_filename,
+        note=(payload.note or "").strip() or None,
+        evidence_snapshot={
+            "highlighted_terms": payload.highlighted_terms[:30],
+            "urls": payload.urls[:20],
+        },
+    )
+    db.add(feedback)
+    db.commit()
+    db.refresh(feedback)
+    return {"id": feedback.id, "status": feedback.review_status}
+
+
+@app.get("/scan-feedback")
+def list_scan_feedback(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Chỉ admin mới xem phản hồi")
+    rows = db.query(ScanFeedback).order_by(ScanFeedback.created_at.desc()).limit(500).all()
+    return [
+        {
+            "id": row.id, "scan_id": row.scan_id, "client_scan_id": row.client_scan_id,
+            "verdict": row.verdict, "predicted_level": row.predicted_level,
+            "risk_score": row.risk_score, "source_type": row.source_type,
+            "original_filename": row.original_filename, "note": row.note,
+            "review_status": row.review_status, "created_at": row.created_at,
+        }
+        for row in rows
+    ]
 
 
 @app.post("/check-document")
@@ -830,16 +1021,39 @@ async def check_image(
         except Exception:
             pass
 
-    if not file.content_type.startswith("image/"):
+    if not (file.content_type or "").startswith("image/"):
         raise HTTPException(status_code=400, detail="File phải là ảnh (jpg, png...)")
 
-    ext = os.path.splitext(file.filename)[1] or ".jpg"
-    saved_name = f"{uuid.uuid4().hex}{ext}"
-    saved_path = os.path.join(UPLOAD_DIR, saved_name)
+    upload_id = uuid.uuid4().hex
+    saved_name = ""
+    saved_path = UPLOAD_DIR / f"{upload_id}.upload"
+    completed_scan = False
 
     try:
-        with open(saved_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        received_size = 0
+        with saved_path.open("wb") as buffer:
+            while chunk := await file.read(1024 * 1024):
+                received_size += len(chunk)
+                if received_size > 10 * 1024 * 1024:
+                    raise HTTPException(status_code=413, detail="Ảnh tối đa 10 MB")
+                buffer.write(chunk)
+        try:
+            with Image.open(saved_path) as image:
+                image.verify()
+            with Image.open(saved_path) as image:
+                width, height = image.size
+                image_format = (image.format or "").upper()
+            extension = {"JPEG": ".jpg", "PNG": ".png", "WEBP": ".webp"}.get(image_format)
+            if not extension:
+                raise HTTPException(status_code=400, detail="Chỉ hỗ trợ ảnh JPEG, PNG hoặc WEBP")
+            if width < 16 or height < 16 or width * height > 25_000_000:
+                raise HTTPException(status_code=400, detail="Kích thước ảnh không hợp lệ hoặc vượt quá 25 megapixel")
+        except (UnidentifiedImageError, OSError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail="File không phải ảnh hợp lệ hoặc đã bị hỏng") from exc
+        final_path = UPLOAD_DIR / f"{upload_id}{extension}"
+        saved_path.replace(final_path)
+        saved_path = final_path
+        saved_name = final_path.name
 
         category_id = scam_category_id
         if category_id is None:
@@ -900,7 +1114,7 @@ async def check_image(
             scan_id = scan_record.id
             created_at = scan_record.created_at or created_at
 
-        return {
+        response = {
             **analysis,
             "scan_id": scan_id,
             "image_url": f"/uploads/{saved_name}",
@@ -912,9 +1126,12 @@ async def check_image(
             "image_annotations": image_annotations,
             "image_dimensions": image_dimensions,
         }
+        completed_scan = True
+        return response
 
     finally:
-        pass
+        if not completed_scan:
+            Path(saved_path).unlink(missing_ok=True)
 
 
 @app.get("/history/{user_id}")
@@ -1023,6 +1240,52 @@ def create_model_evaluation(
     return {"id": evaluation.id}
 
 
+@app.post("/model-evaluations/run")
+def run_model_evaluation(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Run the versioned regression suite against the same live scan pipeline."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Chỉ admin mới được chạy đánh giá model")
+
+    result = run_detector_benchmark(_analyze_content_payload)
+    active_model = (
+        db.query(AiModel)
+        .filter(AiModel.is_active.is_(True))
+        .order_by(AiModel.created_at.desc())
+        .first()
+    )
+    saved_evaluation_id = None
+    if active_model:
+        evaluation = ModelEvaluation(
+            ai_model_id=active_model.id,
+            macro_f1=result["macro_f1"],
+            recall=result["binary"]["recall"],
+            false_alarm_rate=result["binary"]["false_alarm_rate"],
+            explanation_usefulness=None,
+        )
+        db.add(evaluation)
+        db.flush()
+        saved_evaluation_id = evaluation.id
+        db.add(SystemActivityLog(
+            admin_id=current_user.id,
+            action_type="automated_model_evaluation",
+            description=(
+                f"{result['suite']}: {result['passed']}/{result['total']} passed; "
+                f"version={APP_VERSION}; commit={GIT_COMMIT}"
+            ),
+        ))
+        db.commit()
+
+    return {
+        **result,
+        "runtime": _runtime_info(),
+        "active_model_id": active_model.id if active_model else None,
+        "saved_evaluation_id": saved_evaluation_id,
+    }
+
+
 @app.post("/system-logs")
 def create_system_log(
     payload: SystemLogRequest,
@@ -1045,4 +1308,9 @@ def create_system_log(
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok"}
+    return _runtime_info()
+
+
+@app.get("/version")
+def version_info():
+    return _runtime_info()

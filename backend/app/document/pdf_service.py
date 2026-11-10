@@ -8,6 +8,9 @@ from backend.app.ocr.ocr_service import extract_text
 from backend.app.visual.qr_analysis import decode_qr_codes
 
 
+PDF_TEMP_ROOT = Path(__file__).resolve().parents[3] / "uploads" / ".pdf-temp"
+
+
 def extract_pdf_content(pdf_path: str, max_pages: int = 10) -> dict:
     try:
         import fitz
@@ -26,7 +29,8 @@ def extract_pdf_content(pdf_path: str, max_pages: int = 10) -> dict:
     page_count = len(document)
     processed_pages = min(page_count, max_pages)
     try:
-        with TemporaryDirectory(prefix="scam-pdf-") as temp_dir:
+        PDF_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
+        with TemporaryDirectory(prefix="scam-pdf-", dir=PDF_TEMP_ROOT) as temp_dir:
             temp_root = Path(temp_dir)
             for index in range(processed_pages):
                 page = document[index]
