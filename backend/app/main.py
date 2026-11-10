@@ -42,16 +42,6 @@ from backend.app.visual.visual_forensics import analyze_image_visual
 from backend.app.visual.qr_analysis import decode_qr_codes
 from backend.app.evaluation.benchmark import run_detector_benchmark
 
-app = FastAPI(title="Vietnamese Scam Detection - Multi-source Scanner")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_origin_regex=r"https?://.*",
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 FRONTEND_DIR = PROJECT_ROOT / "frontend-react"
 UPLOAD_DIR = PROJECT_ROOT / "uploads"
@@ -61,16 +51,43 @@ JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-key-change-me")
 APP_ENV = os.getenv("APP_ENV", "development").strip().lower()
 if APP_ENV == "production" and JWT_SECRET == "dev-secret-key-change-me":
     raise RuntimeError("JWT_SECRET bắt buộc phải được cấu hình an toàn trong production")
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@scamdetector.local").strip().lower()
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "Admin@123")
+if APP_ENV == "production":
+    if not ADMIN_EMAIL or "@" not in ADMIN_EMAIL:
+        raise RuntimeError("ADMIN_EMAIL hợp lệ bắt buộc phải được cấu hình trong production")
+    if len(ADMIN_PASSWORD) < 12 or ADMIN_PASSWORD == "Admin@123":
+        raise RuntimeError("ADMIN_PASSWORD production phải có ít nhất 12 ký tự và không dùng mật khẩu mặc định")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "1440"))
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
 APP_VERSION = os.getenv("APP_VERSION", "1.2.0").strip() or "1.2.0"
 STARTED_AT = datetime.now(timezone.utc)
 
+default_cors_origins = (
+    "http://localhost:5173,http://127.0.0.1:5173"
+    if APP_ENV != "production"
+    else ""
+)
+CORS_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("CORS_ORIGINS", default_cors_origins).split(",")
+    if origin.strip()
+]
+
+app = FastAPI(title="Vietnamese Scam Detection - Multi-source Scanner")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 def _read_git_commit() -> str:
     """Resolve a short revision without invoking Git in a request handler."""
-    configured = os.getenv("GIT_COMMIT", "").strip()
+    configured = (os.getenv("GIT_COMMIT") or os.getenv("RENDER_GIT_COMMIT") or "").strip()
     if configured:
         return configured[:12]
     try:
@@ -303,14 +320,13 @@ def seed_default_categories(db: Session):
         if not existing:
             db.add(ScamCategory(code=code, display_name=display_name, description=description))
 
-    admin_email = "admin@scamdetector.local"
-    admin = db.query(User).filter(User.email == admin_email).first()
+    admin = db.query(User).filter(User.email == ADMIN_EMAIL).first()
     if not admin:
         db.add(
             User(
-                email=admin_email,
-                password_hash=_hash_password("Admin@123"),
-                full_name="System Admin",
+                email=ADMIN_EMAIL,
+                password_hash=_hash_password(ADMIN_PASSWORD),
+                full_name="Quản trị viên",
                 role="admin",
                 is_active=True,
             )

@@ -4,8 +4,19 @@ services:
     runtime: docker
     plan: free
     region: singapore
+    healthCheckPath: /health
     envVars:
+      - key: APP_ENV
+        value: production
       - key: USE_SQLITE
         value: "true"
+      - key: USE_DEEPFAKE_MODEL
+        value: "false"
+      - key: USE_VLM_ANALYZER
+        value: "false"
       - key: JWT_SECRET
         generateValue: true
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
