@@ -51,13 +51,20 @@ JWT_SECRET = os.getenv("JWT_SECRET", "dev-secret-key-change-me")
 APP_ENV = os.getenv("APP_ENV", "development").strip().lower()
 if APP_ENV == "production" and JWT_SECRET == "dev-secret-key-change-me":
     raise RuntimeError("JWT_SECRET bắt buộc phải được cấu hình an toàn trong production")
-ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@scamdetector.local").strip().lower()
-ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "Admin@123")
-if APP_ENV == "production":
+ADMIN_EMAIL = os.getenv(
+    "ADMIN_EMAIL",
+    "" if APP_ENV == "production" else "admin@scamdetector.local",
+).strip().lower()
+ADMIN_PASSWORD = os.getenv(
+    "ADMIN_PASSWORD",
+    "" if APP_ENV == "production" else "Admin@123",
+)
+if APP_ENV == "production" and (ADMIN_EMAIL or ADMIN_PASSWORD):
     if not ADMIN_EMAIL or "@" not in ADMIN_EMAIL:
-        raise RuntimeError("ADMIN_EMAIL hợp lệ bắt buộc phải được cấu hình trong production")
+        raise RuntimeError("ADMIN_EMAIL hợp lệ bắt buộc khi bật tài khoản quản trị production")
     if len(ADMIN_PASSWORD) < 12 or ADMIN_PASSWORD == "Admin@123":
         raise RuntimeError("ADMIN_PASSWORD production phải có ít nhất 12 ký tự và không dùng mật khẩu mặc định")
+ADMIN_SEED_ENABLED = bool(ADMIN_EMAIL and ADMIN_PASSWORD)
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "1440"))
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
@@ -320,17 +327,18 @@ def seed_default_categories(db: Session):
         if not existing:
             db.add(ScamCategory(code=code, display_name=display_name, description=description))
 
-    admin = db.query(User).filter(User.email == ADMIN_EMAIL).first()
-    if not admin:
-        db.add(
-            User(
-                email=ADMIN_EMAIL,
-                password_hash=_hash_password(ADMIN_PASSWORD),
-                full_name="Quản trị viên",
-                role="admin",
-                is_active=True,
+    if ADMIN_SEED_ENABLED:
+        admin = db.query(User).filter(User.email == ADMIN_EMAIL).first()
+        if not admin:
+            db.add(
+                User(
+                    email=ADMIN_EMAIL,
+                    password_hash=_hash_password(ADMIN_PASSWORD),
+                    full_name="Quản trị viên",
+                    role="admin",
+                    is_active=True,
+                )
             )
-        )
 
     db.commit()
 
