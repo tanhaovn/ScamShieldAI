@@ -14,16 +14,13 @@ scam-detector/
 ├── datasets/                # Dữ liệu nghiên cứu/tham chiếu
 ├── database/                # Schema và tài nguyên database
 ├── tests/                   # Test tự động và fixture
-├── scripts/                 # Script đánh giá, chuẩn bị dữ liệu và sinh tài liệu
-├── docs/                    # Tài liệu, báo cáo, sơ đồ và hồ sơ capstone
+├── scripts/                 # Script đánh giá, kiểm thử và chuẩn bị dữ liệu
 ├── tessdata/                # Dữ liệu ngôn ngữ Tesseract
 ├── Dockerfile
 ├── render.yaml
 ├── requirements.txt
 └── .env.example
 ```
-
-Xem mô tả chi tiết tại `docs/PROJECT_STRUCTURE.md`.
 
 ## Cài đặt
 
@@ -145,8 +142,7 @@ python scripts/run_black_box_suite.py `
   --json-out .pytest-work/black-box-results.json
 ```
 
-Lần chạy ngày 12/11/2026 đạt **86/86** ca. Xem phạm vi, giới hạn và kết luận ổn
-định tại `docs/reports/BLACK_BOX_TEST_REPORT_2026-11-12.md`.
+Script xuất kết quả chi tiết ra file JSON được truyền qua `--json-out`.
 
 ## Về phần "kiểm tra ảnh giả mạo" (visual forensics)
 
@@ -190,6 +186,8 @@ trả về bằng chứng có cấu trúc: chi tiết quan sát được, vị t
 ```env
 USE_VLM_ANALYZER=true
 VLM_MODEL_ID=HuggingFaceTB/SmolVLM-500M-Instruct
+GEMINI_API_KEY=your_google_ai_studio_key
+GEMINI_VISION_MODEL=gemini-3.5-flash-lite
 VLM_DEVICE=auto
 ```
 

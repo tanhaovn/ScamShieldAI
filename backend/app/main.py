@@ -16,6 +16,12 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
+from dotenv import load_dotenv
+
+# Load feature flags and AI provider settings before importing AI modules,
+# because those modules read their configuration at import time.
+load_dotenv()
+
 import jwt
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,7 +43,6 @@ from backend.app.ocr.highlight_service import build_suspicious_regions
 from backend.app.ocr.ocr_service import extract_text_and_boxes, get_image_dimensions
 from backend.app.risk.explanation_builder import build_analysis_explanation
 from backend.app.risk.risk_engine import analyze_text
-from backend.app.risk.safety_assistant import answer_safety_question
 from backend.app.visual.visual_forensics import analyze_image_visual
 from backend.app.visual.qr_analysis import decode_qr_codes
 from backend.app.evaluation.benchmark import run_detector_benchmark
@@ -64,10 +69,10 @@ ADMIN_PASSWORD = os.getenv(
     "" if APP_ENV == "production" else "Admin@123",
 )
 if APP_ENV == "production" and (ADMIN_EMAIL or ADMIN_PASSWORD):
-    if not ADMIN_EMAIL or "@" not in ADMIN_EMAIL:
-        raise RuntimeError("ADMIN_EMAIL hợp lệ bắt buộc khi bật tài khoản quản trị production")
-    if len(ADMIN_PASSWORD) < 12 or ADMIN_PASSWORD == "Admin@123":
-        raise RuntimeError("ADMIN_PASSWORD production phải có ít nhất 12 ký tự và không dùng mật khẩu mặc định")
+    if len(ADMIN_EMAIL) < 3:
+        raise RuntimeError("ADMIN_EMAIL phải có ít nhất 3 ký tự khi bật tài khoản quản trị production")
+    if len(ADMIN_PASSWORD) < 8 or ADMIN_PASSWORD == "Admin@123":
+        raise RuntimeError("ADMIN_PASSWORD production phải có ít nhất 8 ký tự và không dùng mật khẩu mặc định")
 ADMIN_SEED_ENABLED = bool(ADMIN_EMAIL and ADMIN_PASSWORD)
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "1440"))
@@ -182,16 +187,6 @@ class UrlCheckRequest(BaseModel):
 
 class BatchUrlRequest(BaseModel):
     urls: list[str] = Field(min_length=1, max_length=50)
-
-
-class AssistantQuestionRequest(BaseModel):
-    question: str = Field(min_length=2, max_length=500)
-    risk_level: str = Field(max_length=30)
-    risk_score: int = Field(ge=0, le=100)
-    highlighted_terms: list[str] = Field(default_factory=list, max_length=30)
-    urls: list[dict] = Field(default_factory=list, max_length=20)
-    suggested_action: str = Field(default="", max_length=3000)
-    verdict: str = Field(default="", max_length=3000)
 
 
 class TrainingDatasetRequest(BaseModel):
@@ -334,15 +329,15 @@ def seed_default_categories(db: Session):
     if ADMIN_SEED_ENABLED:
         admin = db.query(User).filter(User.email == ADMIN_EMAIL).first()
         if not admin:
-            db.add(
-                User(
-                    email=ADMIN_EMAIL,
-                    password_hash=_hash_password(ADMIN_PASSWORD),
-                    full_name="Quản trị viên",
-                    role="admin",
-                    is_active=True,
-                )
-            )
+            admin = db.query(User).filter(User.role == "admin").order_by(User.id.asc()).first()
+        if admin:
+            admin.email = ADMIN_EMAIL
+            admin.password_hash = _hash_password(ADMIN_PASSWORD)
+            admin.full_name = "Quản trị viên"
+            admin.role = "admin"
+            admin.is_active = True
+        else:
+            db.add(User(email=ADMIN_EMAIL, password_hash=_hash_password(ADMIN_PASSWORD), full_name="Quản trị viên", role="admin", is_active=True))
 
     db.commit()
 
@@ -373,7 +368,7 @@ def register_user(payload: RegisterRequest, db: Session = Depends(get_db)):
 def login_user(payload: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email.strip().lower()).first()
     if not user or not _verify_password(payload.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Email hoặc mật khẩu không đúng")
+        raise HTTPException(status_code=401, detail="Tài khoản hoặc mật khẩu không đúng")
 
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Tài khoản đã bị vô hiệu hóa")
@@ -703,6 +698,18 @@ def _analyze_content_payload(
             note="Không áp dụng phân tích ngữ cảnh ảnh cho nguồn dữ liệu này.",
         )
 
+    vlm_confident_safe = bool(
+        image_path
+        and getattr(vlm_result, "available", False)
+        and getattr(vlm_result, "verdict", "") == "safe"
+        and float(getattr(vlm_result, "confidence", 0.0) or 0.0) >= 0.65
+        and getattr(vlm_result, "explanation_source", "") == "vision_language_model"
+        and int(text_result.risk_score) < 25
+        and calibrated_phishvn_score < 25
+        and domain_score < 20
+        and not safe_browsing_result.matches
+    )
+
     component_scores = [int(text_result.risk_score)]
     if phishvn_result.available and phishvn_result.predictions:
         component_scores.append(calibrated_phishvn_score)
@@ -730,7 +737,7 @@ def _analyze_content_payload(
         primary_scores.append(int(safe_browsing_result.risk_score))
     if image_path and vlm_result.available:
         primary_scores.append(int(vlm_result.risk_score))
-    if image_path and image_model_result.available and image_model_score >= 70:
+    if image_path and image_model_result.available and image_model_score >= 70 and not vlm_confident_safe:
         # High-confidence phishing-layout matches are primary evidence. OCR can
         # legitimately miss tiny login text or a cropped browser address bar.
         primary_scores.append(image_model_score)
@@ -747,11 +754,7 @@ def _analyze_content_payload(
     if (
         image_path
         and vlm_result.available
-        and vlm_result.verdict == "safe"
-        and image_model_score < 65
-        and int(text_result.risk_score) < 25
-        and int(phishvn_result.risk_score) < 25
-        and not safe_browsing_result.matches
+        and vlm_confident_safe
     ):
         # Domain Gating confirmed benign / everyday photo:
         combined_score = min(int(max_primary * 0.35), 15)
@@ -801,7 +804,7 @@ def _analyze_content_payload(
         combined_scam_type = "phishing_url"
     elif calibrated_phishvn_score >= 50 and calibrated_phishvn_score >= text_result.risk_score:
         combined_scam_type = "phishing_url"
-    elif image_path and image_model_result.available and image_model_score >= 65 and combined_scam_type == "none":
+    elif image_path and image_model_result.available and image_model_score >= 65 and combined_scam_type == "none" and not vlm_confident_safe:
         combined_scam_type = "phishing"
 
     suggested_action = text_result.suggested_action
@@ -825,7 +828,7 @@ def _analyze_content_payload(
             "URL có dấu hiệu cần kiểm tra thêm. Không bấm trực tiếp; hãy đối chiếu tên miền "
             "với website chính thức trước khi tiếp tục."
         )
-    elif image_path and image_model_result.available and image_model_score >= 65:
+    elif image_path and image_model_result.available and image_model_score >= 65 and not vlm_confident_safe:
         suggested_action = (
             "Ảnh có bố cục tương đồng với các trang giả mạo. Không nhập mật khẩu, OTP hoặc "
             "thông tin thanh toán; hãy tự mở ứng dụng hay website chính thức để xác minh."
@@ -950,22 +953,6 @@ def check_urls_batch(payload: BatchUrlRequest):
         analysis = _analyze_content_payload(url)
         results.append({"url": url, "status": "checked", "risk_score": analysis["risk_score"], "risk_level": analysis["risk_level"], "domain_intelligence": analysis["domain_intelligence"], "google_safe_browsing": analysis["google_safe_browsing"]})
     return {"total": len(results), "results": results}
-
-
-@app.post("/analysis-assistant")
-def analysis_assistant(payload: AssistantQuestionRequest):
-    """Answer follow-up safety questions using only the completed scan evidence."""
-    return {
-        "answer": answer_safety_question(
-            question=payload.question,
-            risk_level=payload.risk_level,
-            risk_score=payload.risk_score,
-            highlighted_terms=payload.highlighted_terms,
-            urls=payload.urls,
-            suggested_action=payload.suggested_action,
-            verdict=payload.verdict,
-        )
-    }
 
 
 @app.post("/scan-feedback", status_code=201)

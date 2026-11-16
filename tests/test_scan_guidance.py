@@ -40,38 +40,3 @@ def test_suspicious_regions_use_tight_ocr_coordinates():
     assert regions[0]["reason"]
 
 
-def test_analysis_assistant_explains_only_scan_evidence():
-    response = client.post(
-        "/analysis-assistant",
-        json={
-            "question": "Vì sao bị cảnh báo?",
-            "risk_level": "nguy_hiem",
-            "risk_score": 88,
-            "highlighted_terms": ["xác minh ngay", "OTP"],
-            "urls": [{"url": "https://fake-bank.example", "risk_score": 91}],
-            "suggested_action": "Không mở URL và không cung cấp OTP.",
-            "verdict": "Nội dung có nhiều dấu hiệu giả mạo.",
-        },
-    )
-
-    assert response.status_code == 200
-    answer = response.json()["answer"]
-    assert "xác minh ngay" in answer
-    assert "fake-bank.example" in answer
-    assert "Nội dung có nhiều dấu hiệu giả mạo" in answer
-
-
-def test_analysis_assistant_gives_emergency_steps_after_click():
-    response = client.post(
-        "/analysis-assistant",
-        json={
-            "question": "Tôi đã bấm link thì làm gì?",
-            "risk_level": "nguy_hiem",
-            "risk_score": 90,
-        },
-    )
-
-    assert response.status_code == 200
-    answer = response.json()["answer"]
-    assert "đóng trang" in answer
-    assert "đổi mật khẩu" in answer

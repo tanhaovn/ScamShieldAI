@@ -8,9 +8,14 @@ OCR text semantics, and PhishVN URL risks into structured evidence.
 """
 from __future__ import annotations
 
+import base64
 import json
+import mimetypes
 import os
 import re
+import time
+import urllib.error
+import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -21,7 +26,9 @@ from backend.app.ai.reasoning_engine import execute_multimodal_reasoning
 
 MODEL_ID = os.getenv("VLM_MODEL_ID", "HuggingFaceTB/SmolVLM-500M-Instruct")
 MODEL_DEVICE = os.getenv("VLM_DEVICE", "auto").strip().lower()
-MAX_NEW_TOKENS = 420
+LOCAL_FILES_ONLY = os.getenv("VLM_LOCAL_FILES_ONLY", "true").strip().lower() in {"1", "true", "yes"}
+MAX_NEW_TOKENS = max(80, int(os.getenv("VLM_MAX_NEW_TOKENS", "140")))
+GEMINI_VISION_MODEL = os.getenv("GEMINI_VISION_MODEL", "gemini-3.5-flash-lite").strip()
 
 _model_cache: Any = None
 _processor_cache: Any = None
@@ -66,6 +73,84 @@ def _enabled() -> bool:
     return os.getenv("USE_VLM_ANALYZER", "false").strip().lower() in {"1", "true", "yes"}
 
 
+def _call_gemini_vision(image_paths: list[str], prompt: str, api_key: str) -> str:
+    parts: list[dict[str, Any]] = [{"text": prompt}]
+    for image_path in image_paths:
+        mime_type = mimetypes.guess_type(image_path)[0] or "image/jpeg"
+        encoded = base64.b64encode(Path(image_path).read_bytes()).decode("ascii")
+        parts.append({"inline_data": {"mime_type": mime_type, "data": encoded}})
+
+    payload = {
+        "contents": [{"role": "user", "parts": parts}],
+        "generationConfig": {"temperature": 0.2, "maxOutputTokens": 500},
+    }
+    request = urllib.request.Request(
+        f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_VISION_MODEL}:generateContent",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json", "x-goog-api-key": api_key},
+        method="POST",
+    )
+    body: dict[str, Any] | None = None
+    last_error: Exception | None = None
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                body = json.loads(response.read().decode("utf-8"))
+            break
+        except urllib.error.HTTPError as error:
+            last_error = error
+            if error.code not in {429, 500, 502, 503, 504} or attempt == 2:
+                raise
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
+            last_error = error
+            if attempt == 2:
+                raise
+        time.sleep(2 ** attempt)
+    if body is None:
+        raise RuntimeError(f"Gemini không phản hồi sau 3 lần thử: {last_error}")
+    candidates = body.get("candidates") or []
+    if not candidates:
+        raise RuntimeError("Gemini không trả về candidate.")
+    response_parts = candidates[0].get("content", {}).get("parts", [])
+    text_parts = [str(part.get("text", "")).strip() for part in response_parts if part.get("text")]
+    result = "\n".join(part for part in text_parts if part).strip()
+    if not result:
+        raise RuntimeError("Gemini không trả về phần văn bản.")
+    return result
+
+
+def _has_causal_explanation(response: str) -> bool:
+    normalized = response.lower()
+    causal_markers = (
+        "vì", "do đó", "nhằm", "khiến", "dụ", "áp lực", "chiếm", "đánh cắp",
+        "hậu quả", "nạn nhân", "lừa đảo", "because", "therefore", "victim", "harm", "fraud",
+    )
+    return any(marker in normalized for marker in causal_markers)
+
+
+def _gemini_structured_prompt(base_prompt: str) -> str:
+    return base_prompt + """
+
+Return only valid JSON, without Markdown, using this schema:
+{
+  "verdict": "safe|suspicious|high_risk|insufficient_evidence",
+  "confidence": 0.0,
+  "summary": "one direct Vietnamese conclusion",
+  "evidence": [
+    {
+      "observation": "specific visible detail in Vietnamese",
+      "location": "location in the image",
+      "why_risky": "specific scam mechanism and possible harm"
+    }
+  ],
+  "observed_text": ["important visible phrase"],
+  "uncertainty": "what the image alone cannot verify",
+  "recommended_action": "one short safe action in Vietnamese"
+}
+Use at most 3 evidence items. Confidence is confidence in the explanation, not
+the ResNet probability."""
+
+
 def _load_model() -> tuple[Any, Any]:
     """Load the configured VLM lazily if enabled and hardware supports it."""
     global _model_cache, _processor_cache, _load_error
@@ -76,7 +161,8 @@ def _load_model() -> tuple[Any, Any]:
 
     try:
         import torch
-        from transformers import AutoModelForVision2Seq, AutoProcessor
+        from huggingface_hub import snapshot_download
+        from transformers import AutoModelForImageTextToText, AutoProcessor
 
         if MODEL_DEVICE == "auto":
             device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -88,17 +174,28 @@ def _load_model() -> tuple[Any, Any]:
         if device == "cuda" and not torch.cuda.is_available():
             raise RuntimeError("VLM_DEVICE=cuda nhưng PyTorch không nhận thấy GPU CUDA.")
 
+        # Passing the resolved snapshot directory is important on offline Windows
+        # machines: some processors still issue a network HEAD request when they
+        # receive a Hub model id, even with local_files_only=True.
+        model_source = MODEL_ID
+        if LOCAL_FILES_ONLY:
+            model_source = snapshot_download(repo_id=MODEL_ID, local_files_only=True)
+
         dtype = torch.float16 if device == "cuda" else torch.float32
-        model = AutoModelForVision2Seq.from_pretrained(
-            MODEL_ID,
-            torch_dtype=dtype,
+        model = AutoModelForImageTextToText.from_pretrained(
+            model_source,
+            dtype=dtype,
             low_cpu_mem_usage=True,
             _attn_implementation="eager",
+            local_files_only=True if LOCAL_FILES_ONLY else False,
         )
         model.to(device)
         model.eval()
         _model_cache = model
-        _processor_cache = AutoProcessor.from_pretrained(MODEL_ID)
+        _processor_cache = AutoProcessor.from_pretrained(
+            model_source,
+            local_files_only=True if LOCAL_FILES_ONLY else False,
+        )
         return _model_cache, _processor_cache
     except Exception as error:
         _load_error = str(error)
@@ -144,12 +241,66 @@ def _clean_explanation_items(value: Any, limit: int = 6) -> list[dict[str, str]]
 
 def _parse_response(response: str) -> dict[str, Any]:
     match = re.search(r"\{.*\}", response, flags=re.DOTALL)
-    if not match:
-        raise ValueError("Model không trả về JSON.")
-    data = json.loads(match.group(0))
-    if not isinstance(data, dict):
-        raise ValueError("JSON của model không phải object.")
-    return data
+    if match:
+        try:
+            data = json.loads(match.group(0))
+            if isinstance(data, dict):
+                return data
+        except json.JSONDecodeError:
+            pass
+
+    # Small local VLMs follow a short line protocol more reliably than a nested
+    # JSON schema. This is still the model's own visual explanation; no OCR rule
+    # sentences are inserted here.
+    parsed: dict[str, Any] = {"evidence": [], "observed_text": []}
+    for raw_line in response.splitlines():
+        line = raw_line.strip().lstrip("-*• ")
+        if not line or ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        key = key.strip().upper().replace(" ", "_")
+        value = value.strip()
+        if key == "VERDICT":
+            parsed["verdict"] = value.lower()
+        elif key == "CONFIDENCE":
+            number = re.search(r"\d+(?:[.,]\d+)?", value)
+            if number:
+                confidence = float(number.group(0).replace(",", "."))
+                parsed["confidence"] = confidence / 100 if confidence > 1 else confidence
+        elif key == "SUMMARY":
+            parsed["summary"] = value
+        elif key.startswith("EVIDENCE"):
+            parts = [part.strip() for part in value.split("||")]
+            if len(parts) >= 3 and parts[0] and parts[2]:
+                parsed["evidence"].append(
+                    {"observation": parts[0], "location": parts[1], "why_risky": " || ".join(parts[2:])}
+                )
+        elif key == "TEXT":
+            parsed["observed_text"].append(value)
+        elif key == "UNCERTAINTY":
+            parsed["uncertainty"] = value
+        elif key == "ACTION":
+            parsed["recommended_action"] = value
+
+    if parsed.get("summary") or parsed["evidence"]:
+        return parsed
+
+    cleaned = response.strip()
+    if cleaned:
+        return {
+            "verdict": "insufficient_evidence",
+            "confidence": 0.0,
+            "summary": cleaned,
+            "evidence": [
+                {
+                    "observation": "Phân tích trực tiếp toàn bộ ảnh",
+                    "location": "Toàn bộ ảnh",
+                    "why_risky": cleaned,
+                }
+            ],
+            "uncertainty": "Mô hình không trả lời đúng cấu trúc nên chưa tách riêng được từng bằng chứng.",
+        }
+    raise ValueError("Model không trả về nội dung.")
 
 
 def _prompt(
@@ -158,47 +309,21 @@ def _prompt(
     image_model_label: str,
     gradcam_focus_regions: list[str],
 ) -> str:
-    safe_ocr = ocr_text.strip()[:4000] or "(OCR chưa đọc được chữ)"
+    safe_ocr = ocr_text.strip()[:2200] or "(OCR chưa đọc được chữ)"
     safe_qr = "; ".join(qr_codes[:5]) or "(không có QR)"
     safe_focus = "; ".join(gradcam_focus_regions[:3]) or "(chưa xác định)"
-    return f"""Bạn là chuyên gia phân tích ảnh nghi ngờ lừa đảo tại Việt Nam.
-Bạn nhận hai ảnh theo thứ tự: (1) ảnh gốc và, nếu có, (2) bản đồ nhiệt Grad-CAM
-của bộ phân loại ResNet18. Hãy tự quan sát toàn bộ ảnh, đọc bố cục và liên kết các
-chi tiết thành một kịch bản cụ thể. Không được chỉ lặp lại phần trăm dự đoán,
-không được giải thích chung chung và không được kết luận chỉ vì xuất hiện một từ.
+    return f"""Look at the original image and its optional Grad-CAM heatmap. Explain in
+Vietnamese why this exact image may be an online scam. Do not transcribe the
+message and do not list isolated keywords. Connect the claimed sender, the
+threat or bait, the action requested from the victim, and the possible harm.
+For each reason say what is visible, where it is, and why it is risky. If this
+is an ordinary real-life photo, say there is not enough scam evidence. Write
+2 or 3 short, specific Vietnamese bullet points followed by one conclusion.
 
-Grad-CAM chỉ cho biết vùng tác động tới đầu ra "{image_model_label}"; nó không tự
-chứng minh lừa đảo. Các vùng mạnh được thuật toán định vị gần: {safe_focus}.
-
-Văn bản OCR tham khảo (có thể sai, chỉ dùng để kiểm chứng điều nhìn thấy): {safe_ocr}
-QR đã giải mã: {safe_qr}
-
-Với từng bằng chứng, phải nêu đủ ba phần:
-1. Nhìn thấy chi tiết cụ thể nào trong ảnh.
-2. Chi tiết nằm ở khu vực nào.
-3. Vì sao chi tiết đó kết hợp với các chi tiết khác tạo ra cơ chế lừa đảo
-   (mồi nhử, yêu cầu hành động, áp lực, lợi ích cho kẻ gian hoặc hậu quả cho nạn nhân).
-
-Nếu là ảnh đời thường như con chó, con mèo hoặc phong cảnh, hãy mô tả đúng đối
-tượng và kết luận không đủ bằng chứng lừa đảo. Không biến OCR thành danh sách từ
-khóa. Không mở URL, không suy đoán nội dung bị che.
-
-Chỉ trả về JSON hợp lệ, không thêm Markdown, theo đúng schema:
-{{
-  "verdict": "safe|suspicious|high_risk|insufficient_evidence",
-  "confidence": 0.0,
-  "summary": "giải thích trực tiếp tại sao ảnh có hoặc không có dấu hiệu lừa đảo",
-  "evidence": [
-    {{
-      "observation": "chi tiết cụ thể nhìn thấy",
-      "location": "vị trí trong ảnh",
-      "why_risky": "mối liên hệ và cơ chế rủi ro cụ thể"
-    }}
-  ],
-  "observed_text": ["đoạn chữ nhìn thấy quan trọng"],
-  "uncertainty": "điều model chưa thể xác minh từ ảnh",
-  "recommended_action": "hành động an toàn ngắn bằng tiếng Việt"
-}}"""
+The classifier label is {image_model_label}; strongest Grad-CAM areas are
+{safe_focus}. These are hints, not proof. OCR is only an imperfect reading aid:
+{safe_ocr}
+Decoded QR: {safe_qr}"""
 
 
 def analyze_image_context(
@@ -221,31 +346,42 @@ def analyze_image_context(
     # 1. If a real VLM is explicitly enabled, attempt running it.
     if _enabled():
         try:
-            model, processor = _load_model()
-            image = Image.open(image_path).convert("RGB")
-            images = [image]
-            content: list[dict[str, Any]] = [{"type": "image"}]
+            image_paths = [image_path]
             if gradcam_path and Path(gradcam_path).is_file():
-                images.append(Image.open(gradcam_path).convert("RGB"))
-                content.append({"type": "image"})
-            content.append(
-                {
-                    "type": "text",
-                    "text": _prompt(
-                        ocr_text,
-                        qr_codes or [],
-                        image_model_label,
-                        gradcam_focus_regions or [],
-                    ),
-                }
+                image_paths.append(gradcam_path)
+            analysis_prompt = _prompt(
+                ocr_text,
+                qr_codes or [],
+                image_model_label,
+                gradcam_focus_regions or [],
             )
-            messages = [{"role": "user", "content": content}]
-            rendered_prompt = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-            inputs = processor(text=[rendered_prompt], images=images, padding=True, return_tensors="pt")
-            inputs = inputs.to(model.device)
-            generated = model.generate(**inputs, max_new_tokens=MAX_NEW_TOKENS, do_sample=False)
-            new_tokens = generated[:, inputs.input_ids.shape[1]:]
-            raw_response = processor.batch_decode(new_tokens, skip_special_tokens=True)[0].strip()
+
+            gemini_key = (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "").strip()
+            if gemini_key:
+                raw_response = _call_gemini_vision(
+                    image_paths,
+                    _gemini_structured_prompt(analysis_prompt),
+                    gemini_key,
+                )
+                active_model_name = GEMINI_VISION_MODEL
+            else:
+                model, processor = _load_model()
+                images = [Image.open(path).convert("RGB") for path in image_paths]
+                content: list[dict[str, Any]] = [{"type": "image"} for _ in images]
+                content.append({"type": "text", "text": analysis_prompt})
+                messages = [{"role": "user", "content": content}]
+                rendered_prompt = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+                inputs = processor(text=[rendered_prompt], images=images, padding=True, return_tensors="pt")
+                inputs = inputs.to(model.device)
+                generated = model.generate(**inputs, max_new_tokens=MAX_NEW_TOKENS, do_sample=False)
+                new_tokens = generated[:, inputs.input_ids.shape[1]:]
+                raw_response = processor.batch_decode(new_tokens, skip_special_tokens=True)[0].strip()
+                active_model_name = MODEL_ID
+                if not _has_causal_explanation(raw_response):
+                    raise ValueError(
+                        "Mô hình cục bộ chỉ chép lại nội dung ảnh, chưa tạo được giải thích nguyên nhân. "
+                        "Hãy cấu hình GEMINI_API_KEY để dùng mô hình thị giác mạnh hơn."
+                    )
             data = _parse_response(raw_response)
 
             verdict = str(data.get("verdict", "insufficient_evidence")).strip().lower()
@@ -266,7 +402,7 @@ def analyze_image_context(
                 observed_text=_clean_string_list(data.get("observed_text")),
                 reasoning=summary,
                 recommended_action=str(data.get("recommended_action", "")).strip()[:500],
-                model_name=MODEL_ID,
+                model_name=active_model_name,
                 note=(
                     "Giải thích được sinh trực tiếp bởi Vision-Language Model từ ảnh gốc và Grad-CAM. "
                     + (f"Giới hạn: {uncertainty}" if uncertainty else "Kết quả cần được người dùng kiểm chứng.")

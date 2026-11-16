@@ -139,98 +139,15 @@ function HighlightedContent({ text, terms = [], urls = [], language }) {
   return output;
 }
 
-function SafetyAssistant({ result, apiBase, language }) {
-  const en = language === "en";
-  const [messages, setMessages] = useState([]);
-  const [question, setQuestion] = useState("");
-  const [asking, setAsking] = useState(false);
-  const quickQuestions = en
-    ? ["Why was this flagged?", "What if I clicked the link?", "What should I do next?", "How certain is this result?"]
-    : ["Vì sao bị cảnh báo?", "Tôi đã bấm link thì làm gì?", "Tôi nên làm gì tiếp theo?", "Kết quả này có chắc chắn không?"];
-
-  useEffect(() => {
-    const opening = result.risk_level === "nguy_hiem"
-      ? (en ? "This result is high risk. I can explain why and guide you through safe next steps." : "Kết quả có nguy cơ cao. Tôi có thể giải thích lý do và hướng dẫn bạn xử lý an toàn.")
-      : result.risk_level === "nghi_ngo"
-        ? (en ? "Some details still need verification. Ask me why or what to do next." : "Kết quả còn điểm cần xác minh. Bạn có thể hỏi tôi vì sao hoặc nên làm gì tiếp theo.")
-        : (en ? "No strong signals were found, but I can still help you review safe next steps." : "Chưa thấy tín hiệu mạnh, nhưng tôi vẫn có thể giúp bạn kiểm tra các bước an toàn.");
-    setMessages([{ role: "assistant", text: opening }]);
-    setQuestion("");
-  }, [result, en]);
-
-  async function askAssistant(value) {
-    const nextQuestion = String(value || question).trim();
-    if (!nextQuestion || asking) return;
-    setMessages((current) => [...current, { role: "user", text: nextQuestion }]);
-    setQuestion("");
-    setAsking(true);
-    try {
-      const response = await fetch(`${apiBase}/analysis-assistant`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: nextQuestion,
-          risk_level: result.risk_level || "nghi_ngo",
-          risk_score: Number(result.risk_score) || 0,
-          highlighted_terms: result.highlighted_terms || [],
-          urls: result.phishvn_urls || [],
-          suggested_action: result.suggested_action || "",
-          verdict: result.analysis_breakdown?.verdict?.headline || result.explanation || "",
-        }),
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.detail || (en ? "Unable to get an answer" : "Không thể nhận câu trả lời"));
-      setMessages((current) => [...current, { role: "assistant", text: payload.answer }]);
-    } catch (error) {
-      setMessages((current) => [...current, {
-        role: "assistant",
-        text: en ? "The assistant is temporarily unavailable. Stop interacting with the suspicious content and verify through an official channel." : "Trợ lý đang tạm gián đoạn. Bạn hãy dừng tương tác với nội dung đáng ngờ và xác minh qua kênh chính thức.",
-      }]);
-    } finally {
-      setAsking(false);
-    }
-  }
-
-  return (
-    <section className="scan-safety-assistant" id="scan-ai-assistant">
-      <header>
-        <div className="assistant-orb"><i /><i /><i /></div>
-        <div>
-          <small>{en ? "POST-SCAN SAFETY ASSISTANT" : "TRỢ LÝ AN TOÀN SAU KHI QUÉT"}</small>
-          <h3>{en ? "Ask about the result and next steps" : "Hỏi để hiểu kết quả và xử lý đúng"}</h3>
-          <p>{en ? "Answers are grounded in this analysis and links are never opened." : "Chỉ trả lời dựa trên kết quả vừa phân tích, không tự mở đường link."}</p>
-        </div>
-        <span className="assistant-grounded-badge"><i /> {en ? "Grounded in result" : "Bám sát kết quả"}</span>
-      </header>
-      <div className="assistant-messages" aria-live="polite">
-        {messages.map((message, index) => (
-          <div className={`assistant-message ${message.role}`} key={`${message.role}-${index}`}>
-            <span>{message.role === "assistant" ? "AI" : (en ? "You" : "Bạn")}</span>
-            <p>{message.text}</p>
-          </div>
-        ))}
-        {asking && <div className="assistant-message assistant thinking"><span>AI</span><p><i /><i /><i /></p></div>}
-      </div>
-      <div className="assistant-quick-questions">
-        {quickQuestions.map((item) => <button type="button" onClick={() => askAssistant(item)} disabled={asking} key={item}>{item}</button>)}
-      </div>
-      <form className="assistant-input" onSubmit={(event) => { event.preventDefault(); askAssistant(); }}>
-        <input value={question} onChange={(event) => setQuestion(event.target.value)} maxLength="500" placeholder={en ? "Example: What should I do if I entered my password?" : "Ví dụ: Tôi đã nhập mật khẩu thì phải làm sao?"} />
-        <button disabled={asking || !question.trim()} aria-label={en ? "Send question" : "Gửi câu hỏi"}>→</button>
-      </form>
-    </section>
-  );
-}
-
 function ResultFeedback({ result, apiBase, language }) {
   const en = language === "en";
   const [choice, setChoice] = useState("");
   const [note, setNote] = useState("");
   const [status, setStatus] = useState("idle");
   const options = [
-    ["correct", en ? "Result is correct" : "Kết quả đúng", "✓"],
-    ["false_alarm", en ? "False warning" : "Cảnh báo sai", "!"],
-    ["missed_scam", en ? "Missed a scam" : "Bỏ sót lừa đảo", "+"],
+    ["correct", en ? "Result is correct" : "Kết quả đúng", en ? "The warning matches this content" : "Cảnh báo phù hợp với nội dung", "✓"],
+    ["false_alarm", en ? "False warning" : "Cảnh báo sai", en ? "Safe content was flagged" : "Nội dung an toàn nhưng bị cảnh báo", "!"],
+    ["missed_scam", en ? "Missed a scam" : "Bỏ sót lừa đảo", en ? "The result should be more severe" : "Kết quả chưa cảnh báo đúng mức", "+"],
   ];
 
   async function submitFeedback() {
@@ -263,8 +180,8 @@ function ResultFeedback({ result, apiBase, language }) {
   if (status === "sent") return <section className="scan-feedback-card is-sent"><span>✓</span><div><strong>{en ? "Thank you for validating this result" : "Cảm ơn bạn đã xác nhận kết quả"}</strong><p>{en ? "The feedback is queued for expert review and model evaluation." : "Phản hồi đã được đưa vào hàng chờ để kiểm định và đánh giá mô hình."}</p></div></section>;
   return (
     <section className="scan-feedback-card">
-      <header><div><small>{en ? "HUMAN VALIDATION" : "XÁC NHẬN TỪ NGƯỜI DÙNG"}</small><h3>{en ? "Was this result accurate?" : "Kết quả này có chính xác không?"}</h3></div><span>{en ? "Helps improve detection" : "Giúp cải thiện hệ thống"}</span></header>
-      <div className="scan-feedback-options">{options.map(([value, label, icon]) => <button type="button" className={choice === value ? "active" : ""} onClick={() => { setChoice(value); setStatus("idle"); }} key={value}><b>{icon}</b>{label}</button>)}</div>
+      <header><div><small>{en ? "HUMAN VALIDATION" : "XÁC NHẬN TỪ NGƯỜI DÙNG"}</small><h3>{en ? "Was this result accurate?" : "Kết quả này có chính xác không?"}</h3></div><span><i />{en ? "Helps improve detection" : "Giúp cải thiện hệ thống"}</span></header>
+      <div className="scan-feedback-options">{options.map(([value, label, description, icon]) => <button type="button" aria-pressed={choice === value} className={`feedback-${value} ${choice === value ? "active" : ""}`} onClick={() => { setChoice(value); setStatus("idle"); }} key={value}><b>{icon}</b><span><strong>{label}</strong><small>{description}</small></span></button>)}</div>
       {choice && <div className="scan-feedback-detail"><textarea value={note} onChange={(event) => setNote(event.target.value)} maxLength={1000} placeholder={en ? "Optional: tell us what was right or wrong" : "Không bắt buộc: cho biết điểm nào đúng hoặc chưa đúng"} /><button type="button" onClick={submitFeedback} disabled={status === "sending"}>{status === "sending" ? (en ? "Sending..." : "Đang gửi...") : (en ? "Submit feedback" : "Gửi phản hồi")}</button></div>}
       {status === "error" && <p className="scan-feedback-error">{en ? "Could not save feedback. Please try again." : "Chưa lưu được phản hồi. Vui lòng thử lại."}</p>}
     </section>
@@ -370,7 +287,7 @@ function ResultConsole({ result, apiBase, language }) {
   const vlm = result.vlm_analysis || {};
   const aiExplanationItems = Array.isArray(vlm.explanation_items) ? vlm.explanation_items : [];
   const hasAiExplanation = vlm.explanation_source === "vision_language_model"
-    && Boolean(vlm.reasoning || aiExplanationItems.length);
+    && aiExplanationItems.length > 0;
   const plainReasons = [];
   if (result.highlighted_terms?.length) {
     plainReasons.push(en ? `Urgent wording or sensitive requests found: ${result.highlighted_terms.slice(0, 5).join(", ")}.` : `Có từ ngữ thúc giục hoặc yêu cầu nhạy cảm: ${result.highlighted_terms.slice(0, 5).join(", ")}.`);
@@ -456,23 +373,16 @@ function ResultConsole({ result, apiBase, language }) {
                 <span>{en ? "Lower contribution" : "Ít tác động"}</span><i /><span>{en ? "Higher contribution" : "Tác động mạnh"}</span>
               </div>
               <div className="scan-gradcam-explanation">
-                <h4>{en ? "Visual AI explanation" : "AI thị giác giải thích cụ thể"}</h4>
+                <h4>{en ? "Explanation" : "Giải thích"}</h4>
                 {hasAiExplanation ? (
-                  <>
-                    {vlm.reasoning && <p>{vlm.reasoning}</p>}
-                    {aiExplanationItems.length > 0 && (
-                      <ol className="scan-ai-evidence-list">
-                        {aiExplanationItems.map((item, index) => (
-                          <li key={`${item.observation}-${index}`}>
-                            <strong>{item.observation}</strong>
-                            {item.location && <span>{en ? "Location" : "Vị trí"}: {item.location}</span>}
-                            <p>{item.why_risky}</p>
-                          </li>
-                        ))}
-                      </ol>
-                    )}
-                    <small>{vlm.note}</small>
-                  </>
+                  <ol className="scan-ai-evidence-list">
+                    {aiExplanationItems.map((item, index) => (
+                      <li key={`${item.observation}-${index}`}>
+                        <strong>{item.observation}</strong>
+                        <p>{item.why_risky}</p>
+                      </li>
+                    ))}
+                  </ol>
                 ) : (
                   <div className="scan-ai-explanation-unavailable">
                     <strong>{en ? "A visual-language explanation is not available" : "Chưa có lời giải thích từ AI thị giác"}</strong>
@@ -481,11 +391,6 @@ function ResultConsole({ result, apiBase, language }) {
                       : "Grad-CAM chỉ định vị vùng tác động, tự nó không hiểu ý nghĩa và không thể nói vì sao nội dung đó là lừa đảo.")}</p>
                   </div>
                 )}
-                <small>
-                  {en
-                    ? `Technical signal: ResNet18 predicted ${gradcamTargetLabel} (${gradcamTargetScore}%); Grad-CAM marks the pixels that influenced that output. This percentage is not the explanation itself.`
-                    : `Tín hiệu kỹ thuật: ResNet18 dự đoán “${gradcamTargetLabel}” (${gradcamTargetScore}%); Grad-CAM đánh dấu pixel ảnh hưởng đến đầu ra. Phần trăm này không được xem là lời giải thích.`}
-                </small>
               </div>
             </>
           ) : (
@@ -552,8 +457,6 @@ function ResultConsole({ result, apiBase, language }) {
       </div>
 
       <ResultFeedback result={result} apiBase={apiBase} language={language} />
-
-      <SafetyAssistant result={result} apiBase={apiBase} language={language} />
 
       <details className="scan-technical-panel">
         <summary><div><small>{en ? "FOR ADVANCED REVIEW" : "DÀNH CHO NGƯỜI MUỐN XEM KỸ"}</small><strong>{en ? "Technical analysis details" : "Chi tiết phân tích kỹ thuật"}</strong></div><span>+</span></summary>
@@ -646,7 +549,6 @@ export default function ScanPage({
   language = "vi",
 }) {
   const en = language === "en";
-  const [assistantHintVisible, setAssistantHintVisible] = useState(false);
   const imageSource = imagePreview || (result?.image_url ? `${apiBase}${result.image_url}` : "");
   const textPreview = scanMode === "text"
     ? textInput.trim().slice(0, 180)
@@ -665,15 +567,6 @@ export default function ScanPage({
     ["pdf", en ? "Document" : "Tài liệu", "▤"],
     ["batch", en ? "Batch" : "Hàng loạt", "≣"],
   ];
-
-  function openAssistant() {
-    if (result) {
-      setAssistantHintVisible(false);
-      document.getElementById("scan-ai-assistant")?.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
-    }
-    setAssistantHintVisible(true);
-  }
 
   return (
     <div className={`scan-experience ${loading ? "loading" : ""}`}>
@@ -805,21 +698,6 @@ export default function ScanPage({
       {batchResults?.length > 0 && <section className="batch-result-panel panel"><header><div><span className="eyebrow">BATCH SCAN</span><h3>{en ? "Batch results" : "Kết quả quét hàng loạt"}</h3></div><button type="button" onClick={() => { const rows = ["url,risk_score,risk_level", ...batchResults.map((item) => `"${String(item.url).replaceAll('"','""')}",${item.risk_score},${item.risk_level}`)]; const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8" }); const anchor = document.createElement("a"); anchor.href = URL.createObjectURL(blob); anchor.download = "scam-detector-batch.csv"; anchor.click(); URL.revokeObjectURL(anchor.href); }}>{en ? "Download CSV" : "Tải CSV"}</button></header><div>{batchResults.map((item) => <article className={item.risk_level} key={item.url}><code>{item.url}</code><strong>{item.status === "invalid" ? (en ? "Invalid" : "Không hợp lệ") : `${item.risk_score}/100`}</strong><span>{item.risk_level}</span></article>)}</div></section>}
 
       {result && <ResultConsole result={result} apiBase={apiBase} language={language} />}
-
-      <aside className={`scan-ai-launcher ${result ? "is-ready" : ""}`} aria-label={en ? "Open AI assistant" : "Mở trợ lý AI"}>
-        {assistantHintVisible && !result && (
-          <div className="scan-ai-launcher-hint">
-            <button type="button" onClick={() => setAssistantHintVisible(false)} aria-label={en ? "Close hint" : "Đóng hướng dẫn"}>×</button>
-            <strong>{en ? "The AI assistant opens after a scan" : "Trợ lý AI sẽ mở sau khi quét"}</strong>
-            <p>{en ? <>Add an image, message, URL or PDF, then press <b>Analyze now</b>.</> : <>Bạn hãy nhập ảnh, tin nhắn, URL hoặc PDF rồi bấm <b>Phân tích ngay</b>.</>}</p>
-          </div>
-        )}
-        <button type="button" className="scan-ai-launcher-button" onClick={openAssistant}>
-          <span className="scan-ai-launcher-orb"><i /><b>AI</b></span>
-          <span><small>{en ? "AI ASSISTANT" : "TRỢ LÝ AI"}</small><strong>{result ? (en ? "Ask about result" : "Hỏi về kết quả") : (en ? "Ready after scan" : "Sẵn sàng sau khi quét")}</strong></span>
-          {result && <em>1</em>}
-        </button>
-      </aside>
 
       {isCameraOpen && (
         <div className="camera-modal-backdrop scan-camera-backdrop">

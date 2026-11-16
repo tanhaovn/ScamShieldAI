@@ -92,16 +92,16 @@ export default function AuthPage({
 
           <form onSubmit={onSubmit} className="auth-form admin-auth-form">
             <label className="auth-field">
-              <span>{en ? "Administrator email" : "Email quản trị"}</span>
+              <span>{en ? "Administrator account" : "Tài khoản quản trị"}</span>
               <div>
-                <i aria-hidden="true">@</i>
+                <i aria-hidden="true">ID</i>
                 <input
-                  type="email"
+                  type="text"
                   autoComplete="username"
                   required
                   value={form.email}
                   onChange={(event) => setForm({ ...form, email: event.target.value })}
-                  placeholder="admin@example.com"
+                  placeholder="tanhao"
                 />
               </div>
             </label>
