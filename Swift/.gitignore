@@ -1,0 +1,41 @@
+# Xcode local state and generated output
+.DS_Store
+._*
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+.build/
+.swiftpm/
+*.xcarchive
+*.app/
+*.ipa
+*.dSYM/
+*.dSYM.zip
+*.xcresult/
+*.log
+
+# Simulator / virtual machines (install locally with Xcode)
+CoreSimulator/
+Devices/
+*.simruntime/
+*.simdevice/
+*.utm/
+*.vmwarevm/
+*.pvm/
+*.qcow2
+*.vmdk
+*.vdi
+*.vhd
+*.vhdx
+*.iso
+*.dmg
+
+# Local credentials and configuration
+.env
+.env.*
+!.env.example
+*.p12
+*.p8
+*.mobileprovision
+*.provisionprofile

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>SCAMSHIELD_API_BASE_URL</key>
+	<string>$(SCAMSHIELD_API_BASE_URL)</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<!-- Chỉ cho phép backend local trong lúc phát triển; bản phát hành phải dùng HTTPS. -->
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>ScamShield AI cần kết nối backend đang chạy trên máy Mac trong cùng mạng Wi-Fi.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>ScamShield AI cần camera để chụp nội dung bạn muốn kiểm tra dấu hiệu lừa đảo.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ScamShield AI cần truy cập ảnh bạn chọn để phân tích dấu hiệu lừa đảo.</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+</dict>
+</plist>
