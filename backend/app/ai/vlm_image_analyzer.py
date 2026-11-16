@@ -28,7 +28,7 @@ MODEL_ID = os.getenv("VLM_MODEL_ID", "HuggingFaceTB/SmolVLM-500M-Instruct")
 MODEL_DEVICE = os.getenv("VLM_DEVICE", "auto").strip().lower()
 LOCAL_FILES_ONLY = os.getenv("VLM_LOCAL_FILES_ONLY", "true").strip().lower() in {"1", "true", "yes"}
 MAX_NEW_TOKENS = max(80, int(os.getenv("VLM_MAX_NEW_TOKENS", "140")))
-GEMINI_VISION_MODEL = os.getenv("GEMINI_VISION_MODEL", "gemini-3.5-flash-lite").strip()
+GEMINI_VISION_MODEL = os.getenv("GEMINI_VISION_MODEL", "gemini-1.5-flash").strip()
 
 _model_cache: Any = None
 _processor_cache: Any = None

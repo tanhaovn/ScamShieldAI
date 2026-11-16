@@ -13,7 +13,11 @@ services:
       - key: USE_DEEPFAKE_MODEL
         value: "false"
       - key: USE_VLM_ANALYZER
-        value: "false"
+        value: "true"
+      - key: GEMINI_VISION_MODEL
+        value: "gemini-1.5-flash"
+      - key: GEMINI_API_KEY
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: ADMIN_EMAIL

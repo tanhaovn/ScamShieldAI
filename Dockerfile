@@ -53,5 +53,5 @@ RUN mkdir -p /app/uploads && chmod -R 777 /app
 # Expose server port (7860 for Hugging Face, 8000 for standard Docker)
 EXPOSE 7860 8000
 
-# Run uvicorn dynamically bound to $PORT (default 7860 for Hugging Face Spaces, or 8000)
-CMD ["sh", "-c", "uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-7860}"]
+# Run uvicorn dynamically bound to $PORT (Render sets $PORT dynamically, defaults to 8000)
+CMD ["sh", "-c", "uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
