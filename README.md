@@ -1,3 +1,13 @@
+---
+title: Scam Shield AI
+emoji: 🛡️
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Vietnamese Scam Detection - Multi-source Scanner
 
 Hệ thống hỗ trợ phát hiện dấu hiệu lừa đảo tiếng Việt từ ảnh, mã QR, tin nhắn,

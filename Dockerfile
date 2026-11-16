@@ -47,8 +47,11 @@ COPY models/ /app/models/
 COPY tessdata/ /app/tessdata/
 COPY --from=frontend-builder /build/dist /app/frontend-react/dist
 
-# Expose server port
-EXPOSE 8000
+# Ensure permissions for Hugging Face Spaces non-root user (UID 1000)
+RUN mkdir -p /app/uploads && chmod -R 777 /app
 
-# Run uvicorn dynamically bound to $PORT (supporting Render, Koyeb, Hugging Face)
-CMD ["sh", "-c", "uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Expose server port (7860 for Hugging Face, 8000 for standard Docker)
+EXPOSE 7860 8000
+
+# Run uvicorn dynamically bound to $PORT (default 7860 for Hugging Face Spaces, or 8000)
+CMD ["sh", "-c", "uvicorn backend.app.main:app --host 0.0.0.0 --port ${PORT:-7860}"]
