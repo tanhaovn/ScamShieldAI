@@ -8,23 +8,22 @@ trong `localStorage`. MySQL chỉ lưu lịch sử và dữ liệu quản trị 
 
 ```
 scam-detector/
-├── backend/
-│   └── app/
-│       ├── main.py          # Backend FastAPI, các endpoint
-│       ├── ai/
-│       │   ├── train_image_model.py # Training image classifier
-│       │   └── phishing_model.py    # AI inference khi backend nhận ảnh
-│       ├── ocr/             # Trích văn bản từ ảnh
-│       ├── document/        # Trích chữ và QR từ PDF
-│       ├── risk/            # Tính risk score từ văn bản
-│       ├── visual/          # EXIF, ELA, deepfake và giải mã QR
-│       └── db/              # Kết nối và model database
-├── frontend/
-│   └── index.html            # Giao diện web (HTML/CSS/JS)
-├── schema.sql                # Schema MySQL (chạy 1 lần để tạo DB)
+├── backend/app/             # FastAPI, AI/OCR, risk engine và database
+├── frontend-react/          # React + Vite frontend
+├── models/                  # Model đã huấn luyện và metrics
+├── datasets/                # Dữ liệu nghiên cứu/tham chiếu
+├── database/                # Schema và tài nguyên database
+├── tests/                   # Test tự động và fixture
+├── scripts/                 # Script đánh giá, chuẩn bị dữ liệu và sinh tài liệu
+├── docs/                    # Tài liệu, báo cáo, sơ đồ và hồ sơ capstone
+├── tessdata/                # Dữ liệu ngôn ngữ Tesseract
+├── Dockerfile
+├── render.yaml
 ├── requirements.txt
 └── .env.example
 ```
+
+Xem mô tả chi tiết tại `docs/PROJECT_STRUCTURE.md`.
 
 ## Cài đặt
 
@@ -47,7 +46,7 @@ Các bước bên dưới dành cho trường hợp cần cài hoặc chạy th�
 ### 1. Cài MySQL và tạo database
 
 ```bash
-mysql -u root -p < schema.sql
+mysql -u root -p < database/schema.sql
 ```
 
 ### 2. Cài Tesseract OCR + gói tiếng Việt (bắt buộc cho OCR)
@@ -132,6 +131,23 @@ curl -H "Authorization: Bearer <ADMIN_JWT>" \
   "http://localhost:8000/history/1"
 ```
 
+## Black-box regression
+
+Bộ black-box gọi ứng dụng đang chạy hoàn toàn qua HTTP, bao phủ system API,
+validation, text, URL, xác thực/phân quyền, admin, feedback, PDF, ảnh và truy cập
+đồng thời cơ bản:
+
+```powershell
+python scripts/run_black_box_suite.py `
+  --base-url http://127.0.0.1:8765 `
+  --admin-email <admin-email> `
+  --admin-password <admin-password> `
+  --json-out .pytest-work/black-box-results.json
+```
+
+Lần chạy ngày 12/11/2026 đạt **86/86** ca. Xem phạm vi, giới hạn và kết luận ổn
+định tại `docs/reports/BLACK_BOX_TEST_REPORT_2026-11-12.md`.
+
 ## Về phần "kiểm tra ảnh giả mạo" (visual forensics)
 
 Endpoint `/check-image` giờ trả về **2 điểm rủi ro riêng biệt**, cộng lại thành
@@ -150,6 +166,37 @@ Endpoint `/check-image` giờ trả về **2 điểm rủi ro riêng biệt**, c
       số FFT, **độ tin cậy THẤP, dễ báo sai (false positive) với ảnh có nhiều cạnh
       sắc như văn bản/đồ họa**. Chỉ nên dùng để demo/test nhanh, KHÔNG dùng làm căn
       cứ kết luận cuối trong sản phẩm thật.
+
+### Giải thích dự đoán ResNet18 bằng Grad-CAM
+
+Khi model ảnh khả dụng, `/check-image` dùng `pytorch-grad-cam` trên lớp tích chập
+cuối `model.layer4[-1]` và đầu ra của lớp được ResNet18 dự đoán (`phishing` hoặc
+`legitimate`). API trả thêm
+`image_model_gradcam.image_url`; giao diện hiển thị ảnh gốc cạnh bản đồ nhiệt để
+cho biết vùng nào đóng góp mạnh vào điểm phishing. Vùng đỏ/vàng chỉ thể hiện nơi
+model tập trung, không phải bounding box vật thể và không tự chứng minh ảnh là
+lừa đảo. OCR/highlight vẫn là lớp giải thích riêng cho nội dung chữ.
+
+Thư viện tham khảo: https://github.com/jacobgil/pytorch-grad-cam (MIT). Nếu dùng
+trong báo cáo nghiên cứu, trích dẫn theo hướng dẫn của dự án thư viện.
+
+### Giải thích ngữ nghĩa bằng Vision-Language Model
+
+Grad-CAM chỉ định vị pixel tác động đến lớp ResNet18; nó không tự hiểu một vùng
+chứa con chó, biểu mẫu đăng nhập hay yêu cầu chuyển tiền. Để có lời giải thích
+"tại sao", backend có thể gửi **ảnh gốc + ảnh Grad-CAM** cho một VLM và yêu cầu
+trả về bằng chứng có cấu trúc: chi tiết quan sát được, vị trí và cơ chế rủi ro.
+
+```env
+USE_VLM_ANALYZER=true
+VLM_MODEL_ID=HuggingFaceTB/SmolVLM-500M-Instruct
+VLM_DEVICE=auto
+```
+
+Lần chạy đầu sẽ tải model từ Hugging Face. Có thể thay bằng một model VLM mạnh
+hơn nếu máy có đủ RAM/GPU. Khi VLM chưa bật hoặc nạp thất bại, API vẫn dùng luật
+để tính điểm dự phòng nhưng giao diện **không trình bày câu luật đó như lời giải
+thích của AI**; nó báo rõ rằng chỉ có bản đồ Grad-CAM, chưa có giải thích ngữ nghĩa.
 
 ## Roadmap nâng cấp
 
@@ -199,7 +246,7 @@ Backend tích hợp **PhishVN v3.1.0** theo đúng phạm vi của bộ dữ li�
    được dùng như một model phân loại SMS/email vì bản phát hành này chỉ có nhãn URL.
 
 Model tham chiếu có sẵn tại
-`PhishVN A Time-Stamped Vietnamese URL Phishing Dat/p1a_results_bundle/models/HistGB_seed0.joblib`.
+`datasets/phishvn/p1a_results_bundle/models/HistGB_seed0.joblib`.
 Để huấn luyện lại theo official gold/silver temporal split:
 
 ```bash

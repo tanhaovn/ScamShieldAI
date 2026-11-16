@@ -104,8 +104,8 @@ def create_architecture_doc():
     # -------------------------------------------------------------
     p_logo = doc.add_paragraph()
     p_logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    if os.path.exists("extracted_media/image_1.png"):
-        p_logo.add_run().add_picture("extracted_media/image_1.png", width=Inches(3.0))
+    if os.path.exists("docs/assets/source-media/image_1.png"):
+        p_logo.add_run().add_picture("docs/assets/source-media/image_1.png", width=Inches(3.0))
         
     p_school = doc.add_paragraph()
     p_school.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -482,8 +482,8 @@ def create_architecture_doc():
 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    if os.path.exists("arch_diagrams/fig1_system_context.png"):
-        p.add_run().add_picture("arch_diagrams/fig1_system_context.png", width=Inches(6.0))
+    if os.path.exists("docs/assets/architecture/fig1_system_context.png"):
+        p.add_run().add_picture("docs/assets/architecture/fig1_system_context.png", width=Inches(6.0))
         
     p_fig1 = doc.add_paragraph("Figure 1. System Context Diagram")
     p_fig1.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -830,8 +830,8 @@ def create_architecture_doc():
 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    if os.path.exists("arch_diagrams/fig2_cc_client.png"):
-        p.add_run().add_picture("arch_diagrams/fig2_cc_client.png", width=Inches(5.5))
+    if os.path.exists("docs/assets/architecture/fig2_cc_client.png"):
+        p.add_run().add_picture("docs/assets/architecture/fig2_cc_client.png", width=Inches(5.5))
         
     p_fig2 = doc.add_paragraph("Figure 2. Component & Connector (C&C) View of Client")
     p_fig2.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -852,8 +852,8 @@ def create_architecture_doc():
 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    if os.path.exists("arch_diagrams/fig3_cc_server.png"):
-        p.add_run().add_picture("arch_diagrams/fig3_cc_server.png", width=Inches(6.0))
+    if os.path.exists("docs/assets/architecture/fig3_cc_server.png"):
+        p.add_run().add_picture("docs/assets/architecture/fig3_cc_server.png", width=Inches(6.0))
         
     p_fig3 = doc.add_paragraph("Figure 3. Component & Connector (C&C) View of Server")
     p_fig3.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -881,8 +881,8 @@ def create_architecture_doc():
 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    if os.path.exists("arch_diagrams/fig4_module_client.png"):
-        p.add_run().add_picture("arch_diagrams/fig4_module_client.png", width=Inches(5.8))
+    if os.path.exists("docs/assets/architecture/fig4_module_client.png"):
+        p.add_run().add_picture("docs/assets/architecture/fig4_module_client.png", width=Inches(5.8))
         
     p_fig4 = doc.add_paragraph("Figure 4. Module View of Client")
     p_fig4.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -902,8 +902,8 @@ def create_architecture_doc():
 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    if os.path.exists("arch_diagrams/fig5_module_server.png"):
-        p.add_run().add_picture("arch_diagrams/fig5_module_server.png", width=Inches(6.0))
+    if os.path.exists("docs/assets/architecture/fig5_module_server.png"):
+        p.add_run().add_picture("docs/assets/architecture/fig5_module_server.png", width=Inches(6.0))
         
     p_fig5 = doc.add_paragraph("Figure 5. Module View of Server")
     p_fig5.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -924,8 +924,8 @@ def create_architecture_doc():
 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    if os.path.exists("arch_diagrams/fig6_allocation_view.png"):
-        p.add_run().add_picture("arch_diagrams/fig6_allocation_view.png", width=Inches(5.8))
+    if os.path.exists("docs/assets/architecture/fig6_allocation_view.png"):
+        p.add_run().add_picture("docs/assets/architecture/fig6_allocation_view.png", width=Inches(5.8))
         
     p_fig6 = doc.add_paragraph("Figure 6. Allocation / Deployment View")
     p_fig6.alignment = WD_ALIGN_PARAGRAPH.CENTER

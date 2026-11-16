@@ -2,9 +2,15 @@
 venv/
 __pycache__/
 *.pyc
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 .env
 uploads/
 scam_detector.db
+*.db-journal
+database/backups/
 phishing_dataset/
 .pytest-tmp/
 .pytest_cache/
@@ -12,5 +18,7 @@ phishing_dataset/
 .codex-work/
 outputs/
 frontend-react/node_modules/
+frontend-react/dist/
+frontend-react/.vite/
 .DS_Store
 *.log

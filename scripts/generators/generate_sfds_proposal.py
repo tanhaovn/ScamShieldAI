@@ -105,8 +105,8 @@ def create_proposal_docx():
     # -------------------------------------------------------------
     p_logo = doc.add_paragraph()
     p_logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    if os.path.exists("extracted_media/image_1.png"):
-        p_logo.add_run().add_picture("extracted_media/image_1.png", width=Inches(3.0))
+    if os.path.exists("docs/assets/source-media/image_1.png"):
+        p_logo.add_run().add_picture("docs/assets/source-media/image_1.png", width=Inches(3.0))
         
     p_school = doc.add_paragraph()
     p_school.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -776,8 +776,8 @@ def create_proposal_docx():
     
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    if os.path.exists("extracted_media/image_0.png"):
-        p.add_run().add_picture("extracted_media/image_0.png", width=Inches(5.5))
+    if os.path.exists("docs/assets/source-media/image_0.png"):
+        p.add_run().add_picture("docs/assets/source-media/image_0.png", width=Inches(5.5))
         
     p_fig1 = doc.add_paragraph("Figure 1: Scrum Agile Framework")
     p_fig1.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -891,8 +891,8 @@ def create_proposal_docx():
     
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    if os.path.exists("extracted_media/image_12.png"):
-        p.add_run().add_picture("extracted_media/image_12.png", width=Inches(5.5))
+    if os.path.exists("docs/assets/source-media/image_12.png"):
+        p.add_run().add_picture("docs/assets/source-media/image_12.png", width=Inches(5.5))
         
     p_fig2 = doc.add_paragraph("Figure 2: System Context Diagram (SFDS Interactions)")
     p_fig2.alignment = WD_ALIGN_PARAGRAPH.CENTER

@@ -677,6 +677,9 @@ def _analyze_content_payload(
             image_model_probability=image_model_result.probability if image_model_result.available else None,
             phishvn_url_score=int(phishvn_result.risk_score),
             phishvn_predictions=phishvn_result.predictions_as_dicts() if hasattr(phishvn_result, "predictions_as_dicts") else [],
+            gradcam_path=str(getattr(image_model_result, "gradcam_path", "") or ""),
+            gradcam_focus_regions=list(getattr(image_model_result, "gradcam_focus_regions", None) or []),
+            image_model_label=str(getattr(image_model_result, "label", "unavailable") or "unavailable"),
         )
     else:
         visual_result = SimpleNamespace(visual_score=0, flags=[])
@@ -696,7 +699,7 @@ def _analyze_content_payload(
             observed_text=[],
             reasoning="",
             recommended_action="",
-            model_name="Qwen2.5-VL",
+            model_name="Vision-Language Model",
             note="Không áp dụng phân tích ngữ cảnh ảnh cho nguồn dữ liệu này.",
         )
 
@@ -844,6 +847,21 @@ def _analyze_content_payload(
         include_visual=bool(image_path),
     )
 
+    gradcam_path_value = str(getattr(image_model_result, "gradcam_path", "") or "")
+    gradcam_url = ""
+    if gradcam_path_value:
+        gradcam_path = Path(gradcam_path_value)
+        try:
+            relative_gradcam_path = gradcam_path.resolve().relative_to(UPLOAD_DIR.resolve())
+            if gradcam_path.is_file():
+                gradcam_url = f"/uploads/{relative_gradcam_path.as_posix()}"
+        except ValueError:
+            # Do not expose arbitrary filesystem paths when analysis is invoked
+            # from tests or another internal caller outside the upload folder.
+            gradcam_url = ""
+    gradcam_target_class = str(getattr(image_model_result, "gradcam_target_class", "") or "")
+    gradcam_target_score = image_model_score if gradcam_target_class == "phishing" else 100 - image_model_score
+
     return {
         "extracted_text": content,
         "risk_score": combined_score,
@@ -861,6 +879,16 @@ def _analyze_content_payload(
         "image_model_available": image_model_result.available,
         "image_model_label": image_model_result.label,
         "image_model_score": image_model_score,
+        "image_model_gradcam": {
+            "available": bool(getattr(image_model_result, "gradcam_available", False) and gradcam_url),
+            "image_url": gradcam_url,
+            "method": "Grad-CAM",
+            "target_class": gradcam_target_class,
+            "target_score": gradcam_target_score if gradcam_target_class else 0,
+            "target_layer": "layer4[-1]",
+            "note": str(getattr(image_model_result, "gradcam_note", "") or ""),
+            "focus_regions": list(getattr(image_model_result, "gradcam_focus_regions", None) or []),
+        },
         "vlm_analysis": vlm_result.to_dict() if hasattr(vlm_result, "to_dict") else vars(vlm_result),
         "scam_type": combined_scam_type,
         "highlighted_terms": text_result.highlighted_terms,
@@ -1160,6 +1188,7 @@ async def check_image(
     finally:
         if not completed_scan:
             Path(saved_path).unlink(missing_ok=True)
+            Path(saved_path).with_name(f"{Path(saved_path).stem}.gradcam.jpg").unlink(missing_ok=True)
 
 
 @app.get("/history/{user_id}")

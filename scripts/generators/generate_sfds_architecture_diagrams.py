@@ -6,7 +6,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-os.makedirs("arch_diagrams", exist_ok=True)
+os.makedirs("docs/assets/architecture", exist_ok=True)
 
 plt.rcParams['font.sans-serif'] = 'Arial'
 plt.rcParams['font.family'] = 'sans-serif'
@@ -71,7 +71,7 @@ def draw_system_context():
     ax.text(64, 30, "PhishVN & ResNet Labels", fontsize=8.5, rotation=-40, ha='center')
 
     plt.tight_layout()
-    plt.savefig("arch_diagrams/fig1_system_context.png", bbox_inches='tight')
+    plt.savefig("docs/assets/architecture/fig1_system_context.png", bbox_inches='tight')
     plt.close()
 
 def draw_cc_client():
@@ -133,7 +133,7 @@ def draw_cc_client():
     ax.text(71, 16, "JSON Response", fontsize=8.5, ha='left')
 
     plt.tight_layout()
-    plt.savefig("arch_diagrams/fig2_cc_client.png", bbox_inches='tight')
+    plt.savefig("docs/assets/architecture/fig2_cc_client.png", bbox_inches='tight')
     plt.close()
 
 def draw_cc_server():
@@ -200,7 +200,7 @@ def draw_cc_server():
     ax.text(72, 35, "Persist", fontsize=8, ha='center')
 
     plt.tight_layout()
-    plt.savefig("arch_diagrams/fig3_cc_server.png", bbox_inches='tight')
+    plt.savefig("docs/assets/architecture/fig3_cc_server.png", bbox_inches='tight')
     plt.close()
 
 def draw_module_views():
@@ -247,7 +247,7 @@ def draw_module_views():
     ax.text(52, 32, "Executes Actions & API Calls", fontsize=8.5)
 
     plt.tight_layout()
-    plt.savefig("arch_diagrams/fig4_module_client.png", bbox_inches='tight')
+    plt.savefig("docs/assets/architecture/fig4_module_client.png", bbox_inches='tight')
     plt.close()
 
     # Module View Server
@@ -278,7 +278,7 @@ def draw_module_views():
     ax.annotate("", xy=(50, 19), xytext=(50, 26), arrowprops=dict(arrowstyle="->", lw=1.5, color="black"))
 
     plt.tight_layout()
-    plt.savefig("arch_diagrams/fig5_module_server.png", bbox_inches='tight')
+    plt.savefig("docs/assets/architecture/fig5_module_server.png", bbox_inches='tight')
     plt.close()
 
 def draw_allocation_view():
@@ -326,7 +326,7 @@ def draw_allocation_view():
     ax.text(85, 51.5, "SQLAlchemy", fontsize=8, ha='left')
 
     plt.tight_layout()
-    plt.savefig("arch_diagrams/fig6_allocation_view.png", bbox_inches='tight')
+    plt.savefig("docs/assets/architecture/fig6_allocation_view.png", bbox_inches='tight')
     plt.close()
 
 if __name__ == '__main__':

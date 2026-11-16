@@ -12,7 +12,7 @@ if not exist ".venv\Scripts\python.exe" (
 echo Dang khoi dong Backend tai http://127.0.0.1:8000
 echo Swagger API: http://127.0.0.1:8000/docs
 echo.
-".venv\Scripts\python.exe" -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
+".venv\Scripts\python.exe" -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
 
 echo.
 echo Backend da dung hoac gap loi.

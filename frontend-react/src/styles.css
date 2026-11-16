@@ -7358,6 +7358,226 @@ html[data-theme="dark"] .evaluation-run-results { background:linear-gradient(145
   line-height: 1.5;
 }
 
+.scan-gradcam-card {
+  margin: 16px 0;
+  padding: 18px;
+  border: 1px solid rgba(66, 142, 114, 0.24);
+  border-radius: 15px;
+  background: linear-gradient(145deg, #ffffff, #f5faf7);
+  box-shadow: 0 12px 30px rgba(32, 73, 57, 0.07);
+}
+
+.scan-gradcam-card.unavailable {
+  border-style: dashed;
+}
+
+.scan-gradcam-card > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.scan-gradcam-card header small {
+  color: var(--brand);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.scan-gradcam-card header h3 {
+  margin: 4px 0 0;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.scan-gradcam-card header > span {
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #fff2c5;
+  color: #72520b;
+  font-size: 0.65rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.scan-gradcam-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.scan-gradcam-comparison figure {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #eef3f0;
+}
+
+.scan-gradcam-comparison img {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  background: #101916;
+}
+
+.scan-gradcam-comparison figcaption {
+  padding: 8px 10px;
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.scan-gradcam-card > p {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.6;
+}
+
+.scan-gradcam-explanation {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(197, 70, 55, 0.2);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fffaf7, #fff);
+}
+
+.scan-gradcam-explanation h4 {
+  margin: 0 0 7px;
+  color: #8d3026;
+  font-size: 0.82rem;
+}
+
+.scan-gradcam-explanation p,
+.scan-gradcam-explanation li {
+  color: var(--text-soft);
+  font-size: 0.68rem;
+  line-height: 1.6;
+}
+
+.scan-gradcam-explanation p {
+  margin: 0 0 10px;
+}
+
+.scan-gradcam-explanation > strong {
+  color: var(--text);
+  font-size: 0.69rem;
+}
+
+.scan-gradcam-explanation ul,
+.scan-gradcam-explanation ol {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 10px;
+  padding-left: 19px;
+}
+
+.scan-ai-evidence-list li {
+  padding: 8px 10px;
+  border-left: 3px solid rgba(197, 70, 55, 0.55);
+  background: color-mix(in srgb, var(--card) 92%, var(--red));
+  list-style-position: outside;
+}
+
+.scan-ai-evidence-list li > strong,
+.scan-ai-evidence-list li > span {
+  display: block;
+}
+
+.scan-ai-evidence-list li > span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.scan-ai-evidence-list li > p {
+  margin: 4px 0 0;
+}
+
+.scan-ai-explanation-unavailable {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  background: var(--muted);
+}
+
+.scan-ai-explanation-unavailable > strong {
+  color: var(--text);
+  font-size: 0.7rem;
+}
+
+.scan-ai-explanation-unavailable > p {
+  margin: 5px 0 0;
+}
+
+.scan-gradcam-explanation small {
+  display: block;
+  padding-top: 9px;
+  border-top: 1px dashed var(--border);
+  color: var(--muted);
+  font-size: 0.61rem;
+  line-height: 1.55;
+}
+
+.scan-gradcam-legend {
+  display: grid;
+  grid-template-columns: auto minmax(120px, 280px) auto;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 0.6rem;
+  font-weight: 750;
+}
+
+.scan-gradcam-legend i {
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #253494, #2c7fb8, #41b6c4, #ffff8c, #f03b20);
+  box-shadow: inset 0 0 0 1px rgba(20, 45, 36, 0.12);
+}
+
+.scan-gradcam-unavailable {
+  padding: 22px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 12px;
+  background: var(--brand-pale);
+  text-align: center;
+}
+
+.scan-gradcam-unavailable strong {
+  color: var(--text);
+  font-size: 0.82rem;
+}
+
+.scan-gradcam-unavailable p {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 0.67rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 680px) {
+  .scan-gradcam-comparison {
+    grid-template-columns: 1fr;
+  }
+
+  .scan-gradcam-card > header {
+    flex-direction: column;
+  }
+
+  .scan-gradcam-legend {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+}
+
 .scan-signal-heading {
   display: flex;
   align-items: center;

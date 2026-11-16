@@ -28,7 +28,7 @@ import numpy as np
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-PHISHVN_ROOT = PROJECT_ROOT / "PhishVN A Time-Stamped Vietnamese URL Phishing Dat"
+PHISHVN_ROOT = PROJECT_ROOT / "datasets" / "phishvn"
 LOCAL_MODEL_PATH = PROJECT_ROOT / "models" / "phishvn_url_histgb.joblib"
 BUNDLED_MODEL_PATH = PHISHVN_ROOT / "p1a_results_bundle" / "models" / "HistGB_seed0.joblib"
 

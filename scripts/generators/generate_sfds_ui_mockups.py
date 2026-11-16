@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 Generate UI Mockup Screenshots for SFDS User Interface Design Document
-Output directory: ui_diagrams/
+Output directory: docs/assets/ui/
 """
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import os
 
-os.makedirs("ui_diagrams", exist_ok=True)
+os.makedirs("docs/assets/ui", exist_ok=True)
 
 # Common styling helper
 def setup_canvas(w=12, h=7):
@@ -70,7 +70,7 @@ def gen_login():
     ax.text(7.95, 1.3, "← Quay lại trang quét công cộng (Không cần đăng nhập)", color="#2563EB", fontsize=8.5, ha='center')
     
     plt.tight_layout()
-    plt.savefig("ui_diagrams/fig1_ui_login.png", bbox_inches='tight')
+    plt.savefig("docs/assets/ui/fig1_ui_login.png", bbox_inches='tight')
     plt.close()
 
 # 2. FIG 2: UI REGISTER
@@ -103,7 +103,7 @@ def gen_register():
     ax.text(5.5, 0.9, "Đã có tài khoản? Đăng nhập ngay", color="#2563EB", fontsize=8.5, ha='center')
     
     plt.tight_layout()
-    plt.savefig("ui_diagrams/fig2_ui_register.png", bbox_inches='tight')
+    plt.savefig("docs/assets/ui/fig2_ui_register.png", bbox_inches='tight')
     plt.close()
 
 # 3. FIG 3: UI OVERVIEW / LANDING
@@ -159,7 +159,7 @@ def gen_overview():
     ax.text(10.2, 0.65, "Vụ lừa đảo bị chặn đứng", fontsize=8.5, color="#64748B", ha='center')
     
     plt.tight_layout()
-    plt.savefig("ui_diagrams/fig3_ui_overview.png", bbox_inches='tight')
+    plt.savefig("docs/assets/ui/fig3_ui_overview.png", bbox_inches='tight')
     plt.close()
 
 # 4. FIG 4: UI SCAN INPUT
@@ -220,7 +220,7 @@ def gen_scan_input():
     ax.text(9.55, 1.2, "⚡ PHÂN TÍCH RỦI RO NGAY", color="#FFFFFF", fontsize=10, fontweight='bold', ha='center')
     
     plt.tight_layout()
-    plt.savefig("ui_diagrams/fig4_ui_scan_input.png", bbox_inches='tight')
+    plt.savefig("docs/assets/ui/fig4_ui_scan_input.png", bbox_inches='tight')
     plt.close()
 
 # 5. FIG 5: UI SCAN RESULT & EXPLANATION
@@ -285,7 +285,7 @@ def gen_scan_result():
     ax.text(5.2, 1.0, "• Liên hệ ngay hotline chính thức của ngân hàng (1900 54 54 13) để kiểm tra tình trạng.", fontsize=8, color="#1E40AF")
     
     plt.tight_layout()
-    plt.savefig("ui_diagrams/fig5_ui_scan_result_explanation.png", bbox_inches='tight')
+    plt.savefig("docs/assets/ui/fig5_ui_scan_result_explanation.png", bbox_inches='tight')
     plt.close()
 
 # 6. FIG 6: UI HISTORY
@@ -338,7 +338,7 @@ def gen_history():
     ax.text(6.0, 0.4, "Hiển thị 1 - 7 trong số 40 lượt quét gần nhất (Bộ nhớ cục bộ lưu trữ tối đa 50 lượt)", fontsize=8, color="#64748B", ha='center')
     
     plt.tight_layout()
-    plt.savefig("ui_diagrams/fig6_ui_history.png", bbox_inches='tight')
+    plt.savefig("docs/assets/ui/fig6_ui_history.png", bbox_inches='tight')
     plt.close()
 
 # 7. FIG 7: UI ADMIN DASHBOARD
@@ -409,7 +409,7 @@ def gen_admin():
     ax.text(9.75, 0.98, "+ Thêm Tên Miền Mới", color="#FFFFFF", fontsize=8, fontweight='bold', ha='center')
     
     plt.tight_layout()
-    plt.savefig("ui_diagrams/fig7_ui_admin_dashboard.png", bbox_inches='tight')
+    plt.savefig("docs/assets/ui/fig7_ui_admin_dashboard.png", bbox_inches='tight')
     plt.close()
 
 if __name__ == "__main__":
@@ -421,4 +421,4 @@ if __name__ == "__main__":
     gen_scan_result()
     gen_history()
     gen_admin()
-    print("All 7 UI mockups generated successfully in ui_diagrams/!")
+    print("All 7 UI mockups generated successfully in docs/assets/ui/!")

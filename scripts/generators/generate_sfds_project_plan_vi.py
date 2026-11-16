@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
+r"""
 Generate official Vietnamese Capstone Project Plan Document (.docx)
-Output: D:\scam-detector\TAILIEU_CAPSTONE_C1SE06_SFDS\2. PROJECT PLAN\C1SE.06_ProjectPlan_SFDS_v1.2_VI.docx
+Output: D:\scam-detector\docs\capstone\2. PROJECT PLAN\C1SE.06_ProjectPlan_SFDS_v1.2_VI.docx
 """
 import os
 import docx
@@ -97,7 +97,7 @@ def create_project_plan_docx_vi():
     # =========================================================================
     # TRANG 1: ẢNH BÌA
     # =========================================================================
-    logo_path = "extracted_media/image_1.png"
+    logo_path = "docs/assets/source-media/image_1.png"
     if os.path.exists(logo_path):
         p_logo = doc.add_paragraph()
         p_logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -782,7 +782,7 @@ def create_project_plan_docx_vi():
             set_cell_background(row.cells[c_idx], "FFFFFF")
 
     # Lưu tập tin kết quả
-    output_path = r"D:\scam-detector\TAILIEU_CAPSTONE_C1SE06_SFDS\2. PROJECT PLAN\C1SE.06_ProjectPlan_SFDS_v1.2_VI.docx"
+    output_path = r"D:\scam-detector\docs\capstone\2. PROJECT PLAN\C1SE.06_ProjectPlan_SFDS_v1.2_VI.docx"
     doc.save(output_path)
     print("Successfully generated:", output_path)
 

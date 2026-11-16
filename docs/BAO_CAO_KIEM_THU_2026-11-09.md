@@ -1,5 +1,12 @@
 # Báo cáo kiểm thử Scam Detector
 
+> **Cập nhật 12/11/2026:** bộ black-box HTTP mới đã đạt 86/86 ca trên server
+> Uvicorn thật, bao gồm các luồng ảnh và PDF từng bị treo/lỗi Temp trong baseline
+> bên dưới. Xem báo cáo hiện hành tại
+> `docs/reports/BLACK_BOX_TEST_REPORT_2026-11-12.md`. Các phần “baseline trước
+> hiệu chỉnh” trong tài liệu này được giữ lại để đối chiếu lịch sử, không còn là
+> trạng thái hiện tại của dự án.
+
 - Ngày kiểm thử: 09/11/2026
 - Phạm vi: ảnh, OCR, nội dung văn bản, URL, tên miền, QR, PDF, model ảnh, VLM, Google Safe Browsing, phản hồi, batch và giao diện web
 - Môi trường: Windows, Python 3.12, backend FastAPI, frontend React/Vite

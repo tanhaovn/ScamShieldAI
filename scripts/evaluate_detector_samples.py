@@ -15,7 +15,7 @@ from backend.app.ocr.ocr_service import extract_text_and_boxes  # noqa: E402
 from backend.app.visual.qr_analysis import decode_qr_codes  # noqa: E402
 
 
-SAMPLES = ROOT / "test_samples"
+SAMPLES = ROOT / "tests" / "fixtures" / "images"
 
 
 def main() -> int:

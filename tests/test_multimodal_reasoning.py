@@ -52,7 +52,8 @@ def test_multimodal_reasoning_on_safe_content():
     assert result.risk_score < 25
 
 
-def test_analyze_image_context_integration():
+def test_analyze_image_context_integration(monkeypatch):
+    monkeypatch.delenv("USE_VLM_ANALYZER", raising=False)
     vlm_res = analyze_image_context(
         "phishing_dataset/phishing/404/homepage.png",
         ocr_text="Khẩn cấp: Tài khoản tạm khóa, xác thực mã OTP ngay",
@@ -65,3 +66,6 @@ def test_analyze_image_context_integration():
     assert vlm_res.verdict in {"high_risk", "suspicious"}
     assert len(vlm_res.risk_indicators) > 0
     assert len(vlm_res.chain_of_thought) > 0
+    assert vlm_res.explanation_source == "rule_fallback"
+    assert vlm_res.explanation_items == []
+    assert "Chưa có giải thích AI thị giác" in vlm_res.note

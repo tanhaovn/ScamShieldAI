@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
-"""
+r"""
 Script to generate official Vietnamese C1SE.06_ProductBacklog_SFDS_v1.0_VI.xlsx
 Capstone Project: SFDS (Hệ Thống Cảnh Báo và Phát Hiện Lừa Đảo Trực Tuyến Đa Phương Thức Có Giải Thích)
 Team: C1SE.06 - CMU-SE 450 - Đại học Duy Tân
-Output: D:\scam-detector\TAILIEU_CAPSTONE_C1SE06_SFDS\3. PRODUCT BACKLOG & USER STORY\C1SE.06_ProductBacklog_SFDS_v1.0_VI.xlsx
+Output: D:\scam-detector\docs\capstone\3. PRODUCT BACKLOG & USER STORY\C1SE.06_ProductBacklog_SFDS_v1.0_VI.xlsx
 """
 
 import os
 import xlsxwriter
 
 def create_backlog_vi():
-    output_dir = r"D:\scam-detector\TAILIEU_CAPSTONE_C1SE06_SFDS\3. PRODUCT BACKLOG & USER STORY"
+    output_dir = r"D:\scam-detector\docs\capstone\3. PRODUCT BACKLOG & USER STORY"
     os.makedirs(output_dir, exist_ok=True)
     filename = os.path.join(output_dir, "C1SE.06_ProductBacklog_SFDS_v1.0_VI.xlsx")
     workbook = xlsxwriter.Workbook(filename)

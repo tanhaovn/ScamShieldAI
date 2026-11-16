@@ -1,7 +1,7 @@
 """Multimodal Reasoning & Vision Analysis for Scam Detection.
 
 Designed for scientific research:
-Supports either an external Vision-Language Model (Qwen2.5-VL / API)
+Supports an instruction-tuned local Vision-Language Model
 or the built-in Multimodal Chain-of-Thought (CoT) Reasoning Engine
 that synthesizes ResNet-18 visual predictions, ELA forensic signals,
 OCR text semantics, and PhishVN URL risks into structured evidence.
@@ -19,7 +19,7 @@ from PIL import Image
 
 from backend.app.ai.reasoning_engine import execute_multimodal_reasoning
 
-MODEL_ID = os.getenv("VLM_MODEL_ID", "Qwen/Qwen2.5-VL-3B-Instruct")
+MODEL_ID = os.getenv("VLM_MODEL_ID", "HuggingFaceTB/SmolVLM-500M-Instruct")
 MODEL_DEVICE = os.getenv("VLM_DEVICE", "auto").strip().lower()
 MAX_NEW_TOKENS = 420
 
@@ -41,6 +41,8 @@ class VlmImageResult:
     model_name: str = "Multimodal-CoT-Reasoning"
     note: str = ""
     chain_of_thought: list[str] = field(default_factory=list)
+    explanation_source: str = "unavailable"
+    explanation_items: list[dict[str, str]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -55,6 +57,8 @@ class VlmImageResult:
             "model_name": self.model_name,
             "note": self.note,
             "chain_of_thought": self.chain_of_thought,
+            "explanation_source": self.explanation_source,
+            "explanation_items": self.explanation_items,
         }
 
 
@@ -63,7 +67,7 @@ def _enabled() -> bool:
 
 
 def _load_model() -> tuple[Any, Any]:
-    """Load Qwen lazily if enabled and hardware supports it."""
+    """Load the configured VLM lazily if enabled and hardware supports it."""
     global _model_cache, _processor_cache, _load_error
     if _model_cache is not None and _processor_cache is not None:
         return _model_cache, _processor_cache
@@ -72,7 +76,7 @@ def _load_model() -> tuple[Any, Any]:
 
     try:
         import torch
-        from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
+        from transformers import AutoModelForVision2Seq, AutoProcessor
 
         if MODEL_DEVICE == "auto":
             device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -85,7 +89,12 @@ def _load_model() -> tuple[Any, Any]:
             raise RuntimeError("VLM_DEVICE=cuda nhưng PyTorch không nhận thấy GPU CUDA.")
 
         dtype = torch.float16 if device == "cuda" else torch.float32
-        model = Qwen2_5_VLForConditionalGeneration.from_pretrained(MODEL_ID, torch_dtype=dtype)
+        model = AutoModelForVision2Seq.from_pretrained(
+            MODEL_ID,
+            torch_dtype=dtype,
+            low_cpu_mem_usage=True,
+            _attn_implementation="eager",
+        )
         model.to(device)
         model.eval()
         _model_cache = model
@@ -110,6 +119,29 @@ def _clean_string_list(value: Any, limit: int = 6) -> list[str]:
     return cleaned
 
 
+def _clean_explanation_items(value: Any, limit: int = 6) -> list[dict[str, str]]:
+    if not isinstance(value, list):
+        return []
+    cleaned: list[dict[str, str]] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        observation = str(item.get("observation", "")).strip()[:300]
+        why_risky = str(item.get("why_risky", "")).strip()[:500]
+        location = str(item.get("location", "")).strip()[:120]
+        if observation and why_risky:
+            cleaned.append(
+                {
+                    "observation": observation,
+                    "why_risky": why_risky,
+                    "location": location,
+                }
+            )
+        if len(cleaned) >= limit:
+            break
+    return cleaned
+
+
 def _parse_response(response: str) -> dict[str, Any]:
     match = re.search(r"\{.*\}", response, flags=re.DOTALL)
     if not match:
@@ -120,27 +152,51 @@ def _parse_response(response: str) -> dict[str, Any]:
     return data
 
 
-def _prompt(ocr_text: str, qr_codes: list[str]) -> str:
+def _prompt(
+    ocr_text: str,
+    qr_codes: list[str],
+    image_model_label: str,
+    gradcam_focus_regions: list[str],
+) -> str:
     safe_ocr = ocr_text.strip()[:4000] or "(OCR chưa đọc được chữ)"
     safe_qr = "; ".join(qr_codes[:5]) or "(không có QR)"
-    return f"""Bạn là lớp phân tích an toàn cho ảnh nghi ngờ lừa đảo tại Việt Nam.
-Phân tích CHỈ những gì thật sự nhìn thấy trong ảnh. Không mở URL, không suy đoán
-thông tin bị che và không khẳng định chắc chắn đây là lừa đảo nếu bằng chứng yếu.
+    safe_focus = "; ".join(gradcam_focus_regions[:3]) or "(chưa xác định)"
+    return f"""Bạn là chuyên gia phân tích ảnh nghi ngờ lừa đảo tại Việt Nam.
+Bạn nhận hai ảnh theo thứ tự: (1) ảnh gốc và, nếu có, (2) bản đồ nhiệt Grad-CAM
+của bộ phân loại ResNet18. Hãy tự quan sát toàn bộ ảnh, đọc bố cục và liên kết các
+chi tiết thành một kịch bản cụ thể. Không được chỉ lặp lại phần trăm dự đoán,
+không được giải thích chung chung và không được kết luận chỉ vì xuất hiện một từ.
 
-Văn bản OCR đã đọc: {safe_ocr}
+Grad-CAM chỉ cho biết vùng tác động tới đầu ra "{image_model_label}"; nó không tự
+chứng minh lừa đảo. Các vùng mạnh được thuật toán định vị gần: {safe_focus}.
+
+Văn bản OCR tham khảo (có thể sai, chỉ dùng để kiểm chứng điều nhìn thấy): {safe_ocr}
 QR đã giải mã: {safe_qr}
 
-Hãy xem ảnh và tìm bằng chứng cụ thể: mạo danh tổ chức/thương hiệu, biểu mẫu yêu
-cầu mật khẩu/OTP/thông tin thanh toán, lời thúc giục hoặc đe dọa, yêu cầu chuyển
-tiền, URL/QR/số điện thoại đáng ngờ, và dấu hiệu bố cục không nhất quán.
+Với từng bằng chứng, phải nêu đủ ba phần:
+1. Nhìn thấy chi tiết cụ thể nào trong ảnh.
+2. Chi tiết nằm ở khu vực nào.
+3. Vì sao chi tiết đó kết hợp với các chi tiết khác tạo ra cơ chế lừa đảo
+   (mồi nhử, yêu cầu hành động, áp lực, lợi ích cho kẻ gian hoặc hậu quả cho nạn nhân).
+
+Nếu là ảnh đời thường như con chó, con mèo hoặc phong cảnh, hãy mô tả đúng đối
+tượng và kết luận không đủ bằng chứng lừa đảo. Không biến OCR thành danh sách từ
+khóa. Không mở URL, không suy đoán nội dung bị che.
 
 Chỉ trả về JSON hợp lệ, không thêm Markdown, theo đúng schema:
 {{
   "verdict": "safe|suspicious|high_risk|insufficient_evidence",
   "confidence": 0.0,
-  "risk_indicators": ["bằng chứng quan sát được"],
+  "summary": "giải thích trực tiếp tại sao ảnh có hoặc không có dấu hiệu lừa đảo",
+  "evidence": [
+    {{
+      "observation": "chi tiết cụ thể nhìn thấy",
+      "location": "vị trí trong ảnh",
+      "why_risky": "mối liên hệ và cơ chế rủi ro cụ thể"
+    }}
+  ],
   "observed_text": ["đoạn chữ nhìn thấy quan trọng"],
-  "reasoning": "giải thích ngắn bằng tiếng Việt",
+  "uncertainty": "điều model chưa thể xác minh từ ảnh",
   "recommended_action": "hành động an toàn ngắn bằng tiếng Việt"
 }}"""
 
@@ -154,19 +210,38 @@ def analyze_image_context(
     image_model_probability: float | None = None,
     phishvn_url_score: int = 0,
     phishvn_predictions: list[dict[str, Any]] | None = None,
+    gradcam_path: str = "",
+    gradcam_focus_regions: list[str] | None = None,
+    image_model_label: str = "unavailable",
 ) -> VlmImageResult:
-    """Analyze image context using Qwen2.5-VL if enabled, else Multimodal CoT Reasoning Engine."""
+    """Use a real VLM for semantic explanation; keep rules only for risk fallback."""
     if not Path(image_path).is_file():
         return VlmImageResult(available=False, note="Không tìm thấy ảnh để gửi cho model ngữ cảnh.")
 
-    # 1. If Qwen2.5-VL is explicitly enabled, attempt running it
+    # 1. If a real VLM is explicitly enabled, attempt running it.
     if _enabled():
         try:
             model, processor = _load_model()
             image = Image.open(image_path).convert("RGB")
-            messages = [{"role": "user", "content": [{"type": "image", "image": image}, {"type": "text", "text": _prompt(ocr_text, qr_codes or [])}]}]
+            images = [image]
+            content: list[dict[str, Any]] = [{"type": "image"}]
+            if gradcam_path and Path(gradcam_path).is_file():
+                images.append(Image.open(gradcam_path).convert("RGB"))
+                content.append({"type": "image"})
+            content.append(
+                {
+                    "type": "text",
+                    "text": _prompt(
+                        ocr_text,
+                        qr_codes or [],
+                        image_model_label,
+                        gradcam_focus_regions or [],
+                    ),
+                }
+            )
+            messages = [{"role": "user", "content": content}]
             rendered_prompt = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-            inputs = processor(text=[rendered_prompt], images=[image], padding=True, return_tensors="pt")
+            inputs = processor(text=[rendered_prompt], images=images, padding=True, return_tensors="pt")
             inputs = inputs.to(model.device)
             generated = model.generate(**inputs, max_new_tokens=MAX_NEW_TOKENS, do_sample=False)
             new_tokens = generated[:, inputs.input_ids.shape[1]:]
@@ -178,20 +253,31 @@ def analyze_image_context(
                 verdict = "insufficient_evidence"
             confidence = max(0.0, min(float(data.get("confidence", 0.0)), 1.0))
             score_by_verdict = {"safe": 10, "suspicious": 45, "high_risk": 75, "insufficient_evidence": 0}
+            explanation_items = _clean_explanation_items(data.get("evidence"))
+            summary = str(data.get("summary", "")).strip()[:900]
+            uncertainty = str(data.get("uncertainty", "")).strip()[:400]
+            risk_indicators = [item["observation"] for item in explanation_items]
             return VlmImageResult(
                 available=True,
                 verdict=verdict,
                 confidence=round(confidence, 3),
                 risk_score=score_by_verdict[verdict],
-                risk_indicators=_clean_string_list(data.get("risk_indicators")),
+                risk_indicators=risk_indicators,
                 observed_text=_clean_string_list(data.get("observed_text")),
-                reasoning=str(data.get("reasoning", "")).strip()[:700],
+                reasoning=summary,
                 recommended_action=str(data.get("recommended_action", "")).strip()[:500],
                 model_name=MODEL_ID,
-                note="Điểm VLM là tín hiệu theo bằng chứng model nêu ra, không phải xác suất đã hiệu chuẩn.",
+                note=(
+                    "Giải thích được sinh trực tiếp bởi Vision-Language Model từ ảnh gốc và Grad-CAM. "
+                    + (f"Giới hạn: {uncertainty}" if uncertainty else "Kết quả cần được người dùng kiểm chứng.")
+                ),
+                explanation_source="vision_language_model",
+                explanation_items=explanation_items,
             )
-        except Exception:
-            pass  # Fallback to Multimodal CoT Reasoning Engine below
+        except Exception as error:
+            vlm_error = f"{type(error).__name__}: {error}"
+    else:
+        vlm_error = "USE_VLM_ANALYZER chưa được bật."
 
     # 2. Multimodal CoT Reasoning Engine (Always Available, Scientific XAI)
     cot_result = execute_multimodal_reasoning(
@@ -213,6 +299,11 @@ def analyze_image_context(
         reasoning=cot_result.reasoning,
         recommended_action=cot_result.recommended_action,
         model_name=cot_result.model_name,
-        note=cot_result.note,
+        note=(
+            f"Chưa có giải thích AI thị giác: {vlm_error} "
+            "Điểm ngữ cảnh hiện chỉ là kết quả dự phòng từ luật; giao diện không được trình bày nó như lời giải thích của AI."
+        ),
         chain_of_thought=cot_result.chain_of_thought,
+        explanation_source="rule_fallback",
+        explanation_items=[],
     )

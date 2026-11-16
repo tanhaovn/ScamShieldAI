@@ -2,14 +2,14 @@
 """
 Generate accurate UI mockups reflecting the real SFDS codebase.
 No registration screen (Public scan is frictionless, only admin logs in).
-Outputs 7 clean screens to ui_diagrams/
+Outputs 7 clean screens to docs/assets/ui/
 """
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import os
 
-os.makedirs("ui_diagrams", exist_ok=True)
+os.makedirs("docs/assets/ui", exist_ok=True)
 
 def setup_canvas(w=12, h=7):
     fig, ax = plt.subplots(figsize=(w, h), dpi=250)
@@ -68,7 +68,7 @@ def gen_overview():
     ax.text(10.2, 0.65, "Vụ lừa đảo bị chặn đứng", fontsize=8.5, color="#64748B", ha='center')
     
     plt.tight_layout()
-    plt.savefig("ui_diagrams/fig1_ui_overview.png", bbox_inches='tight')
+    plt.savefig("docs/assets/ui/fig1_ui_overview.png", bbox_inches='tight')
     plt.close()
 
 # 2. FIG 2: SCAN INPUT
@@ -120,7 +120,7 @@ def gen_scan_input():
     ax.text(9.55, 1.2, "PHÂN TÍCH RỦI RO NGAY", color="#FFFFFF", fontsize=10, fontweight='bold', ha='center')
     
     plt.tight_layout()
-    plt.savefig("ui_diagrams/fig2_ui_scan_input.png", bbox_inches='tight')
+    plt.savefig("docs/assets/ui/fig2_ui_scan_input.png", bbox_inches='tight')
     plt.close()
 
 # 3. FIG 3: SCAN RESULT & EXPLANATION
@@ -177,7 +177,7 @@ def gen_scan_result():
     ax.text(5.2, 1.0, "• Liên hệ ngay hotline chính thức của ngân hàng (1900 54 54 13) để kiểm tra tình trạng.", fontsize=8, color="#1E40AF")
     
     plt.tight_layout()
-    plt.savefig("ui_diagrams/fig3_ui_scan_result.png", bbox_inches='tight')
+    plt.savefig("docs/assets/ui/fig3_ui_scan_result.png", bbox_inches='tight')
     plt.close()
 
 # 4. FIG 4: HISTORY
@@ -226,7 +226,7 @@ def gen_history():
     ax.text(6.0, 0.4, "Hiển thị 1 - 7 trong số 40 lượt quét gần nhất (Bộ nhớ cục bộ lưu trữ tối đa 50 lượt)", fontsize=8, color="#64748B", ha='center')
     
     plt.tight_layout()
-    plt.savefig("ui_diagrams/fig4_ui_history.png", bbox_inches='tight')
+    plt.savefig("docs/assets/ui/fig4_ui_history.png", bbox_inches='tight')
     plt.close()
 
 # 5. FIG 5: PROFILE PAGE
@@ -287,7 +287,7 @@ def gen_profile():
     ax.text(9.75, 1.78, "Đồng bộ dữ liệu", color="#475569", fontsize=8, fontweight='bold', ha='center')
     
     plt.tight_layout()
-    plt.savefig("ui_diagrams/fig5_ui_profile.png", bbox_inches='tight')
+    plt.savefig("docs/assets/ui/fig5_ui_profile.png", bbox_inches='tight')
     plt.close()
 
 # 6. FIG 6: ADMIN LOGIN
@@ -327,7 +327,7 @@ def gen_admin_login():
     ax.text(7.95, 1.3, "Quay lại trang quét công cộng (Không cần đăng nhập)", color="#2563EB", fontsize=8.5, ha='center')
     
     plt.tight_layout()
-    plt.savefig("ui_diagrams/fig6_ui_admin_login.png", bbox_inches='tight')
+    plt.savefig("docs/assets/ui/fig6_ui_admin_login.png", bbox_inches='tight')
     plt.close()
 
 # 7. FIG 7: ADMIN CONSOLE
@@ -392,7 +392,7 @@ def gen_admin_console():
         ax.text(5.9, dy - 0.18, f"Người tải lên: {uploader}", fontsize=7.5, color="#94A3B8")
         
     plt.tight_layout()
-    plt.savefig("ui_diagrams/fig7_ui_admin_console.png", bbox_inches='tight')
+    plt.savefig("docs/assets/ui/fig7_ui_admin_console.png", bbox_inches='tight')
     plt.close()
 
 if __name__ == "__main__":
@@ -404,4 +404,4 @@ if __name__ == "__main__":
     gen_profile()
     gen_admin_login()
     gen_admin_console()
-    print("Accurate UI mockups generated in ui_diagrams/!")
+    print("Accurate UI mockups generated in docs/assets/ui/!")

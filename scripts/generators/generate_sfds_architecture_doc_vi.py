@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
+r"""
 Generate official Vietnamese Capstone Architecture Design Document (.docx)
-Output: D:\scam-detector\TAILIEU_CAPSTONE_C1SE06_SFDS\4. ARCHITECTURE DESIGN\C1SE.06_ArchitectureDesign_SFDS_v1.0_VI.docx
+Output: D:\scam-detector\docs\capstone\4. ARCHITECTURE DESIGN\C1SE.06_ArchitectureDesign_SFDS_v1.0_VI.docx
 """
 import os
 import docx
@@ -97,7 +97,7 @@ def create_architecture_doc_vi():
     # =========================================================================
     # TRANG 1: ẢNH BÌA
     # =========================================================================
-    logo_path = "extracted_media/image_1.png"
+    logo_path = "docs/assets/source-media/image_1.png"
     if os.path.exists(logo_path):
         p_logo = doc.add_paragraph()
         p_logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -479,8 +479,8 @@ def create_architecture_doc_vi():
 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    if os.path.exists("arch_diagrams/fig1_system_context.png"):
-        p.add_run().add_picture("arch_diagrams/fig1_system_context.png", width=Inches(6.0))
+    if os.path.exists("docs/assets/architecture/fig1_system_context.png"):
+        p.add_run().add_picture("docs/assets/architecture/fig1_system_context.png", width=Inches(6.0))
         
     p_fig1 = doc.add_paragraph("Hình 1. Sơ đồ Bối cảnh Hệ thống (System Context Diagram)")
     p_fig1.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -829,9 +829,9 @@ def create_architecture_doc_vi():
 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    img_cc_client = "arch_diagrams/fig2_cc_client.png"
+    img_cc_client = "docs/assets/architecture/fig2_cc_client.png"
     if not os.path.exists(img_cc_client):
-        img_cc_client = "TAILIEU_CAPSTONE_C1SE06_SFDS/4. ARCHITECTURE DESIGN/diagrams/fig2_cc_client.png"
+        img_cc_client = "docs/capstone/4. ARCHITECTURE DESIGN/diagrams/fig2_cc_client.png"
     if os.path.exists(img_cc_client):
         p.add_run().add_picture(img_cc_client, width=Inches(5.5))
         
@@ -854,9 +854,9 @@ def create_architecture_doc_vi():
 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    img_cc_server = "arch_diagrams/fig3_cc_server.png"
+    img_cc_server = "docs/assets/architecture/fig3_cc_server.png"
     if not os.path.exists(img_cc_server):
-        img_cc_server = "TAILIEU_CAPSTONE_C1SE06_SFDS/4. ARCHITECTURE DESIGN/diagrams/fig3_cc_server.png"
+        img_cc_server = "docs/capstone/4. ARCHITECTURE DESIGN/diagrams/fig3_cc_server.png"
     if os.path.exists(img_cc_server):
         p.add_run().add_picture(img_cc_server, width=Inches(6.0))
         
@@ -888,9 +888,9 @@ def create_architecture_doc_vi():
 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    img_mod_client = "arch_diagrams/fig4_module_client.png"
+    img_mod_client = "docs/assets/architecture/fig4_module_client.png"
     if not os.path.exists(img_mod_client):
-        img_mod_client = "TAILIEU_CAPSTONE_C1SE06_SFDS/4. ARCHITECTURE DESIGN/diagrams/fig4_module_client.png"
+        img_mod_client = "docs/capstone/4. ARCHITECTURE DESIGN/diagrams/fig4_module_client.png"
     if os.path.exists(img_mod_client):
         p.add_run().add_picture(img_mod_client, width=Inches(5.8))
         
@@ -912,9 +912,9 @@ def create_architecture_doc_vi():
 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    img_mod_server = "arch_diagrams/fig5_module_server.png"
+    img_mod_server = "docs/assets/architecture/fig5_module_server.png"
     if not os.path.exists(img_mod_server):
-        img_mod_server = "TAILIEU_CAPSTONE_C1SE06_SFDS/4. ARCHITECTURE DESIGN/diagrams/fig5_module_server.png"
+        img_mod_server = "docs/capstone/4. ARCHITECTURE DESIGN/diagrams/fig5_module_server.png"
     if os.path.exists(img_mod_server):
         p.add_run().add_picture(img_mod_server, width=Inches(6.0))
         
@@ -939,9 +939,9 @@ def create_architecture_doc_vi():
 
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    img_alloc = "arch_diagrams/fig6_allocation_view.png"
+    img_alloc = "docs/assets/architecture/fig6_allocation_view.png"
     if not os.path.exists(img_alloc):
-        img_alloc = "TAILIEU_CAPSTONE_C1SE06_SFDS/4. ARCHITECTURE DESIGN/diagrams/fig6_allocation_view.png"
+        img_alloc = "docs/capstone/4. ARCHITECTURE DESIGN/diagrams/fig6_allocation_view.png"
     if os.path.exists(img_alloc):
         p.add_run().add_picture(img_alloc, width=Inches(5.8))
         
@@ -994,7 +994,7 @@ def create_architecture_doc_vi():
             set_cell_background(row.cells[c_idx], "FFFFFF")
 
     # Lưu tập tin kết quả
-    output_path = r"D:\scam-detector\TAILIEU_CAPSTONE_C1SE06_SFDS\4. ARCHITECTURE DESIGN\C1SE.06_ArchitectureDesign_SFDS_v1.0_VI.docx"
+    output_path = r"D:\scam-detector\docs\capstone\4. ARCHITECTURE DESIGN\C1SE.06_ArchitectureDesign_SFDS_v1.0_VI.docx"
     doc.save(output_path)
     print("Successfully generated:", output_path)
 

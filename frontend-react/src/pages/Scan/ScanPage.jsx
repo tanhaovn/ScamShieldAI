@@ -358,6 +358,19 @@ function ResultConsole({ result, apiBase, language }) {
   })[result.risk_level] || {};
   const suspiciousUrls = (result.phishvn_urls || []).map((item) => item.url || item.normalized_url);
   const suspiciousCount = (result.highlighted_terms?.length || 0) + suspiciousUrls.length;
+  const hasGradcamPayload = Object.prototype.hasOwnProperty.call(result, "image_model_gradcam");
+  const gradcam = result.image_model_gradcam || {};
+  const gradcamTarget = gradcam.target_class || result.image_model_label || "unavailable";
+  const gradcamTargetScore = Math.min(100, Math.max(0, Number(gradcam.target_score) || 0));
+  const gradcamTargetLabel = gradcamTarget === "phishing"
+    ? (en ? "Phishing" : "Phishing / giả mạo")
+    : gradcamTarget === "legitimate"
+      ? (en ? "Legitimate" : "Hợp lệ")
+      : (en ? "Unavailable" : "Chưa có kết quả");
+  const vlm = result.vlm_analysis || {};
+  const aiExplanationItems = Array.isArray(vlm.explanation_items) ? vlm.explanation_items : [];
+  const hasAiExplanation = vlm.explanation_source === "vision_language_model"
+    && Boolean(vlm.reasoning || aiExplanationItems.length);
   const plainReasons = [];
   if (result.highlighted_terms?.length) {
     plainReasons.push(en ? `Urgent wording or sensitive requests found: ${result.highlighted_terms.slice(0, 5).join(", ")}.` : `Có từ ngữ thúc giục hoặc yêu cầu nhạy cảm: ${result.highlighted_terms.slice(0, 5).join(", ")}.`);
@@ -413,9 +426,84 @@ function ResultConsole({ result, apiBase, language }) {
         {result.phishvn_urls?.length > 0 && <span>{en ? "Links" : "Đường link"}: <strong>{result.phishvn_urls.length} {en ? "to review" : "link cần chú ý"}</strong></span>}
       </div>
 
-      <EvidenceSources result={result} language={language} />
+      {result.source_type !== "image" && <EvidenceSources result={result} language={language} />}
 
-      <div className="scan-simple-result-grid">
+      {result.source_type === "image" && (
+        <section className={`scan-gradcam-card ${gradcam.available ? "available" : "unavailable"}`}>
+          <header>
+            <div>
+              <small>PYTORCH GRAD-CAM · RESNET18</small>
+              <h3>{en ? "Why did the image model make this prediction?" : "Vì sao mô hình ảnh đưa ra dự đoán này?"}</h3>
+            </div>
+            <span>{gradcamTargetLabel} · {gradcamTargetScore}%</span>
+          </header>
+
+          {gradcam.available && gradcam.image_url ? (
+            <>
+              <div className="scan-gradcam-comparison">
+                {result.image_url && (
+                  <figure>
+                    <img src={`${apiBase}${result.image_url}`} alt={en ? "The image submitted for this check" : "Ảnh được gửi trong lần kiểm tra này"} />
+                    <figcaption>{en ? "Image submitted for this check" : "Ảnh gốc của lần kiểm tra này"}</figcaption>
+                  </figure>
+                )}
+                <figure>
+                  <img src={`${apiBase}${gradcam.image_url}`} alt={en ? `Grad-CAM map for the ${gradcamTarget} prediction` : `Bản đồ Grad-CAM cho dự đoán ${gradcamTargetLabel}`} />
+                  <figcaption>{en ? `Grad-CAM for class: ${gradcamTargetLabel}` : `Grad-CAM giải thích lớp: ${gradcamTargetLabel}`}</figcaption>
+                </figure>
+              </div>
+              <div className="scan-gradcam-legend" aria-label={en ? "Grad-CAM color scale" : "Thang màu Grad-CAM"}>
+                <span>{en ? "Lower contribution" : "Ít tác động"}</span><i /><span>{en ? "Higher contribution" : "Tác động mạnh"}</span>
+              </div>
+              <div className="scan-gradcam-explanation">
+                <h4>{en ? "Visual AI explanation" : "AI thị giác giải thích cụ thể"}</h4>
+                {hasAiExplanation ? (
+                  <>
+                    {vlm.reasoning && <p>{vlm.reasoning}</p>}
+                    {aiExplanationItems.length > 0 && (
+                      <ol className="scan-ai-evidence-list">
+                        {aiExplanationItems.map((item, index) => (
+                          <li key={`${item.observation}-${index}`}>
+                            <strong>{item.observation}</strong>
+                            {item.location && <span>{en ? "Location" : "Vị trí"}: {item.location}</span>}
+                            <p>{item.why_risky}</p>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                    <small>{vlm.note}</small>
+                  </>
+                ) : (
+                  <div className="scan-ai-explanation-unavailable">
+                    <strong>{en ? "A visual-language explanation is not available" : "Chưa có lời giải thích từ AI thị giác"}</strong>
+                    <p>{vlm.note || (en
+                      ? "Grad-CAM can localize influential pixels, but it cannot explain their semantic meaning by itself."
+                      : "Grad-CAM chỉ định vị vùng tác động, tự nó không hiểu ý nghĩa và không thể nói vì sao nội dung đó là lừa đảo.")}</p>
+                  </div>
+                )}
+                <small>
+                  {en
+                    ? `Technical signal: ResNet18 predicted ${gradcamTargetLabel} (${gradcamTargetScore}%); Grad-CAM marks the pixels that influenced that output. This percentage is not the explanation itself.`
+                    : `Tín hiệu kỹ thuật: ResNet18 dự đoán “${gradcamTargetLabel}” (${gradcamTargetScore}%); Grad-CAM đánh dấu pixel ảnh hưởng đến đầu ra. Phần trăm này không được xem là lời giải thích.`}
+                </small>
+              </div>
+            </>
+          ) : (
+            <div className="scan-gradcam-unavailable">
+              <strong>{en ? "No Grad-CAM map is available for this check" : "Chưa tạo được bản đồ Grad-CAM cho lần kiểm tra này"}</strong>
+              <p>{gradcam.note || (!hasGradcamPayload
+                ? (en
+                  ? "This result came from an older backend response. Restart the backend, then scan the image again."
+                  : "Kết quả này được trả từ backend phiên bản cũ. Hãy khởi động lại backend rồi quét lại ảnh.")
+                : (en
+                  ? "The ResNet18 image model or Grad-CAM dependency was unavailable."
+                  : "Model ResNet18 hoặc thư viện Grad-CAM chưa sẵn sàng."))}</p>
+            </div>
+          )}
+        </section>
+      )}
+
+      {result.source_type !== "image" && <div className="scan-simple-result-grid">
         <section className="scan-why-card">
           <div className="scan-friendly-heading"><span>01</span><div><small>{en ? "WHY IT WAS FLAGGED" : "LÝ DO CẢNH BÁO"}</small><h3>{en ? "Why did I get this result?" : "Vì sao có kết quả này?"}</h3></div></div>
           <ol>{plainReasons.map((reason, index) => <li key={reason}><b>{index + 1}</b><span>{reason}</span></li>)}</ol>
@@ -424,7 +512,7 @@ function ResultConsole({ result, apiBase, language }) {
           <div className="scan-friendly-heading"><span>02</span><div><small>{en ? "SAFE NEXT STEPS" : "HÀNH ĐỘNG AN TOÀN"}</small><h3>{en ? "What should you do next?" : "Bạn nên làm gì tiếp theo?"}</h3></div></div>
           <ol>{nextSteps.map((step, index) => <li key={step}><b>{index + 1}</b><span>{step}</span></li>)}</ol>
         </section>
-      </div>
+      </div>}
 
       <div className="scan-readable-content">
           <details className="scan-ocr-console" open>

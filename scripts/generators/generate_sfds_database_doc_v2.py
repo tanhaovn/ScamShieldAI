@@ -128,7 +128,7 @@ def generate_document():
     # =========================================================================
     # PAGE 1: EXACT STORELENS COVER PAGE
     # =========================================================================
-    logo_path = "extracted_media/image_1.png"
+    logo_path = "docs/assets/source-media/image_1.png"
     if os.path.exists(logo_path):
         p_logo = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=8)
         p_logo.add_run().add_picture(logo_path, width=Inches(3.2))
@@ -413,7 +413,7 @@ def generate_document():
         "foreign keys, and relational cardinality."
     ), space_after=6)
 
-    erd_image_path = "arch_diagrams/fig_sfds_erd.png"
+    erd_image_path = "docs/assets/architecture/fig_sfds_erd.png"
     if os.path.exists(erd_image_path):
         p_img = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_before=6, space_after=4)
         p_img.add_run().add_picture(erd_image_path, width=Inches(6.4))

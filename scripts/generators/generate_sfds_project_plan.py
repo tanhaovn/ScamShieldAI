@@ -106,8 +106,8 @@ def create_project_plan_docx():
     # -------------------------------------------------------------
     p_logo = doc.add_paragraph()
     p_logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    if os.path.exists("extracted_media/image_1.png"):
-        p_logo.add_run().add_picture("extracted_media/image_1.png", width=Inches(3.0))
+    if os.path.exists("docs/assets/source-media/image_1.png"):
+        p_logo.add_run().add_picture("docs/assets/source-media/image_1.png", width=Inches(3.0))
         
     p_school = doc.add_paragraph()
     p_school.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -578,8 +578,8 @@ def create_project_plan_docx():
     
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    if os.path.exists("extracted_media/image_0.png"):
-        p.add_run().add_picture("extracted_media/image_0.png", width=Inches(5.6))
+    if os.path.exists("docs/assets/source-media/image_0.png"):
+        p.add_run().add_picture("docs/assets/source-media/image_0.png", width=Inches(5.6))
         
     p_fig = doc.add_paragraph("Figure 1. Scrum Process")
     p_fig.alignment = WD_ALIGN_PARAGRAPH.CENTER

@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-"""
+r"""
 Script to organize all Capstone C1SE.06 documents into standard numbered folders
 Matching the structure of D:\TAILIEU_CAPSTONE_C1SE20_ver02.
-Target: D:\TAILIEU_CAPSTONE_C1SE06_SFDS and D:\scam-detector\TAILIEU_CAPSTONE_C1SE06_SFDS
+Target: D:\scam-detector\docs\capstone
 """
 
 import os
 import shutil
 
 target_dirs = [
-    r"D:\scam-detector\TAILIEU_CAPSTONE_C1SE06_SFDS"
+    r"D:\scam-detector\docs\capstone"
 ]
 
 folders = [
@@ -63,26 +63,26 @@ def organize():
         if os.path.exists(arch_file):
             shutil.copy2(arch_file, os.path.join(base, "4. ARCHITECTURE DESIGN", arch_file))
         # copy diagrams
-        if os.path.exists("arch_diagrams"):
+        if os.path.exists("docs/assets/architecture"):
             diag_dest = os.path.join(base, "4. ARCHITECTURE DESIGN", "diagrams")
             os.makedirs(diag_dest, exist_ok=True)
-            for f in os.listdir("arch_diagrams"):
+            for f in os.listdir("docs/assets/architecture"):
                 if f.startswith("fig") and not f.startswith("fig_sfds_erd"):
-                    shutil.copy2(os.path.join("arch_diagrams", f), os.path.join(diag_dest, f))
+                    shutil.copy2(os.path.join("docs/assets/architecture", f), os.path.join(diag_dest, f))
 
         # 5. DATABASE DESIGN
         db_files = [
             "C1SE.06_DatabaseDesign_SFDS_v1.0.docx",
             "C1SE.06_DatabaseDesign_SFDS_v1.1.docx",
             "SFDS_Database_ERD.drawio",
-            "schema.sql"
+            "database/schema.sql"
         ]
         for dbf in db_files:
             if os.path.exists(dbf):
                 shutil.copy2(dbf, os.path.join(base, "5. DATABASE DESIGN", dbf))
         
         # copy ERD png
-        erd_png = os.path.join("arch_diagrams", "fig_sfds_erd.png")
+        erd_png = os.path.join("docs/assets/architecture", "fig_sfds_erd.png")
         if os.path.exists(erd_png):
             shutil.copy2(erd_png, os.path.join(base, "5. DATABASE DESIGN", "SFDS_Database_ERD.png"))
 

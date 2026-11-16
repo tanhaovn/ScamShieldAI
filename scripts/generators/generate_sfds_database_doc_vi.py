@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
+r"""
 Generate official Vietnamese Capstone Database Design Document (.docx)
-Output: D:\scam-detector\TAILIEU_CAPSTONE_C1SE06_SFDS\5. DATABASE DESIGN\C1SE.06_DatabaseDesign_SFDS_v1.1_VI.docx
+Output: D:\scam-detector\docs\capstone\5. DATABASE DESIGN\C1SE.06_DatabaseDesign_SFDS_v1.1_VI.docx
 """
 
 import os
@@ -126,7 +126,7 @@ def generate_document():
     # =========================================================================
     # TRANG 1: ẢNH BÌA
     # =========================================================================
-    logo_path = "extracted_media/image_1.png"
+    logo_path = "docs/assets/source-media/image_1.png"
     if os.path.exists(logo_path):
         p_logo = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=8)
         p_logo.add_run().add_picture(logo_path, width=Inches(3.2))
@@ -391,9 +391,9 @@ def generate_document():
         "khóa chính (PK), khóa ngoại (FK), các trường dữ liệu và bản số quan hệ (cardinality 1:1, 1:N)."
     ), space_after=6)
 
-    erd_image_path = "TAILIEU_CAPSTONE_C1SE06_SFDS/5. DATABASE DESIGN/SFDS_Database_ERD.png"
+    erd_image_path = "docs/capstone/5. DATABASE DESIGN/SFDS_Database_ERD.png"
     if not os.path.exists(erd_image_path):
-        erd_image_path = "arch_diagrams/fig_sfds_erd.png"
+        erd_image_path = "docs/assets/architecture/fig_sfds_erd.png"
     if os.path.exists(erd_image_path):
         p_img = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_before=6, space_after=4)
         p_img.add_run().add_picture(erd_image_path, width=Inches(6.4))
@@ -565,7 +565,7 @@ def generate_document():
     create_styled_table(doc, ["Thuộc tính kỹ thuật", "Mô tả chi tiết"], tech_data, col_widths=[2.0, 4.5])
 
     # Luu tap tin ket qua
-    output_path = r"D:\scam-detector\TAILIEU_CAPSTONE_C1SE06_SFDS\5. DATABASE DESIGN\C1SE.06_DatabaseDesign_SFDS_v1.1_VI.docx"
+    output_path = r"D:\scam-detector\docs\capstone\5. DATABASE DESIGN\C1SE.06_DatabaseDesign_SFDS_v1.1_VI.docx"
     doc.save(output_path)
     print("Successfully generated:", output_path)
 

@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 Generate Clean PNG ERD diagram matching the pristine Draw.io layout
-Output: arch_diagrams/fig_sfds_erd.png
+Output: docs/assets/architecture/fig_sfds_erd.png
 """
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import os
 
-os.makedirs("arch_diagrams", exist_ok=True)
+os.makedirs("docs/assets/architecture", exist_ok=True)
 
 fig, ax = plt.subplots(figsize=(18, 12), dpi=300)
 ax.set_xlim(0, 18)
@@ -203,6 +203,6 @@ ax.text(8.9, 11.6, "1 : N", fontsize=8, ha='center', va='center', fontfamily='se
         bbox=dict(boxstyle="square,pad=0.2", fc="#FFFFFF", ec="#000000", lw=0.6))
 
 plt.tight_layout()
-plt.savefig("arch_diagrams/fig_sfds_erd.png", dpi=300, bbox_inches='tight')
+plt.savefig("docs/assets/architecture/fig_sfds_erd.png", dpi=300, bbox_inches='tight')
 plt.close()
 print("Successfully generated pristine clean ERD PNG!")

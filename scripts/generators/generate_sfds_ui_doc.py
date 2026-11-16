@@ -128,7 +128,7 @@ def generate_document():
     # =========================================================================
     # PAGE 1: EXACT STORELENS COVER PAGE
     # =========================================================================
-    logo_path = "extracted_media/image_1.png"
+    logo_path = "docs/assets/source-media/image_1.png"
     if os.path.exists(logo_path):
         p_logo = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=8)
         p_logo.add_run().add_picture(logo_path, width=Inches(3.2))
@@ -363,7 +363,7 @@ def generate_document():
     # -------------------------------------------------------------
     add_p(doc, "2.1 Login (Admin Security Gate)", bold=True, font_size=14, space_before=8, space_after=4)
     
-    img_login = "ui_diagrams/fig1_ui_login.png"
+    img_login = "docs/assets/ui/fig1_ui_login.png"
     if os.path.exists(img_login):
         p_img = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_before=6, space_after=4)
         p_img.add_run().add_picture(img_login, width=Inches(6.0))
@@ -390,7 +390,7 @@ def generate_document():
     # -------------------------------------------------------------
     add_p(doc, "2.2 Register (Analyst & SME Registration)", bold=True, font_size=14, space_before=8, space_after=4)
 
-    img_reg = "ui_diagrams/fig2_ui_register.png"
+    img_reg = "docs/assets/ui/fig2_ui_register.png"
     if os.path.exists(img_reg):
         p_img = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_before=6, space_after=4)
         p_img.add_run().add_picture(img_reg, width=Inches(5.8))
@@ -417,7 +417,7 @@ def generate_document():
     # -------------------------------------------------------------
     add_p(doc, "2.3 Dashboard (Portal Overview & Threat Trends)", bold=True, font_size=14, space_before=8, space_after=4)
 
-    img_over = "ui_diagrams/fig3_ui_overview.png"
+    img_over = "docs/assets/ui/fig3_ui_overview.png"
     if os.path.exists(img_over):
         p_img = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_before=6, space_after=4)
         p_img.add_run().add_picture(img_over, width=Inches(6.4))
@@ -447,7 +447,7 @@ def generate_document():
     # -------------------------------------------------------------
     add_p(doc, "2.4 Multimodal Scan Interface", bold=True, font_size=14, space_before=8, space_after=4)
 
-    img_scan = "ui_diagrams/fig4_ui_scan_input.png"
+    img_scan = "docs/assets/ui/fig4_ui_scan_input.png"
     if os.path.exists(img_scan):
         p_img = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_before=6, space_after=4)
         p_img.add_run().add_picture(img_scan, width=Inches(6.4))
@@ -476,7 +476,7 @@ def generate_document():
     # -------------------------------------------------------------
     add_p(doc, "2.5 Explainable Risk Analysis & Verdict", bold=True, font_size=14, space_before=8, space_after=4)
 
-    img_res = "ui_diagrams/fig5_ui_scan_result_explanation.png"
+    img_res = "docs/assets/ui/fig5_ui_scan_result_explanation.png"
     if os.path.exists(img_res):
         p_img = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_before=6, space_after=4)
         p_img.add_run().add_picture(img_res, width=Inches(6.4))
@@ -508,7 +508,7 @@ def generate_document():
     # -------------------------------------------------------------
     add_p(doc, "2.6 Scan History & Forensic Audit", bold=True, font_size=14, space_before=8, space_after=4)
 
-    img_hist = "ui_diagrams/fig6_ui_history.png"
+    img_hist = "docs/assets/ui/fig6_ui_history.png"
     if os.path.exists(img_hist):
         p_img = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_before=6, space_after=4)
         p_img.add_run().add_picture(img_hist, width=Inches(6.4))
@@ -536,7 +536,7 @@ def generate_document():
     # -------------------------------------------------------------
     add_p(doc, "2.7 Admin Threat Intelligence & Incident Triage", bold=True, font_size=14, space_before=8, space_after=4)
 
-    img_adm = "ui_diagrams/fig7_ui_admin_dashboard.png"
+    img_adm = "docs/assets/ui/fig7_ui_admin_dashboard.png"
     if os.path.exists(img_adm):
         p_img = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_before=6, space_after=4)
         p_img.add_run().add_picture(img_adm, width=Inches(6.4))
@@ -611,8 +611,8 @@ def generate_document():
 
     # Copy to designated folders
     dest_folders = [
-        r"D:\scam-detector\TAILIEU_CAPSTONE_C1SE06_SFDS\6. USER INTERFACE DESIGN",
-        r"D:\TAILIEU_CAPSTONE_C1SE06_SFDS\6. USER INTERFACE DESIGN"
+        r"D:\scam-detector\docs\capstone\6. USER INTERFACE DESIGN",
+        r"D:\scam-detector\docs\capstone\6. USER INTERFACE DESIGN"
     ]
     for df in dest_folders:
         try:

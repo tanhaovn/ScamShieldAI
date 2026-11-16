@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
+r"""
 Generate official Vietnamese Capstone User Interface Design Document (.docx)
-Output: D:\scam-detector\TAILIEU_CAPSTONE_C1SE06_SFDS\6. USER INTERFACE DESIGN\C1SE.06_UIDesign_SFDS_v1.0_VI.docx
+Output: D:\scam-detector\docs\capstone\6. USER INTERFACE DESIGN\C1SE.06_UIDesign_SFDS_v1.0_VI.docx
 """
 
 import os
@@ -127,7 +127,7 @@ def generate_document():
     # =========================================================================
     # TRANG 1: ẢNH BÌA CHUẨN ĐỒ ÁN CAPSTONE DUY TÂN
     # =========================================================================
-    logo_path = "extracted_media/image_1.png"
+    logo_path = "docs/assets/source-media/image_1.png"
     if os.path.exists(logo_path):
         p_logo = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=8)
         p_logo.add_run().add_picture(logo_path, width=Inches(3.2))
@@ -360,7 +360,7 @@ def generate_document():
         "và các thẻ cảnh báo trực quan về những thủ đoạn giả mạo thương hiệu ngân hàng, app đầu tư tài chính bất hợp pháp, hay mạo danh cơ quan công quyền."
     ), space_after=6)
 
-    img_path = "ui_diagrams/fig1_ui_overview.png"
+    img_path = "docs/assets/ui/fig1_ui_overview.png"
     if os.path.exists(img_path):
         p_img = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=3)
         p_img.add_run().add_picture(img_path, width=Inches(6.2))
@@ -385,7 +385,7 @@ def generate_document():
         "hoặc tải tập tin tài liệu PDF. Quá trình xử lý diễn ra ngay lập tức với thanh tiến trình trực quan theo thời gian thực."
     ), space_after=6)
 
-    img_path = "ui_diagrams/fig2_ui_scan_input.png"
+    img_path = "docs/assets/ui/fig2_ui_scan_input.png"
     if os.path.exists(img_path):
         p_img = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=3)
         p_img.add_run().add_picture(img_path, width=Inches(6.2))
@@ -411,7 +411,7 @@ def generate_document():
         "Ngoài ra, màn hình cung cấp danh sách hành động khẩn cấp cần thực hiện và cửa sổ đóng góp ý kiến (User Feedback modal) để người dùng phản hồi về độ chính xác."
     ), space_after=6)
 
-    img_path = "ui_diagrams/fig3_ui_scan_result.png"
+    img_path = "docs/assets/ui/fig3_ui_scan_result.png"
     if os.path.exists(img_path):
         p_img = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=3)
         p_img.add_run().add_picture(img_path, width=Inches(6.2))
@@ -436,7 +436,7 @@ def generate_document():
         "mở lại kết quả giải thích chi tiết, hoặc xuất báo cáo pháp chứng dạng tệp CSV để gửi cho cơ quan công an khi cần tố giác tội phạm."
     ), space_after=6)
 
-    img_path = "ui_diagrams/fig4_ui_history.png"
+    img_path = "docs/assets/ui/fig4_ui_history.png"
     if os.path.exists(img_path):
         p_img = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=3)
         p_img.add_run().add_picture(img_path, width=Inches(6.2))
@@ -461,7 +461,7 @@ def generate_document():
         "bộ nhớ lịch sử trên trình duyệt chỉ với một nút bấm."
     ), space_after=6)
 
-    img_path = "ui_diagrams/fig5_ui_profile.png"
+    img_path = "docs/assets/ui/fig5_ui_profile.png"
     if os.path.exists(img_path):
         p_img = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=3)
         p_img.add_run().add_picture(img_path, width=Inches(6.2))
@@ -486,7 +486,7 @@ def generate_document():
         "Chỉ có các quản trị viên hệ thống và chuyên gia an ninh mạng đã được tạo tài khoản trước trong cơ sở dữ liệu mới có thể đăng nhập bằng thông tin định danh hợp lệ."
     ), space_after=6)
 
-    img_path = "ui_diagrams/fig6_ui_admin_login.png"
+    img_path = "docs/assets/ui/fig6_ui_admin_login.png"
     if os.path.exists(img_path):
         p_img = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=3)
         p_img.add_run().add_picture(img_path, width=Inches(6.2))
@@ -511,7 +511,7 @@ def generate_document():
         "Đánh giá hiệu năng và độ chính xác mô hình (Evaluation Benchmarks), và Giám sát nhật ký hoạt động hệ thống (System Activity Logs)."
     ), space_after=6)
 
-    img_path = "ui_diagrams/fig7_ui_admin_console.png"
+    img_path = "docs/assets/ui/fig7_ui_admin_console.png"
     if os.path.exists(img_path):
         p_img = add_p(doc, align=WD_ALIGN_PARAGRAPH.CENTER, space_after=3)
         p_img.add_run().add_picture(img_path, width=Inches(6.2))
@@ -561,7 +561,7 @@ def generate_document():
     ), space_after=8)
 
     # Luu tap tin ket qua
-    output_path = r"D:\scam-detector\TAILIEU_CAPSTONE_C1SE06_SFDS\6. USER INTERFACE DESIGN\C1SE.06_UIDesign_SFDS_v1.0_VI.docx"
+    output_path = r"D:\scam-detector\docs\capstone\6. USER INTERFACE DESIGN\C1SE.06_UIDesign_SFDS_v1.0_VI.docx"
     doc.save(output_path)
     print("Successfully generated:", output_path)
 
