@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 function DatasetPage({ categories, form, setForm, onSubmit, items, language }) {
   const en = language === "en";
@@ -233,16 +235,74 @@ function FeedbackPage({ items, language, onRefresh }) {
   return <section className="panel admin-feedback-page"><div className="admin-evaluation-heading"><div><span className="eyebrow">USER VALIDATION</span><h3>{en ? "Feedback from users" : "Phản hồi từ người dùng"}</h3><p>{en ? "Every submitted validation is stored in the shared database." : "Mọi xác nhận đã gửi đều được lưu trong cơ sở dữ liệu dùng chung."}</p></div><div className="admin-heading-actions"><button type="button" onClick={onRefresh}>{en ? "Refresh" : "Làm mới"}</button><div className="admin-evaluation-badge"><i /> {items.length} {en ? "responses" : "phản hồi"}</div></div></div><div className="admin-feedback-list">{items.length === 0 ? <div className="admin-empty-state">{en ? "No feedback yet." : "Chưa có phản hồi nào."}</div> : items.map((item) => <article className={`verdict-${item.verdict}`} key={item.id}><header><span>{labels[item.verdict] || item.verdict}</span><time>{new Date(item.created_at).toLocaleString(en ? "en-US" : "vi-VN")}</time></header><div><strong>{item.original_filename || `${en ? "Check" : "Lượt kiểm tra"} #${item.client_scan_id || item.scan_id || "—"}`}</strong><b>{item.risk_score}/100 · {item.predicted_level}</b></div><p>{item.note || (en ? "No additional comment." : "Người dùng không để lại ghi chú.")}</p><footer><span>{item.source_type}</span><span>{item.review_status === "pending" ? (en ? "Pending review" : "Chờ xem xét") : item.review_status}</span></footer></article>)}</div></section>;
 }
 
+function DeviceWorldMap({ items, selectedId, onSelect, language }) {
+  const en = language === "en";
+  const containerRef = useRef(null);
+  const mapRef = useRef(null);
+  const markersRef = useRef(null);
+
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return undefined;
+    const map = L.map(containerRef.current, { minZoom: 2, worldCopyJump: true }).setView([18, 0], 2);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 18,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(map);
+    markersRef.current = L.layerGroup().addTo(map);
+    mapRef.current = map;
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      markersRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const layer = markersRef.current;
+    if (!map || !layer) return;
+    layer.clearLayers();
+    const located = items.filter((item) => Number.isFinite(item.latitude) && Number.isFinite(item.longitude));
+    const points = [];
+    located.forEach((item) => {
+      const active = selectedId !== "all" && item.id === selectedId;
+      const marker = L.circleMarker([item.latitude, item.longitude], {
+        radius: active ? 10 : 7,
+        weight: active ? 4 : 2,
+        color: active ? "#103f30" : "#ffffff",
+        fillColor: active ? "#36b889" : "#55a98a",
+        fillOpacity: .92,
+      }).addTo(layer);
+      const tooltip = document.createElement("div");
+      const title = document.createElement("strong");
+      const detail = document.createElement("small");
+      title.textContent = item.device_name || (en ? "Unknown device" : "Thiết bị chưa rõ");
+      detail.textContent = `${item.platform || "—"} · ${item.browser || "—"} · ${item.visit_count} ${en ? "visits" : "lượt"}`;
+      tooltip.className = "device-map-tooltip";
+      tooltip.append(title, detail);
+      marker.bindTooltip(tooltip, { direction: "top", offset: [0, -8] });
+      marker.on("click", () => onSelect(item.id));
+      points.push([item.latitude, item.longitude]);
+    });
+    if (selectedId === "all") {
+      if (points.length > 1) map.fitBounds(points, { padding: [42, 42], maxZoom: 9 });
+      else if (points.length === 1) map.setView(points[0], 7);
+      else map.setView([18, 0], 2);
+    } else {
+      const selected = located.find((item) => item.id === selectedId);
+      if (selected) map.setView([selected.latitude, selected.longitude], selected.location_permission === "ip" ? 9 : 14);
+    }
+  }, [en, items, onSelect, selectedId]);
+
+  return <div className="admin-leaflet-map" ref={containerRef} aria-label={en ? "World map of visitor devices" : "Bản đồ thế giới của các thiết bị truy cập"} />;
+}
+
 function DevicesPage({ items, language, onRefresh }) {
   const en = language === "en";
   const located = items.filter((item) => Number.isFinite(item.latitude) && Number.isFinite(item.longitude));
-  const [selectedId, setSelectedId] = useState(() => located[0]?.id || null);
-  const selected = items.find((item) => item.id === selectedId) || located[0] || items[0];
-  const mapRadius = selected?.location_permission === "ip" ? 0.35 : 0.02;
-  const mapUrl = selected?.latitude != null && selected?.longitude != null
-    ? `https://www.openstreetmap.org/export/embed.html?bbox=${selected.longitude - mapRadius}%2C${selected.latitude - mapRadius * .6}%2C${selected.longitude + mapRadius}%2C${selected.latitude + mapRadius * .6}&layer=mapnik&marker=${selected.latitude}%2C${selected.longitude}`
-    : "";
-  return <section className="panel admin-devices-page"><div className="admin-evaluation-heading"><div><span className="eyebrow">DEVICE PRESENCE</span><h3>{en ? "Devices and approximate locations" : "Thiết bị và vị trí gần đúng"}</h3><p>{en ? "Device type, operating system, browser and approximate network area are detected automatically." : "Tự động nhận diện loại thiết bị, hệ điều hành, trình duyệt và khu vực mạng gần đúng."}</p></div><div className="admin-heading-actions"><button type="button" onClick={onRefresh}>{en ? "Refresh" : "Làm mới"}</button><div className="admin-device-kpis"><span><strong>{items.length}</strong>{en ? "Devices" : "Thiết bị"}</span><span><strong>{located.length}</strong>{en ? "Located" : "Có vị trí"}</span></div></div></div><div className="admin-device-layout"><div className="admin-device-list">{items.length === 0 ? <div className="admin-empty-state">{en ? "No devices recorded yet." : "Chưa ghi nhận thiết bị nào."}</div> : items.map((item) => <button type="button" className={selected?.id === item.id ? "active" : ""} onClick={() => setSelectedId(item.id)} key={item.id}><i className={item.latitude != null ? "located" : ""}>●</i><span><strong>{item.device_name || (en ? "Unknown device" : "Thiết bị chưa rõ")}</strong><small>{item.platform || "—"} · {item.browser || "—"}</small><small>{item.ip_address || "—"} · {item.visit_count} {en ? "visits" : "lượt"} · {en ? "Last seen" : "Lần cuối"} {new Date(item.last_seen_at).toLocaleString(en ? "en-US" : "vi-VN")}</small></span><b>{item.latitude != null ? (item.location_permission === "ip" ? (en ? "Approx. by IP" : "Gần đúng theo IP") : (en ? "Located" : "Có vị trí")) : (en ? "Unavailable" : "Chưa xác định")}</b></button>)}</div><div className="admin-device-map">{mapUrl ? <><iframe title={en ? "Selected device location" : "Vị trí thiết bị đã chọn"} src={mapUrl} loading="lazy" referrerPolicy="no-referrer" /><div><strong>{selected.device_name}</strong><span>{selected.location_permission === "ip" ? (en ? "Approximate network area · not a street address" : "Khu vực mạng gần đúng · không phải địa chỉ cụ thể") : `${Number(selected.latitude).toFixed(5)}, ${Number(selected.longitude).toFixed(5)}`}</span><a href={`https://www.openstreetmap.org/?mlat=${selected.latitude}&mlon=${selected.longitude}#map=${selected.location_permission === "ip" ? 10 : 15}/${selected.latitude}/${selected.longitude}`} target="_blank" rel="noreferrer">{en ? "Open full map ↗" : "Mở bản đồ đầy đủ ↗"}</a></div></> : <div className="admin-map-empty"><span>⌖</span><strong>{en ? "Location not available" : "Chưa có dữ liệu vị trí"}</strong><p>{en ? "The public IP could not be mapped for this visit." : "Chưa thể ánh xạ địa chỉ IP công khai của lượt truy cập này."}</p></div>}</div></div></section>;
+  const [selectedId, setSelectedId] = useState("all");
+  const selected = items.find((item) => item.id === selectedId) || null;
+  return <section className="panel admin-devices-page"><div className="admin-evaluation-heading"><div><span className="eyebrow">DEVICE PRESENCE</span><h3>{en ? "Devices and approximate locations" : "Thiết bị và vị trí gần đúng"}</h3><p>{en ? "Device type, operating system, browser and approximate network area are detected automatically." : "Tự động nhận diện loại thiết bị, hệ điều hành, trình duyệt và khu vực mạng gần đúng."}</p></div><div className="admin-heading-actions"><button type="button" onClick={onRefresh}>{en ? "Refresh" : "Làm mới"}</button><div className="admin-device-kpis"><span><strong>{items.length}</strong>{en ? "Devices" : "Thiết bị"}</span><span><strong>{located.length}</strong>{en ? "Located" : "Có vị trí"}</span></div></div></div><div className="admin-device-layout"><div className="admin-device-list">{items.length === 0 ? <div className="admin-empty-state">{en ? "No devices recorded yet." : "Chưa ghi nhận thiết bị nào."}</div> : <><button type="button" className={`admin-device-all ${selectedId === "all" ? "active" : ""}`} onClick={() => setSelectedId("all")}><i className="located">●</i><span><strong>{en ? "All devices" : "Tất cả thiết bị"}</strong><small>{located.length} {en ? "locations shown on the world map" : "vị trí trên bản đồ thế giới"}</small></span><b>{en ? "World view" : "Toàn thế giới"}</b></button>{items.map((item) => <button type="button" className={selected?.id === item.id ? "active" : ""} onClick={() => setSelectedId(item.id)} key={item.id}><i className={item.latitude != null ? "located" : ""}>●</i><span><strong>{item.device_name || (en ? "Unknown device" : "Thiết bị chưa rõ")}</strong><small>{item.platform || "—"} · {item.browser || "—"}</small><small>{item.ip_address || "—"} · {item.visit_count} {en ? "visits" : "lượt"} · {en ? "Last seen" : "Lần cuối"} {new Date(item.last_seen_at).toLocaleString(en ? "en-US" : "vi-VN")}</small></span><b>{item.latitude != null ? (item.location_permission === "ip" ? (en ? "Approx. by IP" : "Gần đúng theo IP") : (en ? "Located" : "Có vị trí")) : (en ? "Unavailable" : "Chưa xác định")}</b></button>)}</>}</div><div className="admin-device-map"><DeviceWorldMap items={items} selectedId={selectedId} onSelect={setSelectedId} language={language} /><div className="admin-map-caption"><strong>{selected ? selected.device_name : (en ? "All visitor devices" : "Tất cả thiết bị truy cập")}</strong><span>{selected ? (selected.latitude == null || selected.longitude == null ? (en ? "Location is not available for this device" : "Thiết bị này chưa xác định được vị trí") : selected.location_permission === "ip" ? (en ? "Approximate network area · not a street address" : "Khu vực mạng gần đúng · không phải địa chỉ cụ thể") : `${Number(selected.latitude).toFixed(5)}, ${Number(selected.longitude).toFixed(5)}`) : (en ? `${located.length} located devices worldwide` : `${located.length} thiết bị có vị trí trên toàn thế giới`)}</span>{selected?.latitude != null && <a href={`https://www.openstreetmap.org/?mlat=${selected.latitude}&mlon=${selected.longitude}#map=${selected.location_permission === "ip" ? 10 : 15}/${selected.latitude}/${selected.longitude}`} target="_blank" rel="noreferrer">{en ? "Open full map ↗" : "Mở bản đồ đầy đủ ↗"}</a>}</div></div></div></section>;
 }
 
 export default function AdminPage({
