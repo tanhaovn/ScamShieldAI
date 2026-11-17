@@ -57,6 +57,48 @@ function DetectionPreview({ item, apiBase, modal = false, language = "vi" }) {
   );
 }
 
+function HistoryExplanation({ item, language }) {
+  const en = language === "en";
+  const vlm = item.vlm_analysis || item.highlighted_regions?.vlm_analysis || {};
+  const geminiItems = Array.isArray(vlm.explanation_items) ? vlm.explanation_items : [];
+  const aiSummary = String(vlm.summary || vlm.reasoning || "").trim();
+  const aiIndicators = Array.isArray(vlm.risk_indicators) ? vlm.risk_indicators : [];
+  const components = item.analysis_breakdown?.components || item.highlighted_regions?.analysis_breakdown?.components || [];
+  const fallbackLines = String(item.explanation || "")
+    .split(/\r?\n+/)
+    .map((line) => line.replace(/^[-•]\s*/, "").trim())
+    .filter(Boolean)
+    .slice(0, 8);
+  const evidence = geminiItems.length
+    ? geminiItems.map((entry) => ({
+        title: entry.observation || (en ? "Detail identified by AI" : "Chi tiết AI nhận diện"),
+        detail: entry.why_risky || entry.explanation || "",
+      }))
+    : aiIndicators.length
+      ? aiIndicators.slice(0, 6).map((indicator) => ({ title: indicator, detail: "" }))
+      : components.flatMap((component) => (component.findings || []).map((finding) => ({ title: component.title, detail: finding }))).slice(0, 6);
+  const sourceIsGemini = vlm.provider === "gemini" || String(vlm.model || "").toLowerCase().includes("gemini");
+
+  return (
+    <div className="history-explanation">
+      <div className="history-explanation-summary">
+        <span className={`history-risk-status ${getRiskMeta(item.risk_level, language).className}`}><i /> {getRiskMeta(item.risk_level, language).label} · {item.risk_score}/100</span>
+        {(sourceIsGemini || geminiItems.length > 0) && <b>{sourceIsGemini ? "Gemini AI" : (en ? "Visual AI" : "AI thị giác")}</b>}
+      </div>
+      {aiSummary && <div className="history-ai-conclusion"><small>{en ? "AI CONCLUSION" : "KẾT LUẬN CỦA AI"}</small><p>{aiSummary}</p></div>}
+      {evidence.length > 0 ? (
+        <ol className="history-evidence-list">
+          {evidence.map((entry, index) => <li key={`${entry.title}-${index}`}><span>{index + 1}</span><div><strong>{entry.title}</strong>{entry.detail && <p>{entry.detail}</p>}</div></li>)}
+        </ol>
+      ) : (
+        <div className="history-fallback-explanation">
+          {(fallbackLines.length ? fallbackLines : [en ? "No explanation was saved for this check." : "Không có giải thích được lưu cho lượt kiểm tra này."]).map((line, index) => <p key={`${line}-${index}`}>{line}</p>)}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function HistoryPage({
   history,
   selectedHistory,
@@ -240,8 +282,8 @@ export default function HistoryPage({
 
               <div className="history-modal-analysis">
                 <section className="history-analysis-section">
-                  <header><span>01</span><div><strong>{en ? "Conclusion" : "Kết luận"}</strong><small>{en ? "Why did I get this result?" : "Vì sao có kết quả này?"}</small></div></header>
-                  <p>{selectedHistory.explanation || (en ? "No explanation was saved for this check." : "Không có giải thích được lưu cho lượt kiểm tra này.")}</p>
+                  <header><span>01</span><div><strong>{en ? "AI explanation" : "Giải thích từ AI"}</strong><small>{en ? "Evidence behind this result" : "Các bằng chứng dẫn đến kết quả"}</small></div></header>
+                  <HistoryExplanation item={selectedHistory} language={language} />
                 </section>
                 <section className="history-analysis-section">
                   <header><span>02</span><div><strong>{en ? "What should you do?" : "Bạn nên làm gì?"}</strong><small>{en ? "Safety guidance" : "Hướng dẫn an toàn"}</small></div></header>

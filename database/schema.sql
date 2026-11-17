@@ -96,3 +96,22 @@ CREATE TABLE IF NOT EXISTS scan_feedback (
     INDEX ix_scan_feedback_scan_id (scan_id),
     FOREIGN KEY (scan_id) REFERENCES scan_history(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS visitor_devices (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    device_id VARCHAR(100) NOT NULL UNIQUE,
+    device_name VARCHAR(160),
+    platform VARCHAR(120),
+    browser VARCHAR(120),
+    user_agent VARCHAR(1000),
+    ip_address VARCHAR(64),
+    latitude DOUBLE,
+    longitude DOUBLE,
+    location_accuracy DOUBLE,
+    location_permission VARCHAR(30) NOT NULL DEFAULT 'unknown',
+    visit_count INT NOT NULL DEFAULT 1,
+    first_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX ix_visitor_devices_device_id (device_id),
+    INDEX ix_visitor_devices_last_seen_at (last_seen_at)
+) ENGINE=InnoDB;

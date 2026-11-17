@@ -12,6 +12,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 USE_SQLITE = os.getenv("USE_SQLITE", "true").lower() in {"1", "true", "yes", "y"}
+CONFIGURED_DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+APP_ENV = os.getenv("APP_ENV", "development").strip().lower()
+
+if APP_ENV == "production" and not CONFIGURED_DATABASE_URL:
+    raise RuntimeError(
+        "Production requires DATABASE_URL. Refusing to use ephemeral SQLite because data would be lost after a restart."
+    )
 
 DB_USER = os.getenv("DB_USER", "root")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
@@ -19,7 +26,10 @@ DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = os.getenv("DB_PORT", "3306")
 DB_NAME = os.getenv("DB_NAME", "scam_detector")
 
-if USE_SQLITE:
+if CONFIGURED_DATABASE_URL:
+    DATABASE_URL = CONFIGURED_DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_recycle=300)
+elif USE_SQLITE:
     DATABASE_URL = "sqlite:///./scam_detector.db"
     engine = create_engine(
         DATABASE_URL,
@@ -41,7 +51,9 @@ else:
         with engine.connect() as _conn:
             pass
     except Exception:
-        # Tự động chuyển về SQLite nếu MySQL chưa khởi động
+        if APP_ENV == "production":
+            raise
+        # Local development may fall back to SQLite when MySQL is unavailable.
         DATABASE_URL = "sqlite:///./scam_detector.db"
         engine = create_engine(
             DATABASE_URL,

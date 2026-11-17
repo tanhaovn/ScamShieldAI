@@ -43,6 +43,8 @@ function App() {
     "admin-models": ["AI Models", "Quản lý các phiên bản mô hình"],
     "admin-evaluations": ["Đánh giá Model", "Theo dõi chỉ số chất lượng mô hình"],
     "admin-keywords": ["Từ khóa lừa đảo", "Quản lý quy tắc phát hiện đang hoạt động"],
+    "admin-feedback": ["Phản hồi người dùng", "Xem xác nhận và góp ý từ các lượt kiểm tra"],
+    "admin-devices": ["Quản lý thiết bị", "Theo dõi thiết bị truy cập và khu vực gần đúng theo IP"],
     "admin-logs": ["Nhật ký hệ thống", "Theo dõi hoạt động quản trị"],
   };
   const pageMetaEn = {
@@ -55,6 +57,8 @@ function App() {
     "admin-models": ["AI Models", "Manage model versions"],
     "admin-evaluations": ["Model evaluations", "Monitor model quality metrics"],
     "admin-keywords": ["Scam keywords", "Manage live detection rules"],
+    "admin-feedback": ["User feedback", "Review validations and comments from checks"],
+    "admin-devices": ["Device management", "Monitor visits and approximate IP-based locations"],
     "admin-logs": ["System logs", "Monitor administrative activity"],
   };
   const pageMeta = language === "en" ? pageMetaEn : pageMetaVi;

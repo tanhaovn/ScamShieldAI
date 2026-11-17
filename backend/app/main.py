@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import jwt
-from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, Header
+from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -37,7 +37,7 @@ from backend.app.ai.google_safe_browsing import check_urls as check_google_safe_
 from backend.app.ai.domain_intelligence import inspect_urls
 from backend.app.ai.vlm_image_analyzer import analyze_image_context
 from backend.app.db.database import get_db, engine, Base, SessionLocal
-from backend.app.db.models import AuthIdentity, ScanHistory, User, ScamCategory, TrainingDataset, AiModel, ModelEvaluation, SystemActivityLog, ScanFeedback, ScamKeyword
+from backend.app.db.models import AuthIdentity, ScanHistory, User, ScamCategory, TrainingDataset, AiModel, ModelEvaluation, SystemActivityLog, ScanFeedback, ScamKeyword, VisitorDevice
 from backend.app.document.pdf_service import extract_pdf_content
 from backend.app.ocr.highlight_service import build_suspicious_regions
 from backend.app.ocr.ocr_service import extract_text_and_boxes, get_image_dimensions
@@ -232,6 +232,17 @@ class ScamKeywordRequest(BaseModel):
     keyword: str = Field(min_length=2, max_length=255)
     category: str = Field(min_length=2, max_length=100)
     weight: int = Field(ge=1, le=50)
+
+
+class DeviceHeartbeatRequest(BaseModel):
+    device_id: str = Field(min_length=8, max_length=100)
+    device_name: str | None = Field(default=None, max_length=160)
+    platform: str | None = Field(default=None, max_length=120)
+    browser: str | None = Field(default=None, max_length=120)
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+    location_accuracy: float | None = Field(default=None, ge=0, le=100000)
+    location_permission: str = Field(default="unknown", pattern="^(unknown|granted|denied|unavailable|ip)$")
 
 
 def _hash_password(password: str) -> str:
@@ -514,8 +525,10 @@ def list_scan_history(
         .order_by(ScanHistory.created_at.desc())
         .all()
     )
-    return [
-        {
+    results = []
+    for row in rows:
+        details = row.highlighted_regions if isinstance(row.highlighted_regions, dict) else {}
+        results.append({
             "id": row.id,
             "image_url": row.image_url,
             "original_filename": row.original_filename,
@@ -526,10 +539,19 @@ def list_scan_history(
             "explanation": row.explanation,
             "suggested_action": row.suggested_action,
             "highlighted_regions": row.highlighted_regions,
+            "highlighted_terms": details.get("terms", []),
+            "visual_flags": details.get("visual_flags", []),
+            "phishvn_urls": details.get("phishvn_urls", []),
+            "qr_codes": details.get("qr_codes", []),
+            "image_annotations": details.get("image_annotations", []),
+            "image_dimensions": details.get("image_dimensions"),
+            "analysis_breakdown": details.get("analysis_breakdown"),
+            "vlm_analysis": details.get("vlm_analysis"),
+            "image_model_gradcam": details.get("image_model_gradcam"),
+            "source_type": "image",
             "created_at": row.created_at,
-        }
-        for row in rows
-    ]
+        })
+    return results
 
 
 @app.get("/training-dataset")
@@ -998,6 +1020,49 @@ def list_scan_feedback(
     ]
 
 
+@app.post("/device-heartbeat", status_code=202)
+def device_heartbeat(payload: DeviceHeartbeatRequest, request: Request, db: Session = Depends(get_db)):
+    """Register an installation and optional browser-approved coordinates."""
+    forwarded = request.headers.get("x-forwarded-for", "").split(",", 1)[0].strip()
+    client_ip = forwarded or (request.client.host if request.client else "")
+    row = db.query(VisitorDevice).filter(VisitorDevice.device_id == payload.device_id).first()
+    values = payload.model_dump()
+    values.pop("device_id", None)
+    if row is None:
+        row = VisitorDevice(device_id=payload.device_id, **values)
+        db.add(row)
+    else:
+        row.visit_count = int(row.visit_count or 0) + 1
+        row.last_seen_at = datetime.utcnow()
+        for key in ("device_name", "platform", "browser", "location_permission"):
+            value = values.get(key)
+            if value:
+                setattr(row, key, value)
+        if payload.latitude is not None and payload.longitude is not None:
+            row.latitude = payload.latitude
+            row.longitude = payload.longitude
+            row.location_accuracy = payload.location_accuracy
+    row.user_agent = request.headers.get("user-agent", "")[:1000]
+    row.ip_address = client_ip[:64]
+    db.commit()
+    return {"status": "recorded"}
+
+
+@app.get("/admin/devices")
+def list_visitor_devices(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Chỉ admin mới xem thiết bị")
+    rows = db.query(VisitorDevice).order_by(VisitorDevice.last_seen_at.desc()).limit(1000).all()
+    return [{
+        "id": row.id, "device_id": row.device_id, "device_name": row.device_name,
+        "platform": row.platform, "browser": row.browser, "ip_address": row.ip_address,
+        "latitude": row.latitude, "longitude": row.longitude,
+        "location_accuracy": row.location_accuracy,
+        "location_permission": row.location_permission, "visit_count": row.visit_count,
+        "first_seen_at": row.first_seen_at, "last_seen_at": row.last_seen_at,
+    } for row in rows]
+
+
 @app.post("/check-document")
 async def check_document(file: UploadFile = File(...)):
     filename = file.filename or "document.pdf"
@@ -1148,6 +1213,8 @@ async def check_image(
                     "image_annotations": image_annotations,
                     "image_dimensions": image_dimensions,
                     "analysis_breakdown": analysis["analysis_breakdown"],
+                    "vlm_analysis": analysis["vlm_analysis"],
+                    "image_model_gradcam": analysis["image_model_gradcam"],
                 },
                 suggested_action=analysis["suggested_action"],
             )

@@ -1,7 +1,7 @@
 """
 Model ORM ánh xạ tới các bảng trong schema.sql.
 """
-from sqlalchemy import Boolean, Column, DECIMAL, Integer, String, Text, JSON, ForeignKey, TIMESTAMP, Enum, UniqueConstraint, func
+from sqlalchemy import Boolean, Column, DECIMAL, Float, Integer, String, Text, JSON, ForeignKey, TIMESTAMP, Enum, UniqueConstraint, func
 from sqlalchemy.orm import relationship
 from backend.app.db.database import Base
 
@@ -153,3 +153,24 @@ class ScamKeyword(Base):
     category = Column(String(100), nullable=False)
     weight = Column(Integer, nullable=False, default=10)
     created_at = Column(TIMESTAMP, server_default=func.now())
+
+
+class VisitorDevice(Base):
+    """A privacy-conscious installation record used for the admin device map."""
+
+    __tablename__ = "visitor_devices"
+
+    id = Column(Integer, primary_key=True, index=True)
+    device_id = Column(String(100), nullable=False, unique=True, index=True)
+    device_name = Column(String(160))
+    platform = Column(String(120))
+    browser = Column(String(120))
+    user_agent = Column(String(1000))
+    ip_address = Column(String(64))
+    latitude = Column(Float)
+    longitude = Column(Float)
+    location_accuracy = Column(Float)
+    location_permission = Column(String(30), nullable=False, default="unknown")
+    visit_count = Column(Integer, nullable=False, default=1)
+    first_seen_at = Column(TIMESTAMP, server_default=func.now())
+    last_seen_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())

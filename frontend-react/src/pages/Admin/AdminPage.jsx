@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 function DatasetPage({ categories, form, setForm, onSubmit, items, language }) {
   const en = language === "en";
   return (
@@ -221,6 +223,28 @@ function KeywordsPage({ form, setForm, onSubmit, items, language }) {
   return <section className="panel"><div className="admin-evaluation-heading"><div><span className="eyebrow">LIVE RULE ENGINE</span><h3>{en ? "Scam keyword management" : "Quản lý từ khóa lừa đảo"}</h3><p>{en ? "Add verified phrases without redeploying the application." : "Thêm cụm từ đã kiểm chứng mà không cần triển khai lại ứng dụng."}</p></div><div className="admin-evaluation-badge"><i /> {items.length} {en ? "active rules" : "quy tắc đang dùng"}</div></div><form onSubmit={onSubmit} className="admin-form keyword-form"><input value={form.keyword} onChange={(e) => setForm({ ...form, keyword: e.target.value })} placeholder={en ? "Keyword or phrase" : "Từ khóa hoặc cụm từ"} required /><select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}><option value="phishing">Phishing</option><option value="impersonation">Impersonation</option><option value="fake_invoice">Fake invoice</option><option value="job_scam">Job scam</option><option value="urgent_account_threat">Urgent threat</option></select><input type="number" min="1" max="50" value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} placeholder="Weight" /><button type="submit">{en ? "Add rule" : "Thêm quy tắc"}</button></form><div className="keyword-rule-grid">{items.length === 0 ? <p>{en ? "No custom rules yet. Built-in fallbacks remain active." : "Chưa có quy tắc tùy chỉnh. Bộ mặc định vẫn đang hoạt động."}</p> : items.map((item) => <article key={item.id}><span>{item.category}</span><strong>{item.keyword}</strong><b>+{item.weight}</b></article>)}</div></section>;
 }
 
+function FeedbackPage({ items, language, onRefresh }) {
+  const en = language === "en";
+  const labels = {
+    correct: en ? "Correct result" : "Kết quả đúng",
+    false_alarm: en ? "False warning" : "Cảnh báo sai",
+    missed_scam: en ? "Missed scam" : "Bỏ sót lừa đảo",
+  };
+  return <section className="panel admin-feedback-page"><div className="admin-evaluation-heading"><div><span className="eyebrow">USER VALIDATION</span><h3>{en ? "Feedback from users" : "Phản hồi từ người dùng"}</h3><p>{en ? "Every submitted validation is stored in the shared database." : "Mọi xác nhận đã gửi đều được lưu trong cơ sở dữ liệu dùng chung."}</p></div><div className="admin-heading-actions"><button type="button" onClick={onRefresh}>{en ? "Refresh" : "Làm mới"}</button><div className="admin-evaluation-badge"><i /> {items.length} {en ? "responses" : "phản hồi"}</div></div></div><div className="admin-feedback-list">{items.length === 0 ? <div className="admin-empty-state">{en ? "No feedback yet." : "Chưa có phản hồi nào."}</div> : items.map((item) => <article className={`verdict-${item.verdict}`} key={item.id}><header><span>{labels[item.verdict] || item.verdict}</span><time>{new Date(item.created_at).toLocaleString(en ? "en-US" : "vi-VN")}</time></header><div><strong>{item.original_filename || `${en ? "Check" : "Lượt kiểm tra"} #${item.client_scan_id || item.scan_id || "—"}`}</strong><b>{item.risk_score}/100 · {item.predicted_level}</b></div><p>{item.note || (en ? "No additional comment." : "Người dùng không để lại ghi chú.")}</p><footer><span>{item.source_type}</span><span>{item.review_status === "pending" ? (en ? "Pending review" : "Chờ xem xét") : item.review_status}</span></footer></article>)}</div></section>;
+}
+
+function DevicesPage({ items, language, onRefresh }) {
+  const en = language === "en";
+  const located = items.filter((item) => Number.isFinite(item.latitude) && Number.isFinite(item.longitude));
+  const [selectedId, setSelectedId] = useState(() => located[0]?.id || null);
+  const selected = items.find((item) => item.id === selectedId) || located[0] || items[0];
+  const mapRadius = selected?.location_permission === "ip" ? 0.35 : 0.02;
+  const mapUrl = selected?.latitude != null && selected?.longitude != null
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${selected.longitude - mapRadius}%2C${selected.latitude - mapRadius * .6}%2C${selected.longitude + mapRadius}%2C${selected.latitude + mapRadius * .6}&layer=mapnik&marker=${selected.latitude}%2C${selected.longitude}`
+    : "";
+  return <section className="panel admin-devices-page"><div className="admin-evaluation-heading"><div><span className="eyebrow">DEVICE PRESENCE</span><h3>{en ? "Devices and approximate locations" : "Thiết bị và vị trí gần đúng"}</h3><p>{en ? "Device type, operating system, browser and approximate network area are detected automatically." : "Tự động nhận diện loại thiết bị, hệ điều hành, trình duyệt và khu vực mạng gần đúng."}</p></div><div className="admin-heading-actions"><button type="button" onClick={onRefresh}>{en ? "Refresh" : "Làm mới"}</button><div className="admin-device-kpis"><span><strong>{items.length}</strong>{en ? "Devices" : "Thiết bị"}</span><span><strong>{located.length}</strong>{en ? "Located" : "Có vị trí"}</span></div></div></div><div className="admin-device-layout"><div className="admin-device-list">{items.length === 0 ? <div className="admin-empty-state">{en ? "No devices recorded yet." : "Chưa ghi nhận thiết bị nào."}</div> : items.map((item) => <button type="button" className={selected?.id === item.id ? "active" : ""} onClick={() => setSelectedId(item.id)} key={item.id}><i className={item.latitude != null ? "located" : ""}>●</i><span><strong>{item.device_name || (en ? "Unknown device" : "Thiết bị chưa rõ")}</strong><small>{item.platform || "—"} · {item.browser || "—"}</small><small>{item.ip_address || "—"} · {item.visit_count} {en ? "visits" : "lượt"} · {en ? "Last seen" : "Lần cuối"} {new Date(item.last_seen_at).toLocaleString(en ? "en-US" : "vi-VN")}</small></span><b>{item.latitude != null ? (item.location_permission === "ip" ? (en ? "Approx. by IP" : "Gần đúng theo IP") : (en ? "Located" : "Có vị trí")) : (en ? "Unavailable" : "Chưa xác định")}</b></button>)}</div><div className="admin-device-map">{mapUrl ? <><iframe title={en ? "Selected device location" : "Vị trí thiết bị đã chọn"} src={mapUrl} loading="lazy" referrerPolicy="no-referrer" /><div><strong>{selected.device_name}</strong><span>{selected.location_permission === "ip" ? (en ? "Approximate network area · not a street address" : "Khu vực mạng gần đúng · không phải địa chỉ cụ thể") : `${Number(selected.latitude).toFixed(5)}, ${Number(selected.longitude).toFixed(5)}`}</span><a href={`https://www.openstreetmap.org/?mlat=${selected.latitude}&mlon=${selected.longitude}#map=${selected.location_permission === "ip" ? 10 : 15}/${selected.latitude}/${selected.longitude}`} target="_blank" rel="noreferrer">{en ? "Open full map ↗" : "Mở bản đồ đầy đủ ↗"}</a></div></> : <div className="admin-map-empty"><span>⌖</span><strong>{en ? "Location not available" : "Chưa có dữ liệu vị trí"}</strong><p>{en ? "The public IP could not be mapped for this visit." : "Chưa thể ánh xạ địa chỉ IP công khai của lượt truy cập này."}</p></div>}</div></div></section>;
+}
+
 export default function AdminPage({
   activePage,
   categories,
@@ -247,6 +271,10 @@ export default function AdminPage({
   keywordForm,
   setKeywordForm,
   handleCreateKeyword,
+  feedback,
+  devices,
+  fetchFeedback,
+  fetchDevices,
   language = "vi",
 }) {
   const pages = {
@@ -291,6 +319,8 @@ export default function AdminPage({
       />
     ),
     "admin-keywords": <KeywordsPage form={keywordForm} setForm={setKeywordForm} onSubmit={handleCreateKeyword} items={keywords} language={language} />,
+    "admin-feedback": <FeedbackPage items={feedback} language={language} onRefresh={fetchFeedback} />,
+    "admin-devices": <DevicesPage items={devices} language={language} onRefresh={fetchDevices} />,
   };
   return <div className="admin-grid">{pages[activePage]}</div>;
 }

@@ -458,60 +458,6 @@ function ResultConsole({ result, apiBase, language }) {
 
       <ResultFeedback result={result} apiBase={apiBase} language={language} />
 
-      <details className="scan-technical-panel">
-        <summary><div><small>{en ? "FOR ADVANCED REVIEW" : "DÀNH CHO NGƯỜI MUỐN XEM KỸ"}</small><strong>{en ? "Technical analysis details" : "Chi tiết phân tích kỹ thuật"}</strong></div><span>+</span></summary>
-        <div className="scan-signal-column">
-          {result.analysis_breakdown?.components?.length > 0 ? (
-            <div className="scan-component-grid">
-              {result.analysis_breakdown.components.map((component) => (
-                <article className={`scan-component-card ${component.status}`} key={component.key}>
-                  <header>
-                    <div><strong>{component.title}</strong><small>{component.status_label}</small></div>
-                    <b>{component.score}</b>
-                  </header>
-                  <div className="scan-component-meter"><span style={{ width: `${Math.min(100, Math.max(0, Number(component.score) || 0))}%` }} /></div>
-                  <p>{component.summary}</p>
-                  <ul>{component.findings.map((finding) => <li key={finding}>{finding}</li>)}</ul>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <p className="scan-no-signals">{en ? "No signal breakdown is available." : "Không có dữ liệu phân rã tín hiệu."}</p>
-          )}
-
-          {result.phishvn_urls?.length > 0 && (
-            <details className="scan-phishvn-console">
-              <summary>
-                <div><strong>{en ? "View suspicious link details" : "Xem chi tiết đường link đáng ngờ"}</strong><small>{en ? "Technical model" : "Thông tin kỹ thuật"}: {result.phishvn_model}</small></div>
-                <b>{result.phishvn_url_risk_score}/100</b>
-              </summary>
-              <div className="scan-phishvn-list">
-                {result.phishvn_urls.map((item) => (
-                  <article key={item.normalized_url}>
-                    <div><strong>{item.url}</strong><span>{item.label === "phishing" ? (en ? "Dangerous" : "Nguy hiểm") : item.label === "suspicious" ? (en ? "Suspicious" : "Nghi ngờ") : (en ? "Review" : "Cần kiểm tra")} · {(item.probability * 100).toFixed(1)}%</span></div>
-                    <ul>{item.suspicious_signals.map((signal) => <li key={signal}>{signal}</li>)}</ul>
-                  </article>
-                ))}
-              </div>
-            </details>
-          )}
-
-          {result.domain_intelligence?.length > 0 && (
-            <details className="scan-phishvn-console" open>
-              <summary><div><strong>{en ? "Domain structure review" : "Kiểm tra cấu trúc tên miền"}</strong><small>{en ? "Offline analysis — the website was not opened" : "Phân tích ngoại tuyến — không mở website"}</small></div><b>{Math.max(...result.domain_intelligence.map((item) => Number(item.score) || 0))}/100</b></summary>
-              <div className="scan-phishvn-list">{result.domain_intelligence.map((item) => <article key={item.host}><div><strong>{item.host}</strong><span>{item.level === "high" ? (en ? "High risk structure" : "Cấu trúc rủi ro cao") : item.level === "review" ? (en ? "Review needed" : "Cần kiểm tra") : (en ? "Few structural signs" : "Ít dấu hiệu cấu trúc")} · {item.score}/100</span></div>{item.signals?.length ? <ul>{item.signals.map((signal) => <li key={signal}>{signal}</li>)}</ul> : <p>{en ? "No notable structural signals." : "Không có dấu hiệu cấu trúc nổi bật."}</p>}</article>)}</div>
-            </details>
-          )}
-
-          {result.analysis_breakdown && (
-            <details className="scan-method-console">
-              <summary>{en ? "View scoring method and technical limitations" : "Xem cách tính điểm và giới hạn kỹ thuật"} <span>+</span></summary>
-              <p>{result.analysis_breakdown.score_method}</p>
-              <ul>{result.analysis_breakdown.limitations.map((item) => <li key={item}>{item}</li>)}</ul>
-            </details>
-          )}
-        </div>
-      </details>
     </section>
   );
 }
@@ -608,19 +554,6 @@ export default function ScanPage({
           </div>
 
           <form onSubmit={scanMode === "image" ? onSubmit : onContentSubmit} className="scan-control-form">
-            {scanMode === "image" && (
-              <>
-                <label className="scan-field-label" htmlFor="scan-category">{en ? "Comparison category" : "Danh mục cần đối chiếu"}</label>
-                <div className="scan-select-wrap">
-                  <span>01</span>
-                  <select id="scan-category" value={selectedCategoryId} onChange={(event) => setSelectedCategoryId(event.target.value)}>
-                    {categories.length === 0 && <option value="">{en ? "Loading..." : "Đang tải..."}</option>}
-                    {categories.map((category) => <option key={category.id} value={category.id}>{category.display_name}</option>)}
-                  </select>
-                </div>
-              </>
-            )}
-
             {scanMode === "image" && (
               <label className={`scan-upload-zone ${imagePreview ? "has-file" : ""}`}>
                 <input type="file" accept="image/*" onChange={onImageSelect} />

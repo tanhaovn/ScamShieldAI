@@ -9,7 +9,11 @@ services:
       - key: APP_ENV
         value: production
       - key: USE_SQLITE
-        value: "true"
+        value: "false"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: scamshieldai-db
+          property: connectionString
       - key: USE_DEEPFAKE_MODEL
         value: "false"
       - key: USE_VLM_ANALYZER
@@ -24,3 +28,11 @@ services:
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
+
+databases:
+  - name: scamshieldai-db
+    plan: free
+    region: singapore
+    postgresMajorVersion: "18"
+    databaseName: scamshieldai_db
+    user: scamshieldai_db_user

@@ -5,6 +5,8 @@ export const API_BASE = import.meta.env.VITE_API_BASE || (typeof window !== "und
 const GUEST_HISTORY_KEY = "scam_detector_guest_history";
 const GUEST_NAME_KEY = "scam_detector_guest_name";
 const GUEST_SINCE_KEY = "scam_detector_guest_since";
+const DEVICE_ID_KEY = "scam_detector_device_id";
+const IP_LOCATION_CACHE_KEY = "scam_detector_ip_location";
 const MAX_GUEST_HISTORY = 50;
 
 function loadGuestHistory() {
@@ -36,6 +38,62 @@ function createGuestUser() {
     is_active: true,
     created_at: createdAt,
     auth_provider: "local_device",
+  };
+}
+
+function getDeviceId() {
+  let value = localStorage.getItem(DEVICE_ID_KEY);
+  if (!value) {
+    value = globalThis.crypto?.randomUUID?.() || `device-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    localStorage.setItem(DEVICE_ID_KEY, value);
+  }
+  return value;
+}
+
+function browserLabel() {
+  const agent = navigator.userAgent;
+  if (/Edg\//.test(agent)) return "Microsoft Edge";
+  if (/Chrome\//.test(agent)) return "Google Chrome";
+  if (/Firefox\//.test(agent)) return "Mozilla Firefox";
+  if (/Safari\//.test(agent)) return "Safari";
+  return "Trình duyệt khác";
+}
+
+async function detectDeviceInfo() {
+  const agent = navigator.userAgent || "";
+  const touchPoints = navigator.maxTouchPoints || 0;
+  const isIPad = /iPad/.test(agent) || (/Macintosh/.test(agent) && touchPoints > 1);
+  const isTablet = isIPad || /Tablet|Android(?!.*Mobile)/i.test(agent);
+  const isPhone = !isTablet && /Mobi|Android|iPhone|iPod/i.test(agent);
+  const deviceType = isTablet ? "Máy tính bảng" : isPhone ? "Điện thoại" : "Máy tính";
+  let operatingSystem = "Hệ điều hành chưa rõ";
+  if (/Windows NT/i.test(agent)) operatingSystem = "Windows";
+  else if (/Android/i.test(agent)) operatingSystem = "Android";
+  else if (/iPhone|iPod/i.test(agent)) operatingSystem = "iOS";
+  else if (isIPad) operatingSystem = "iPadOS";
+  else if (/Mac OS X|Macintosh/i.test(agent)) operatingSystem = "macOS";
+  else if (/CrOS/i.test(agent)) operatingSystem = "ChromeOS";
+  else if (/Linux/i.test(agent)) operatingSystem = "Linux";
+
+  let model = "";
+  if (navigator.userAgentData?.getHighEntropyValues) {
+    try {
+      const hints = await navigator.userAgentData.getHighEntropyValues(["model", "platform", "platformVersion"]);
+      model = String(hints.model || "").trim();
+      if (hints.platform) operatingSystem = hints.platform;
+    } catch {
+      // Browsers may intentionally withhold high-entropy device details.
+    }
+  }
+  if (!model && /Android/i.test(agent)) {
+    const androidModel = agent.match(/Android[^;]*;\s*([^;)]+?)(?:\s+Build\/|;|\))/i)?.[1];
+    model = String(androidModel || "").replace(/^wv$/i, "").trim();
+  }
+  const browser = browserLabel();
+  return {
+    device_name: model ? `${model} · ${deviceType}` : `${deviceType} ${operatingSystem}`,
+    platform: operatingSystem,
+    browser,
   };
 }
 
@@ -78,6 +136,8 @@ export default function useAppController() {
   const [backendStatus, setBackendStatus] = useState({ state: "checking", checkedAt: null });
   const [logs, setLogs] = useState([]);
   const [keywords, setKeywords] = useState([]);
+  const [feedback, setFeedback] = useState([]);
+  const [devices, setDevices] = useState([]);
   const [keywordForm, setKeywordForm] = useState({ keyword: "", category: "phishing", weight: "10" });
   const [datasetForm, setDatasetForm] = useState({
     image_url: "",
@@ -141,6 +201,40 @@ export default function useAppController() {
     };
   }, []);
 
+  useEffect(() => {
+    const send = (basePayload, location = {}) => fetch(`${API_BASE}/device-heartbeat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...basePayload, ...location }),
+    }).catch(() => {});
+
+    async function locateByIp(basePayload) {
+      try {
+        const cached = JSON.parse(localStorage.getItem(IP_LOCATION_CACHE_KEY) || "null");
+        if (cached?.saved_at && Date.now() - cached.saved_at < 24 * 60 * 60 * 1000) {
+          await send(basePayload, cached.location);
+          return;
+        }
+        const response = await fetch("https://ipwho.is/", { cache: "no-store" });
+        const data = await response.json();
+        if (!response.ok || data.success === false || !Number.isFinite(data.latitude) || !Number.isFinite(data.longitude)) {
+          throw new Error("ip_location_unavailable");
+        }
+        const location = {
+          latitude: data.latitude,
+          longitude: data.longitude,
+          location_accuracy: 25000,
+          location_permission: "ip",
+        };
+        localStorage.setItem(IP_LOCATION_CACHE_KEY, JSON.stringify({ saved_at: Date.now(), location }));
+        await send(basePayload, location);
+      } catch {
+        await send(basePayload, { location_permission: "unavailable" });
+      }
+    }
+    detectDeviceInfo().then((device) => locateByIp({ device_id: getDeviceId(), ...device }));
+  }, []);
+
   function setScanMode(mode) {
     setScanModeState(mode);
     setResult(null);
@@ -182,10 +276,24 @@ export default function useAppController() {
       fetchEvaluations();
       fetchLogs();
       fetchKeywords();
+      fetchFeedback();
+      fetchDevices();
     } else if (!token) {
       setHistory(loadGuestHistory());
     }
   }, [token, me?.role]);
+
+  useEffect(() => {
+    if (!token || me?.role !== "admin") return undefined;
+    if (activePage === "admin-feedback") fetchFeedback();
+    if (activePage === "admin-devices") fetchDevices();
+    if (!['admin-feedback', 'admin-devices'].includes(activePage)) return undefined;
+    const refresh = window.setInterval(() => {
+      if (activePage === "admin-feedback") fetchFeedback();
+      if (activePage === "admin-devices") fetchDevices();
+    }, 30000);
+    return () => window.clearInterval(refresh);
+  }, [activePage, token, me?.role]);
 
   useEffect(() => {
     if (videoRef.current && cameraStream)
@@ -253,6 +361,16 @@ export default function useAppController() {
   async function fetchKeywords() {
     const res = await fetch(`${API_BASE}/scam-keywords`, { headers: authHeaders });
     if (res.ok) setKeywords(await res.json());
+  }
+
+  async function fetchFeedback() {
+    const res = await fetch(`${API_BASE}/scan-feedback`, { headers: authHeaders });
+    if (res.ok) setFeedback(await res.json());
+  }
+
+  async function fetchDevices() {
+    const res = await fetch(`${API_BASE}/admin/devices`, { headers: authHeaders });
+    if (res.ok) setDevices(await res.json());
   }
 
   function completeAuth(data) {
@@ -658,6 +776,8 @@ export default function useAppController() {
     setModels([]);
     setEvaluations([]);
     setLogs([]);
+    setFeedback([]);
+    setDevices([]);
     navigate("overview");
   }
 
@@ -718,6 +838,10 @@ export default function useAppController() {
     refreshBackendStatus,
     logs,
     keywords,
+    feedback,
+    devices,
+    fetchFeedback,
+    fetchDevices,
     keywordForm,
     setKeywordForm,
     handleCreateKeyword,
