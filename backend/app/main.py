@@ -1042,6 +1042,11 @@ def device_heartbeat(payload: DeviceHeartbeatRequest, request: Request, db: Sess
             row.latitude = payload.latitude
             row.longitude = payload.longitude
             row.location_accuracy = payload.location_accuracy
+        elif payload.location_permission in {"denied", "unavailable"}:
+            # Never display coordinates retained from an older IP/network as current.
+            row.latitude = None
+            row.longitude = None
+            row.location_accuracy = None
     row.user_agent = request.headers.get("user-agent", "")[:1000]
     row.ip_address = client_ip[:64]
     db.commit()

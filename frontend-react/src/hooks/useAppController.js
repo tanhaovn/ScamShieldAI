@@ -6,7 +6,6 @@ const GUEST_HISTORY_KEY = "scam_detector_guest_history";
 const GUEST_NAME_KEY = "scam_detector_guest_name";
 const GUEST_SINCE_KEY = "scam_detector_guest_since";
 const DEVICE_ID_KEY = "scam_detector_device_id";
-const IP_LOCATION_CACHE_KEY = "scam_detector_ip_location";
 const MAX_GUEST_HISTORY = 50;
 
 function loadGuestHistory() {
@@ -210,11 +209,6 @@ export default function useAppController() {
 
     async function locateByIp(basePayload) {
       try {
-        const cached = JSON.parse(localStorage.getItem(IP_LOCATION_CACHE_KEY) || "null");
-        if (cached?.saved_at && Date.now() - cached.saved_at < 24 * 60 * 60 * 1000) {
-          await send(basePayload, cached.location);
-          return;
-        }
         const response = await fetch("https://ipwho.is/", { cache: "no-store" });
         const data = await response.json();
         if (!response.ok || data.success === false || !Number.isFinite(data.latitude) || !Number.isFinite(data.longitude)) {
@@ -226,7 +220,6 @@ export default function useAppController() {
           location_accuracy: 25000,
           location_permission: "ip",
         };
-        localStorage.setItem(IP_LOCATION_CACHE_KEY, JSON.stringify({ saved_at: Date.now(), location }));
         await send(basePayload, location);
       } catch {
         await send(basePayload, { location_permission: "unavailable" });

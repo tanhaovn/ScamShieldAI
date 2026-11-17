@@ -266,6 +266,15 @@ function DeviceWorldMap({ items, selectedId, onSelect, language }) {
     const points = [];
     located.forEach((item) => {
       const active = selectedId !== "all" && item.id === selectedId;
+      if (item.location_permission === "ip") {
+        L.circle([item.latitude, item.longitude], {
+          radius: Math.max(Number(item.location_accuracy) || 25000, 10000),
+          stroke: false,
+          fillColor: active ? "#36b889" : "#55a98a",
+          fillOpacity: active ? .2 : .12,
+          interactive: false,
+        }).addTo(layer);
+      }
       const marker = L.circleMarker([item.latitude, item.longitude], {
         radius: active ? 10 : 7,
         weight: active ? 4 : 2,
@@ -277,7 +286,7 @@ function DeviceWorldMap({ items, selectedId, onSelect, language }) {
       const title = document.createElement("strong");
       const detail = document.createElement("small");
       title.textContent = item.device_name || (en ? "Unknown device" : "Thiết bị chưa rõ");
-      detail.textContent = `${item.platform || "—"} · ${item.browser || "—"} · ${item.visit_count} ${en ? "visits" : "lượt"}`;
+      detail.textContent = `${item.platform || "—"} · ${item.browser || "—"} · ${item.location_permission === "ip" ? (en ? "approximate IP area" : "khu vực gần đúng theo IP") : (en ? "precise coordinates" : "tọa độ chính xác")}`;
       tooltip.className = "device-map-tooltip";
       tooltip.append(title, detail);
       marker.bindTooltip(tooltip, { direction: "top", offset: [0, -8] });
