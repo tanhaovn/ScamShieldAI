@@ -27,7 +27,11 @@ DB_PORT = os.getenv("DB_PORT", "3306")
 DB_NAME = os.getenv("DB_NAME", "scam_detector")
 
 if CONFIGURED_DATABASE_URL:
-    DATABASE_URL = CONFIGURED_DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    DATABASE_URL = CONFIGURED_DATABASE_URL
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
+    elif DATABASE_URL.startswith("postgresql://"):
+        DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
     engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_recycle=300)
 elif USE_SQLITE:
     DATABASE_URL = "sqlite:///./scam_detector.db"
