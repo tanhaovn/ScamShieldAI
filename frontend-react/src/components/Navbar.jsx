@@ -41,7 +41,7 @@ function NavIcon({ name }) {
   );
 }
 
-function NavGroup({ label, items, activePage, navigate, language }) {
+function NavGroup({ label, items, activePage, navigate, language, mobileAction }) {
   return (
     <section className="sidebar-group">
       <span className="sidebar-group-label">{label}</span>
@@ -60,6 +60,15 @@ function NavGroup({ label, items, activePage, navigate, language }) {
             <span>{item[language] || item.vi}</span>
           </button>
         ))}
+        {mobileAction && (
+          <button
+            className={`sidebar-nav-item mobile-admin-access ${mobileAction.active ? "active" : ""}`}
+            onClick={mobileAction.onClick}
+          >
+            <NavIcon name={mobileAction.icon} />
+            <span>{mobileAction.label}</span>
+          </button>
+        )}
       </nav>
     </section>
   );
@@ -95,6 +104,12 @@ export default function Navbar({ activePage, navigate, user, onLogout, onAdminLo
           activePage={activePage}
           navigate={navigate}
           language={language}
+          mobileAction={{
+            label: isAdmin ? (isEnglish ? "Admin" : "Quản trị") : "Admin",
+            icon: isAdmin ? "database" : "login",
+            active: activePage.startsWith("admin-"),
+            onClick: isAdmin ? () => navigate("admin-dataset") : onAdminLogin,
+          }}
         />
         {isAdmin && (
           <NavGroup

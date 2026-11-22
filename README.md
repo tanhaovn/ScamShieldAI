@@ -97,8 +97,8 @@ Server chạy tại `http://localhost:8000`. Xem docs tự động (Swagger UI) 
 ### 6. Chế độ khách và đăng nhập Admin
 
 - Người dùng mở web và kiểm tra ảnh ngay, không đăng nhập hoặc đăng ký.
-- Tối đa 50 kết quả gần nhất được lưu bằng `localStorage` trên trình duyệt hiện
-  tại và vẫn còn sau khi đóng/mở lại web.
+- Các kết quả được lưu bằng `localStorage` trên trình duyệt hiện tại, không giới hạn
+  số lượt ở cấp ứng dụng và vẫn còn sau khi đóng/mở lại web.
 - Lịch sử khách không đồng bộ sang trình duyệt hoặc thiết bị khác.
 - Chỉ Admin đăng nhập để truy cập Dataset, AI Models, đánh giá và system logs.
 - Tài khoản mặc định cho môi trường demo được tạo lúc backend khởi động; hãy đổi

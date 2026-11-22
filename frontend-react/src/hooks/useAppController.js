@@ -6,7 +6,6 @@ const GUEST_HISTORY_KEY = "scam_detector_guest_history";
 const GUEST_NAME_KEY = "scam_detector_guest_name";
 const GUEST_SINCE_KEY = "scam_detector_guest_since";
 const DEVICE_ID_KEY = "scam_detector_device_id";
-const MAX_GUEST_HISTORY = 50;
 
 function loadGuestHistory() {
   try {
@@ -18,9 +17,8 @@ function loadGuestHistory() {
 }
 
 function saveGuestHistory(items) {
-  const limited = items.slice(0, MAX_GUEST_HISTORY);
-  localStorage.setItem(GUEST_HISTORY_KEY, JSON.stringify(limited));
-  return limited;
+  localStorage.setItem(GUEST_HISTORY_KEY, JSON.stringify(items));
+  return items;
 }
 
 function createGuestUser() {

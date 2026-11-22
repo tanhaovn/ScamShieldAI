@@ -1,0 +1,4809 @@
+{
+  "workbooks": [
+    {
+      "path": "D:\\TAILIEU_CAPSTONE_C1SE06_SFDS\\3. PRODUCT BACKLOG & USER STORY\\C1SE.06_ProductBacklog_SFDS_v1.0.xlsx",
+      "sheets": [
+        {
+          "title": "Project Overview",
+          "max_row": 27,
+          "max_column": 6,
+          "rows": [
+            [
+              null,
+              "CAPSTONE PROJECT MANAGEMENT OVERVIEW"
+            ],
+            [
+              null,
+              "Duy Tan University - School of Computer Science - CMU-SE 450"
+            ],
+            [
+              null,
+              "PROJECT INFORMATION"
+            ],
+            [
+              null,
+              "Project Name",
+              "Scam Fraud Detection System with Explanations (SFDS)"
+            ],
+            [
+              null,
+              "Project Code",
+              "CMU-SE 450 - C1SE.06"
+            ],
+            [
+              null,
+              "Academic Year",
+              "2024 - 2025 / Capstone Period"
+            ],
+            [
+              null,
+              "Project Leader",
+              "Pham Tan Hao (ID: 29219020823) - phamtanhao1909@gmail.com"
+            ],
+            [
+              null,
+              "Project Mentor",
+              "Eng. Ha Manh Toan (lhttuy@gmail.com)"
+            ],
+            [
+              null,
+              "Core Stack",
+              "FastAPI (Python 3.12), React 18 (Vite), PyTorch, Scikit-Learn, Tesseract OCR, SQLite/MySQL"
+            ],
+            [
+              null,
+              "TEAM MEMBERS & RESPONSIBILITIES"
+            ],
+            [
+              null,
+              "Member Name",
+              "Student ID",
+              "Project Role",
+              "Email",
+              "Phone"
+            ],
+            [
+              null,
+              "Pham Tan Hao",
+              "29219020823",
+              "Project Leader / Scrum Master / Full-stack",
+              "phamtanhao1909@gmail.com",
+              "0961651933"
+            ],
+            [
+              null,
+              "Dao Thi My Nhung",
+              "29209200048",
+              "QA Lead / UI-UX Designer",
+              "mynhung150905@gmail.com",
+              "0376415338"
+            ],
+            [
+              null,
+              "Tran Hoang Nhat Nam",
+              "29219423638",
+              "Frontend Developer / Technical Writer",
+              "trannamnhathoang@gmail.com",
+              "0795798736"
+            ],
+            [
+              null,
+              "Nguyen Phan Duc Tuan",
+              "29211151140",
+              "AI Lead / Full-stack Developer",
+              "ductuan02072005@gmail.com",
+              "0932442770"
+            ],
+            [
+              null,
+              "SPRINT SCHEDULE SUMMARY"
+            ],
+            [
+              null,
+              "Sprint",
+              "Duration",
+              "Target Milestone",
+              "Est. Hours",
+              "Status"
+            ],
+            [
+              null,
+              "Sprint 1",
+              "Week 1 - Week 3",
+              "Architecture Setup, Domain Gating, PhishVN & ResNet-18 baseline",
+              "160",
+              "Done"
+            ],
+            [
+              null,
+              "Sprint 2",
+              "Week 4 - Week 6",
+              "OCR Engine, Risk Keyword Engine, Calibrated Consensus Fusion",
+              "180",
+              "Done"
+            ],
+            [
+              null,
+              "Sprint 3",
+              "Week 7 - Week 9",
+              "React Scan Interface, Reasoning Visualizer, History & Feedback",
+              "170",
+              "In Progress"
+            ],
+            [
+              null,
+              "Sprint 4",
+              "Week 10 - Week 12",
+              "Admin Intelligence Dashboard, Whitelist/Blacklist Manager, Report Export",
+              "150",
+              "To Do"
+            ],
+            [
+              null,
+              "Sprint 5",
+              "Week 13 - Week 15",
+              "End-to-End Stress Testing, Security Hardening, Capstone Final Defense",
+              "140",
+              "To Do"
+            ],
+            [
+              null,
+              "Total Project Estimated Hours",
+              null,
+              null,
+              "800"
+            ]
+          ]
+        },
+        {
+          "title": "Product Backlog",
+          "max_row": 26,
+          "max_column": 15,
+          "rows": [
+            [
+              null,
+              "Product Backlog"
+            ],
+            [
+              null,
+              "Id",
+              "Heading",
+              "As a..",
+              "I want to ..",
+              "so that ..",
+              "Acceptance Criteria",
+              "Remarks",
+              "Priority",
+              "Status",
+              "Type",
+              "Project Id",
+              "Sprint No",
+              "Estimate | (Hours)",
+              "Assignee"
+            ],
+            [
+              null,
+              "PB-01",
+              "Project Architecture & Core Scaffolding",
+              "System Engineer",
+              "set up FastAPI backend framework, Vite React frontend, and database schema ORM",
+              "the development team has a unified, stable environment to build multimodal detection modules.",
+              "- FastAPI app initialized with CORS, Uvicorn, and structured routing. | - React 18 (Vite) initialized with Tailwind CSS. | - SQLite local DB & SQLAlchemy ORM configured. | - CI/CD automated linting and pytest runners operational.",
+              "Base architecture foundation",
+              "5",
+              "Done",
+              "Tech Spike",
+              "C1SE.06",
+              "Sprint 1",
+              "36",
+              "Pham Tan Hao"
+            ],
+            [
+              null,
+              "PB-02",
+              "User & Admin Authentication",
+              "User",
+              "authenticate and obtain secure role-based session tokens (JWT)",
+              "sensitive administrative dashboards and reporting actions are restricted to authorized personnel.",
+              "- Public users can perform scans without login. | - Admin login with username/password issues signed JWT. | - Invalid credentials return HTTP 401 with informative error. | - Token expiry and refresh token mechanisms validated.",
+              "OWASP ASVS compliant",
+              "5",
+              "Done",
+              "User Story",
+              "C1SE.06",
+              "Sprint 1",
+              "28",
+              "Pham Tan Hao"
+            ],
+            [
+              null,
+              "PB-03",
+              "PhishVN Lexical URL Detection Pipeline",
+              "AI Engineer",
+              "extract 21 lexical features from suspicious URLs and classify risk using HistGradientBoosting",
+              "the system detects malicious URLs, credential harvesters, and deceptive subdomain tricks instantly.",
+              "- Feature extraction pipeline extracts: URL length, entropy, IP address usage, punycode, hyphen count, sensitive tokens. | - HistGradientBoosting model (joblib) outputs calibrated risk score [0, 1]. | - Execution completes in < 250ms per URL query.",
+              "Trained on 100k+ VN URLs",
+              "5",
+              "Done",
+              "User Story",
+              "C1SE.06",
+              "Sprint 1",
+              "48",
+              "Nguyen Phan Duc Tuan"
+            ],
+            [
+              null,
+              "PB-04",
+              "Domain Gating & Trusted Registry",
+              "System",
+              "pre-filter input domains against official whitelist (.gov.vn, official banks) and known blacklists",
+              "benign government portals are never flagged falsely, and known malicious domains are blocked in 0ms.",
+              "- Whitelist check recognizes official banking/gov domains (Vietcombank, MB, gov.vn) and forces safe gating. | - Blacklist lookup matches known fraudulent domains and returns immediate risk level 100. | - Lookup overhead < 10ms.",
+              "Domain gating layer",
+              "5",
+              "Done",
+              "User Story",
+              "C1SE.06",
+              "Sprint 1",
+              "24",
+              "Pham Tan Hao"
+            ],
+            [
+              null,
+              "PB-05",
+              "ResNet-18 Brand Impersonation Classifier",
+              "AI Engineer",
+              "analyze uploaded screenshots to detect counterfeit brand logos and deceptive visual layouts",
+              "visual phishing attempts mimicking popular banking apps or e-wallets are detected even without text.",
+              "- ResNet-18 CNN model processes image tensors (224x224). | - Temperature Scaling (T=1.8) applied to calibrate raw logits into smooth probabilities. | - Outputs brand classification confidence and visual fraud score.",
+              "PyTorch Transfer Learning",
+              "5",
+              "Done",
+              "User Story",
+              "C1SE.06",
+              "Sprint 1",
+              "44",
+              "Nguyen Phan Duc Tuan"
+            ],
+            [
+              null,
+              "PB-06",
+              "Forensics & Compression Artifact Analysis (ELA)",
+              "Security Analyst",
+              "apply Error Level Analysis (ELA) and EXIF metadata extraction on uploaded proof images",
+              "digitally manipulated images, fake bank transfer receipts, and edited logos can be flagged.",
+              "- ELA algorithm computes difference matrix between original and resaved JPEG. | - Identifies high-frequency anomalies in text areas (fake balance/billings). | - Extracts EXIF creation timestamps and camera/software signatures.",
+              "OpenCV implementation",
+              "4",
+              "Done",
+              "User Story",
+              "C1SE.06",
+              "Sprint 2",
+              "36",
+              "Pham Tan Hao"
+            ],
+            [
+              null,
+              "PB-07",
+              "Tesseract Vietnamese OCR Engine",
+              "System",
+              "extract text content from uploaded screenshots and scam message captures",
+              "visual message evidence is converted into structured text for contextual linguistic risk evaluation.",
+              "- Tesseract OCR configured with 'vie+eng' language packs. | - Preprocessing pipeline: grayscale conversion, thresholding, noise removal. | - Outputs extracted plain text with character confidence metrics.",
+              "Tessdata Vietnamese",
+              "5",
+              "Done",
+              "User Story",
+              "C1SE.06",
+              "Sprint 2",
+              "40",
+              "Nguyen Phan Duc Tuan"
+            ],
+            [
+              null,
+              "PB-08",
+              "Vietnamese Contextual Risk Keyword Engine",
+              "AI Engineer",
+              "detect urgent, coercive, and fraudulent language patterns in Vietnamese text",
+              "scam scripts (mạo danh công an, đe dọa bắt giữ, nộp tiền phạt, khóa tài khoản) are pinpointed.",
+              "- Keyword lexicon covers: impersonation, financial urgency, OTP capture, high-yield investment traps. | - Regex matching extracts bank account numbers, OTP solicitations, and phone hotlines. | - Outputs normalized keyword risk score [0, 1].",
+              "Calibrated lexicon",
+              "5",
+              "Done",
+              "User Story",
+              "C1SE.06",
+              "Sprint 2",
+              "32",
+              "Dao Thi My Nhung"
+            ],
+            [
+              null,
+              "PB-09",
+              "Chain-of-Thought (CoT) Multimodal Reasoning",
+              "AI Engineer",
+              "combine URL lexical signals, visual brand detection, and OCR text semantics via multi-step CoT",
+              "the system reasons across all evidence sources to provide consistent, explainable fraud verdicts.",
+              "- Implements multi-step deductive inference (Step 1: Domain, Step 2: Visual, Step 3: Text, Step 4: Consensus). | - Soft Voting Consensus replaces crude max() function, preventing erratic 0% vs 98% jumps. | - Produces confidence-weighted final risk score.",
+              "Core reasoning engine",
+              "5",
+              "Done",
+              "User Story",
+              "C1SE.06",
+              "Sprint 2",
+              "42",
+              "Nguyen Phan Duc Tuan"
+            ],
+            [
+              null,
+              "PB-10",
+              "Human-Readable Explanation Generator",
+              "Citizen",
+              "receive clear, plain-language explanations of why a submission was deemed dangerous or safe",
+              "citizens without technical knowledge understand the specific deception techniques being used.",
+              "- System generates bulleted explanations (e.g., 'Phát hiện tên miền giả mạo', 'Hối thúc chuyển khoản khẩn cấp'). | - Explanations are synchronized with detected entities (brand, keywords, domain age). | - Vietnamese language output is grammatically natural and non-technical.",
+              "SHAP/Rule synthesis",
+              "4",
+              "Done",
+              "User Story",
+              "C1SE.06",
+              "Sprint 2",
+              "30",
+              "Tran Hoang Nhat Nam"
+            ],
+            [
+              null,
+              "PB-11",
+              "Multimodal Scan Submission Web Interface",
+              "Citizen",
+              "submit suspicious URLs, message text, and screenshots through a unified, responsive web portal",
+              "citizens can easily verify threats across mobile browsers or desktop PCs within seconds.",
+              "- Single-page application with 3 input modalities (URL input, Text area, Drag-and-drop Image upload). | - Real-time client-side validation and file format checks (JPEG, PNG, WebP up to 10MB). | - Loading skeleton and progress indicators during backend processing.",
+              "React 18 + Vite SPA",
+              "5",
+              "In Progress",
+              "User Story",
+              "C1SE.06",
+              "Sprint 3",
+              "40",
+              "Tran Hoang Nhat Nam"
+            ],
+            [
+              null,
+              "PB-12",
+              "Visual Explanation & Risk Gauge Dashboard",
+              "Citizen",
+              "view an interactive breakdown of risk factors (Risk Gauge, Radar Chart, Actionable Advice)",
+              "I can make an immediate, informed decision whether to engage or discard the suspicious interaction.",
+              "- Tri-color Risk Gauge: Safe (0-39%), Suspicious (40-69%), Dangerous (70-100%). | - Radar chart showing risk distribution (Domain, Visual, Linguistic, Urgency). | - Specific, actionable safety recommendations ('Không cung cấp OTP', 'Liên hệ ngân hàng qua hotline chính thức').",
+              "Recharts visualization",
+              "4",
+              "In Progress",
+              "User Story",
+              "C1SE.06",
+              "Sprint 3",
+              "38",
+              "Tran Hoang Nhat Nam"
+            ],
+            [
+              null,
+              "PB-13",
+              "Local Inspection History & Offline Cache",
+              "Citizen",
+              "review previous scan results and audit trails stored securely in my browser",
+              "I can re-read warning evidence without re-uploading sensitive files or re-running API scans.",
+              "- Inspection history persisted in browser localStorage (capped at 50 most recent records). | - Clear history button with confirmation dialog. | - Detailed modal view to reopen full reasoning breakdown for any past scan.",
+              "Client-side persistence",
+              "3",
+              "In Progress",
+              "User Story",
+              "C1SE.06",
+              "Sprint 3",
+              "26",
+              "Tran Hoang Nhat Nam"
+            ],
+            [
+              null,
+              "PB-14",
+              "Incident Feedback & False Positive Reporting",
+              "Citizen",
+              "submit community feedback or report false positive / false negative scan verdicts",
+              "the system dataset can be continuously curated and audited by security engineers.",
+              "- 'Báo cáo sai lệch' modal on scan result screen. | - Captures user explanation, contact email (optional), and flagged classification error. | - Feedback record stored in database with pending audit status.",
+              "Feedback loop",
+              "3",
+              "In Progress",
+              "User Story",
+              "C1SE.06",
+              "Sprint 3",
+              "28",
+              "Dao Thi My Nhung"
+            ],
+            [
+              null,
+              "PB-15",
+              "Admin Incident Triage & Verification Queue",
+              "Security Analyst",
+              "review reported incidents, inspect user feedback, and verify scam classifications",
+              "malicious threat campaigns can be validated and added to active protection lists.",
+              "- Admin view listing all citizen incident submissions with status filters (Pending, Reviewed, Dismissed). | - Detailed view displaying original inputs, AI scores, and user remarks. | - Action buttons to approve as confirmed scam or dismiss false alarm.",
+              "Admin role required",
+              "4",
+              "To Do",
+              "User Story",
+              "C1SE.06",
+              "Sprint 4",
+              "36",
+              "Pham Tan Hao"
+            ],
+            [
+              null,
+              "PB-16",
+              "Threat Intelligence & Real-time Metrics Dashboard",
+              "Admin",
+              "monitor overall system throughput, common scam categories, and detection accuracy KPIs",
+              "I have real-time visibility into prevailing fraud tactics and system operational health.",
+              "- Overview metrics: Total Scans, Confirmed Scams %, Average Response Time (ms), False Positive Rate. | - Time-series charts of daily scan volume and risk distribution. | - Top targeted brands leaderboard (e.g., Vietcombank, Techcombank, VNeID).",
+              "Analytics dashboard",
+              "4",
+              "To Do",
+              "User Story",
+              "C1SE.06",
+              "Sprint 4",
+              "34",
+              "Pham Tan Hao"
+            ],
+            [
+              null,
+              "PB-17",
+              "Dynamic Whitelist & Blacklist Manager",
+              "Admin",
+              "dynamically add, update, or remove domain rules, keywords, and trusted brand signatures",
+              "the system can instantly counter emerging zero-day phishing domains without redeploying code.",
+              "- CRUD interface for domain whitelist and blacklist. | - Add custom regex patterns and high-risk keywords with associated weight. | - Instant cache invalidation to reflect updates immediately in active inference.",
+              "Dynamic config manager",
+              "4",
+              "To Do",
+              "User Story",
+              "C1SE.06",
+              "Sprint 4",
+              "30",
+              "Nguyen Phan Duc Tuan"
+            ],
+            [
+              null,
+              "PB-18",
+              "Detailed Incident Audit Report Export (PDF / CSV)",
+              "Security Analyst",
+              "export formal fraud investigation reports containing digital evidence and AI audit trail",
+              "citizens or legal authorities can use the standardized report as evidence for cybercrime complaints.",
+              "- Generates downloadable PDF report with timestamp, risk scores, forensic highlights, and prevention advice. | - Export tabular incident logs to CSV for external security analysis. | - Standardized header including DTU C1SE.06 verification signature.",
+              "Report generator",
+              "3",
+              "To Do",
+              "User Story",
+              "C1SE.06",
+              "Sprint 4",
+              "28",
+              "Dao Thi My Nhung"
+            ],
+            [
+              null,
+              "PB-19",
+              "Rate Limiting, Security Hardening & OWASP Compliance",
+              "System Engineer",
+              "implement API rate limiting, payload sanitization, and CORS security policies",
+              "the public-facing API is protected against DDoS attacks, automated scraping, and injection vectors.",
+              "- SlowAPI rate limiter restricts IP clients to 30 requests per minute. | - Strict file mime-type and magic-byte validation on image uploads. | - CORS configuration restricts allowed origins. | - SQL injection and XSS defenses verified via OWASP ZAP scanning.",
+              "Security hardening",
+              "5",
+              "To Do",
+              "Enabler",
+              "C1SE.06",
+              "Sprint 5",
+              "32",
+              "Pham Tan Hao"
+            ],
+            [
+              null,
+              "PB-20",
+              "End-to-End Stress Testing & Model Calibration Validation",
+              "QA Lead",
+              "conduct regression testing, load testing (50 concurrent users), and verify balanced score distribution",
+              "the deployed system operates stably, accurately, and reliably during Capstone final defense.",
+              "- Comprehensive pytest suite (unit, integration, multimodal reasoning) achieves > 85% coverage. | - Locust load test verifies p95 latency < 3.0s under 50 concurrent requests. | - Calibration test verifies no extreme 0%/98% bipolar spikes on ambiguous inputs.",
+              "QA verification suite",
+              "5",
+              "To Do",
+              "Tech Spike",
+              "C1SE.06",
+              "Sprint 5",
+              "38",
+              "Dao Thi My Nhung"
+            ],
+            [
+              null,
+              "Total",
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "=SUM(N6:N25)"
+            ]
+          ]
+        },
+        {
+          "title": "Sprint 1",
+          "max_row": 17,
+          "max_column": 8,
+          "rows": [
+            [
+              null,
+              "Sprint 1 - Foundation & AI Models"
+            ],
+            [
+              null,
+              "SFDS Capstone Development Team C1SE.06"
+            ],
+            [
+              null,
+              "Task Id",
+              "PB Ref",
+              "Task Description",
+              "Assignee",
+              "Est. Hours",
+              "Actual Hours",
+              "Status"
+            ],
+            [
+              null,
+              "TS-01-01",
+              "PB-01",
+              "Setup FastAPI boilerplate, CORS, routing and logging",
+              "Pham Tan Hao",
+              "16",
+              "16",
+              "Done"
+            ],
+            [
+              null,
+              "TS-01-02",
+              "PB-01",
+              "Initialize React 18 SPA with Vite and Tailwind",
+              "Tran Hoang Nhat Nam",
+              "12",
+              "12",
+              "Done"
+            ],
+            [
+              null,
+              "TS-01-03",
+              "PB-01",
+              "Configure SQLite DB and SQLAlchemy schema definitions",
+              "Pham Tan Hao",
+              "8",
+              "8",
+              "Done"
+            ],
+            [
+              null,
+              "TS-01-04",
+              "PB-02",
+              "Implement JWT auth endpoints and password hashing",
+              "Pham Tan Hao",
+              "18",
+              "18",
+              "Done"
+            ],
+            [
+              null,
+              "TS-01-05",
+              "PB-02",
+              "Design AuthPage and token management in frontend",
+              "Tran Hoang Nhat Nam",
+              "10",
+              "10",
+              "Done"
+            ],
+            [
+              null,
+              "TS-01-06",
+              "PB-03",
+              "Build 21-feature URL lexical extraction module",
+              "Nguyen Phan Duc Tuan",
+              "24",
+              "24",
+              "Done"
+            ],
+            [
+              null,
+              "TS-01-07",
+              "PB-03",
+              "Train & export HistGradientBoosting PhishVN model",
+              "Nguyen Phan Duc Tuan",
+              "24",
+              "24",
+              "Done"
+            ],
+            [
+              null,
+              "TS-01-08",
+              "PB-04",
+              "Implement domain gating whitelist/blacklist engine",
+              "Pham Tan Hao",
+              "14",
+              "14",
+              "Done"
+            ],
+            [
+              null,
+              "TS-01-09",
+              "PB-04",
+              "Verify domain normalization & punycode handling",
+              "Dao Thi My Nhung",
+              "10",
+              "10",
+              "Done"
+            ],
+            [
+              null,
+              "TS-01-10",
+              "PB-05",
+              "Fine-tune ResNet-18 model for Vietnamese brand logos",
+              "Nguyen Phan Duc Tuan",
+              "28",
+              "28",
+              "Done"
+            ],
+            [
+              null,
+              "TS-01-11",
+              "PB-05",
+              "Apply temperature scaling (T=1.8) on PyTorch logits",
+              "Nguyen Phan Duc Tuan",
+              "16",
+              "16",
+              "Done"
+            ],
+            [
+              null,
+              "Total",
+              null,
+              null,
+              null,
+              "=SUM(F6:F16)",
+              "=SUM(G6:G16)"
+            ]
+          ]
+        },
+        {
+          "title": "Sprint 2",
+          "max_row": 16,
+          "max_column": 8,
+          "rows": [
+            [
+              null,
+              "Sprint 2 - OCR, Risk & Reasoning"
+            ],
+            [
+              null,
+              "SFDS Capstone Development Team C1SE.06"
+            ],
+            [
+              null,
+              "Task Id",
+              "PB Ref",
+              "Task Description",
+              "Assignee",
+              "Est. Hours",
+              "Actual Hours",
+              "Status"
+            ],
+            [
+              null,
+              "TS-02-01",
+              "PB-06",
+              "Implement OpenCV ELA forensics calculation pipeline",
+              "Pham Tan Hao",
+              "20",
+              "20",
+              "Done"
+            ],
+            [
+              null,
+              "TS-02-02",
+              "PB-06",
+              "Extract image EXIF metadata and software markers",
+              "Pham Tan Hao",
+              "16",
+              "16",
+              "Done"
+            ],
+            [
+              null,
+              "TS-02-03",
+              "PB-07",
+              "Integrate Tesseract OCR 5.x with Vietnamese tessdata",
+              "Nguyen Phan Duc Tuan",
+              "22",
+              "22",
+              "Done"
+            ],
+            [
+              null,
+              "TS-02-04",
+              "PB-07",
+              "Add image pre-processing (adaptive thresholding, denoise)",
+              "Nguyen Phan Duc Tuan",
+              "18",
+              "18",
+              "Done"
+            ],
+            [
+              null,
+              "TS-02-05",
+              "PB-08",
+              "Compile comprehensive Vietnamese scam fraud lexicon",
+              "Dao Thi My Nhung",
+              "18",
+              "18",
+              "Done"
+            ],
+            [
+              null,
+              "TS-02-06",
+              "PB-08",
+              "Implement regex pattern matching for bank accounts & OTP",
+              "Dao Thi My Nhung",
+              "14",
+              "14",
+              "Done"
+            ],
+            [
+              null,
+              "TS-02-07",
+              "PB-09",
+              "Develop Chain-of-Thought (CoT) 4-step reasoning logic",
+              "Nguyen Phan Duc Tuan",
+              "24",
+              "24",
+              "Done"
+            ],
+            [
+              null,
+              "TS-02-08",
+              "PB-09",
+              "Implement soft consensus fusion to eliminate 0%/98% jumps",
+              "Nguyen Phan Duc Tuan",
+              "18",
+              "18",
+              "Done"
+            ],
+            [
+              null,
+              "TS-02-09",
+              "PB-10",
+              "Create dynamic human-readable explanation builder",
+              "Tran Hoang Nhat Nam",
+              "18",
+              "18",
+              "Done"
+            ],
+            [
+              null,
+              "TS-02-10",
+              "PB-10",
+              "Build unit tests for explanation text consistency",
+              "Dao Thi My Nhung",
+              "12",
+              "12",
+              "Done"
+            ],
+            [
+              null,
+              "Total",
+              null,
+              null,
+              null,
+              "=SUM(F6:F15)",
+              "=SUM(G6:G15)"
+            ]
+          ]
+        },
+        {
+          "title": "Sprint 3",
+          "max_row": 14,
+          "max_column": 8,
+          "rows": [
+            [
+              null,
+              "Sprint 3 - Frontend SPA & UI-UX"
+            ],
+            [
+              null,
+              "SFDS Capstone Development Team C1SE.06"
+            ],
+            [
+              null,
+              "Task Id",
+              "PB Ref",
+              "Task Description",
+              "Assignee",
+              "Est. Hours",
+              "Actual Hours",
+              "Status"
+            ],
+            [
+              null,
+              "TS-03-01",
+              "PB-11",
+              "Build ScanPage UI with multi-tab input (URL/Text/Image)",
+              "Tran Hoang Nhat Nam",
+              "22",
+              "18",
+              "In Progress"
+            ],
+            [
+              null,
+              "TS-03-02",
+              "PB-11",
+              "Implement drag-and-drop screenshot uploader with preview",
+              "Tran Hoang Nhat Nam",
+              "18",
+              "14",
+              "In Progress"
+            ],
+            [
+              null,
+              "TS-03-03",
+              "PB-12",
+              "Develop dynamic Risk Gauge component with color transitions",
+              "Tran Hoang Nhat Nam",
+              "20",
+              "16",
+              "In Progress"
+            ],
+            [
+              null,
+              "TS-03-04",
+              "PB-12",
+              "Render multimodal evidence cards and safety suggestions",
+              "Dao Thi My Nhung",
+              "18",
+              "12",
+              "In Progress"
+            ],
+            [
+              null,
+              "TS-03-05",
+              "PB-13",
+              "Implement localStorage cache for recent 50 scans",
+              "Tran Hoang Nhat Nam",
+              "14",
+              "10",
+              "In Progress"
+            ],
+            [
+              null,
+              "TS-03-06",
+              "PB-13",
+              "Build HistoryPage with search, filter and detail replay",
+              "Tran Hoang Nhat Nam",
+              "12",
+              "8",
+              "In Progress"
+            ],
+            [
+              null,
+              "TS-03-07",
+              "PB-14",
+              "Create incident feedback modal and API endpoint",
+              "Dao Thi My Nhung",
+              "16",
+              "10",
+              "In Progress"
+            ],
+            [
+              null,
+              "TS-03-08",
+              "PB-14",
+              "Implement feedback validation and confirmation toasts",
+              "Dao Thi My Nhung",
+              "12",
+              "8",
+              "In Progress"
+            ],
+            [
+              null,
+              "Total",
+              null,
+              null,
+              null,
+              "=SUM(F6:F13)",
+              "=SUM(G6:G13)"
+            ]
+          ]
+        },
+        {
+          "title": "Sprint 4",
+          "max_row": 14,
+          "max_column": 8,
+          "rows": [
+            [
+              null,
+              "Sprint 4 - Admin Platform & Reports"
+            ],
+            [
+              null,
+              "SFDS Capstone Development Team C1SE.06"
+            ],
+            [
+              null,
+              "Task Id",
+              "PB Ref",
+              "Task Description",
+              "Assignee",
+              "Est. Hours",
+              "Actual Hours",
+              "Status"
+            ],
+            [
+              null,
+              "TS-04-01",
+              "PB-15",
+              "Build Admin incident review table with pagination and filter",
+              "Pham Tan Hao",
+              "20",
+              "0",
+              "To Do"
+            ],
+            [
+              null,
+              "TS-04-02",
+              "PB-15",
+              "Implement incident triage actions (Verify, Dismiss, Flag)",
+              "Pham Tan Hao",
+              "16",
+              "0",
+              "To Do"
+            ],
+            [
+              null,
+              "TS-04-03",
+              "PB-16",
+              "Develop Threat Intelligence analytics dashboard",
+              "Pham Tan Hao",
+              "20",
+              "0",
+              "To Do"
+            ],
+            [
+              null,
+              "TS-04-04",
+              "PB-16",
+              "Implement KPI metric cards (Total Scans, Fraud %, Latency)",
+              "Pham Tan Hao",
+              "14",
+              "0",
+              "To Do"
+            ],
+            [
+              null,
+              "TS-04-05",
+              "PB-17",
+              "Build Whitelist/Blacklist management UI and CRUD API",
+              "Nguyen Phan Duc Tuan",
+              "18",
+              "0",
+              "To Do"
+            ],
+            [
+              null,
+              "TS-04-06",
+              "PB-17",
+              "Add dynamic keyword lexicon management interface",
+              "Nguyen Phan Duc Tuan",
+              "12",
+              "0",
+              "To Do"
+            ],
+            [
+              null,
+              "TS-04-07",
+              "PB-18",
+              "Implement PDF report export generator with forensic stamp",
+              "Dao Thi My Nhung",
+              "18",
+              "0",
+              "To Do"
+            ],
+            [
+              null,
+              "TS-04-08",
+              "PB-18",
+              "Implement CSV incident data export for external audit",
+              "Dao Thi My Nhung",
+              "10",
+              "0",
+              "To Do"
+            ],
+            [
+              null,
+              "Total",
+              null,
+              null,
+              null,
+              "=SUM(F6:F13)",
+              "=SUM(G6:G13)"
+            ]
+          ]
+        },
+        {
+          "title": "Sprint 5",
+          "max_row": 12,
+          "max_column": 8,
+          "rows": [
+            [
+              null,
+              "Sprint 5 - Hardening & Final Defense"
+            ],
+            [
+              null,
+              "SFDS Capstone Development Team C1SE.06"
+            ],
+            [
+              null,
+              "Task Id",
+              "PB Ref",
+              "Task Description",
+              "Assignee",
+              "Est. Hours",
+              "Actual Hours",
+              "Status"
+            ],
+            [
+              null,
+              "TS-05-01",
+              "PB-19",
+              "Configure SlowAPI rate limiting (30 requests/min/IP)",
+              "Pham Tan Hao",
+              "14",
+              "0",
+              "To Do"
+            ],
+            [
+              null,
+              "TS-05-02",
+              "PB-19",
+              "Implement OWASP security headers, CORS and input cleansing",
+              "Pham Tan Hao",
+              "18",
+              "0",
+              "To Do"
+            ],
+            [
+              null,
+              "TS-05-03",
+              "PB-20",
+              "Execute comprehensive pytest suite across all AI engines",
+              "Dao Thi My Nhung",
+              "18",
+              "0",
+              "To Do"
+            ],
+            [
+              null,
+              "TS-05-04",
+              "PB-20",
+              "Perform Locust load and stress testing under 50 concurrency",
+              "Pham Tan Hao",
+              "12",
+              "0",
+              "To Do"
+            ],
+            [
+              null,
+              "TS-05-05",
+              "PB-20",
+              "Verify model calibration and zero extreme score artifacts",
+              "Nguyen Phan Duc Tuan",
+              "14",
+              "0",
+              "To Do"
+            ],
+            [
+              null,
+              "TS-05-06",
+              "PB-20",
+              "Prepare final presentation slide deck & live demo scenario",
+              "Tran Hoang Nhat Nam",
+              "20",
+              "0",
+              "To Do"
+            ],
+            [
+              null,
+              "Total",
+              null,
+              null,
+              null,
+              "=SUM(F6:F11)",
+              "=SUM(G6:G11)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "path": "D:\\TAILIEU_CAPSTONE_C1SE20_ver02\\7. TEST PLAN\\C1SE.20_TestCase Sprint1_ver2.0.xlsx",
+      "sheets": [
+        {
+          "title": "Edge AI Processing Pipeline",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              "\"StoreLens\" - Real-Time Retail Optimization Powered by edge AI"
+            ],
+            [
+              "Module name",
+              "Edge AI Processing Pipeline"
+            ],
+            [
+              "Created by",
+              "Thu, Phan Nguyen Anh"
+            ],
+            [
+              "Date created",
+              "2025-08-25 00:00:00"
+            ],
+            [
+              "Rated by",
+              "All"
+            ],
+            [
+              "Evaluation date",
+              "2025-08-25 00:00:00"
+            ],
+            [
+              "Pass",
+              "=COUNTIF(P18:P26,\"Pass\")"
+            ],
+            [
+              "Fail",
+              "=COUNTIF(P18:P21,\"Fail\")"
+            ],
+            [
+              "Total",
+              "=(B7+B8)"
+            ],
+            [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "Test case ID",
+              "Representation",
+              "Prerequisites",
+              "Testing steps",
+              "Test data",
+              "Expected results",
+              "Actual results",
+              "Number of Tests (Times)",
+              "Status"
+            ],
+            [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "TC_AI_001",
+              "Camera captures input frames",
+              "Camera connected & powered",
+              "1. Start the device.  | 2. Open the camera module.  | 3. Check the returned frame rate.",
+              "Live camera feed",
+              "The camera returns a continuous frame rate of 25–30 FPS, without stuttering or frame loss.",
+              "Camera returned an average of 27 FPS, image stability was good, no frame drops recorded over 60 seconds.",
+              "3.0",
+              "Pass"
+            ],
+            [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "TC_AI_002",
+              "Resize input frame",
+              "TC_AI_001 passed",
+              "1. Submit a 1920x1080 image.  | 2. The pipeline automatically resizes to 320x320.",
+              "Image 1080p",
+              "The image is resized accurately to 320x320, with no distortion of aspect ratio.",
+              "The image was resized correctly to 320x320; pixel edges were checked and found to be neither distorted nor stretched.",
+              "3.0",
+              "Pass"
+            ],
+            [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "TC_AI_003",
+              "Pixel normalization",
+              "TC_AI_002 passed",
+              "1. Load frame.  | 2. Check pixel values.",
+              "8-bit pixel frame",
+              "All pixels are scaled to the range [0–1].",
+              "Pixels after normalization were in the range 0.0 to 0.996, evenly distributed, with no values exceeding the range.",
+              "3.0",
+              "Pass"
+            ],
+            [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "TC_AI_004",
+              "Model execution",
+              "Model is loaded",
+              "1. Submit frame.  | 2. Run model.  | 3. Receive output tensor.",
+              "Preprocessed frame",
+              "The model returns the tensor in the correct format (shape, dtype).",
+              "Output had shape [1, 80, 8400], dtype float32, with no runtime errors generated.",
+              "5.0",
+              "Pass"
+            ],
+            [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "TC_AI_005",
+              "Decode bounding box",
+              "TC_AI_004 passed",
+              "1. Decode bbox.  | 2. Apply NMS (Non-Maximum Suppression).",
+              "Image with 1–3 objects",
+              "Bbox coordinates are accurate ($\\pm 2$px), NMS correctly eliminates redundant overlapping bounding boxes.",
+              "Bbox deviated by an average of 3–4px from the ground truth; NMS worked correctly, no redundant bounding boxes detected.",
+              "4.0",
+              "Pass"
+            ],
+            [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "TC_AI_006",
+              "Extract class label",
+              "TC_AI_004 passed",
+              "1. Receive softmax output.  | 2. Get the class with the highest score.",
+              "Softmax vector",
+              "Correct label prediction with accuracy $\\ge 90\\%$.",
+              "93% of images were correctly classified; incorrect images belonged to the low-light group.",
+              "5.0",
+              "Pass"
+            ],
+            [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "TC_AI_007",
+              "Total frame latency",
+              "Full pipeline stable",
+              "1. Run 100 frames.  | 2. Record latency.",
+              "Live stream",
+              "Latency $< 80$ms/frame.",
+              "Latency fluctuated between 78–82ms; 7 out of 100 frames exceeded 80ms but did not exceed 82ms.",
+              "10.0",
+              "Pass"
+            ],
+            [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "TC_AI_008",
+              "RAM consumption",
+              "Device stable",
+              "1. Run for 300s.  | 2. Monitor RAM.",
+              "Live feed",
+              "RAM $< 700$MB.",
+              "RAM was stable at 630–655MB, no memory leak recorded.",
+              "3.0",
+              "Pass"
+            ],
+            [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "TC_AI_009",
+              "Retry mechanism",
+              "Simulate inference error",
+              "1. Disable the model for 1s.  | 2. Check retry mechanism.",
+              "No model response",
+              "Retry maximum 3 times, with full logging.",
+              "Retried exactly 3 times before reporting an error; logs recorded the correct timestamp and error type.",
+              "2.0",
+              "Pass"
+            ],
+            [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              "TC_AI_010",
+              "FPS output",
+              "Full pipeline running",
+              "1. Run for 30s.  | 2. Record FPS.",
+              "Camera input",
+              "FPS $> 12$FPS.",
+              "Average FPS was 14.2, never dropped below 12 throughout the 30 seconds.",
+              "3.0",
+              "Pass"
+            ]
+          ]
+        },
+        {
+          "title": "Authentication",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              "\"StoreLens\" - Real-Time Retail Optimization Powered by edge AI"
+            ],
+            [
+              "Module name",
+              "Authentication Flow"
+            ],
+            [
+              "Created by",
+              "Trang, Lieu Thi Thuy"
+            ],
+            [
+              "Date created",
+              "2025-08-25 00:00:00"
+            ],
+            [
+              "Rated by",
+              "All"
+            ],
+            [
+              "Evaluation date",
+              "2025-08-25 00:00:00"
+            ],
+            [
+              "Pass",
+              "=COUNTIF(I12:I29,\"Pass\")"
+            ],
+            [
+              "Fail",
+              "=COUNTIF(I12:I21,\"Fail\")"
+            ],
+            [
+              "Total",
+              "=(B7+B8)"
+            ],
+            [
+              "Test case ID",
+              "Representation",
+              "Prerequisites",
+              "Testing steps",
+              "Test data",
+              "Expected results",
+              "Actual result",
+              "Number of Tests (Times)",
+              "Status"
+            ],
+            [
+              "TC_AUTH_LOGIN_UI_001",
+              "Login Screen UI",
+              "1. Open Admin Dashboard.  | 2. Navigate to the Login page.",
+              "1. Observe the Login (\"Đăng nhập) screen.",
+              "N/A",
+              "Displays all fields: Account, Password, SIGN IN button, and auxiliary components (logo, 'Forgot password?' link).",
+              "All UI components are displayed correctly with no formatting errors.",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_AUTH_LOGIN_001",
+              "Login - Success",
+              "1. A valid account (test\\_active) with status \"active\" exists.",
+              "1. Enter valid Account.  | 2. Enter correct Password.  | 3. Click \"Đăng nhập\".",
+              "Account: test\\_active | Pass: Pass1234!",
+              "1. Status 200 (OK).  | 2. Message: \"Login success\".  | 3. JWT sessionToken is stored in Cookie (httpOnly).  | 4. Redirect to Dashboard.",
+              "Login successful, redirects to the home page, token is set in the cookie.",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_AUTH_LOGIN_002",
+              "Wrong Password",
+              "1. A valid account (test\\_active) exists.",
+              "1. Enter valid Account.  | 2. Enter incorrect Password.  | 3. Click \"Đăng nhập\".",
+              "Account: test\\_active | Pass: WrongPass123",
+              "1. Status 400 (Bad Request).  | 2. Message: \"Mật khẩu không chính xác\".  | 3. Remains on Login page.",
+              "Displays the error message \"Mật khẩu không chính xác\" (400).",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_AUTH_LOGIN_003",
+              "Non-existent Account",
+              "On the Login page.",
+              "1. Enter an unregistered Account.  | 2. Enter any Password.  | 3. Click \"Đăng nhập\".",
+              "Account: non\\_existent\\_user | Pass: AnyPass",
+              "1. Status 400 (Bad Request).  | 2. Message: \"Tài khoản không tồn tại\".  | 3. Remains on Login page.",
+              "Displays the error message \"Tài khoản không tồn tại\" (400).",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_AUTH_LOGIN_004",
+              "Missing Account or Password",
+              "On the Login page.",
+              "1. Enter Account, leave Password blank.  | 2. Click \"Đăng nhập\". (Repeat for opposite case).",
+              "Account: test\\_active | Pass: (Blank)",
+              "1. Status 400 (Bad Request).  | 2. Message: \"Account and password are required\".  | 3. Remains on Login page.",
+              "Displays the error message \"Account and password are required\" (400).",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_AUTH_LOGIN_005",
+              "Inactive Account",
+              "1. A valid account (test\\_inactive) with status \"inactive\" exists.",
+              "1. Enter inactive Account.  | 2. Enter valid Password.  | 3.  Click \"Đăng nhập\".",
+              "Account: test\\_inactive | Pass: Pass1234!",
+              "1. Status 403 (Forbidden).  | 2. Message: \"Tài khoản chưa được kích hoạt\".  | 3. Remains on Login page.",
+              "Displays the error message \"Tài khoản chưa được kích hoạt\" (403).",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_AUTH_LOGIN_006",
+              "Handle Whitespace",
+              "A valid account (test\\_active) exists.",
+              "1. Enter Account with leading/trailing spaces.  | 2. Enter Password with leading/trailing spaces.  | 3.  Click \"Đăng nhập\".",
+              "Account: test\\_active | Pass: Pass1234!",
+              "1. Status 200 (OK). (Due to .trim() in code).  | 2. Login successful, redirect to Dashboard.",
+              "Login successful, whitespace is trimmed.",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_AUTH_REG_007",
+              "Registration - Success",
+              "1. Valid Store ID (ST001) exists.  | 2. Account/Email are unique.",
+              "1. Enter valid and unique data for all fields.  | 2. Click Register.",
+              "Account: new\\_user\\_1 | Email: new@email.com | Store ID: ST001",
+              "1. Status 200 (OK).  | 2. Message: \"User registered successfully\".  | 3. User created in DB with role: \"manager\" and status: \"inactive\".",
+              "Registration successful (200), user has inactive status in DB.",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_AUTH_REG_008",
+              "Missing Required Field",
+              "On the Registration page.",
+              "1. Leave any required field (e.g., fullname) blank.  | 2. Click Register.",
+              "Fullname: (Blank)",
+              "1. Status 400 (Bad Request).  | 2. Message: \"All fields are required\".  | 3. Remains on Registration page.",
+              "Displays the error message \"All fields are required\" (400).",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_AUTH_REG_009",
+              "Existing Account",
+              "Account test\\_active already exists.",
+              "1. Enter existing Account.  | 2. Enter unique Email.  | 3. Click Register.",
+              "Account: test\\_active",
+              "1. Status 400 (Bad Request).  | 2. Message: \"Account already exists\".  | 3. Remains on Registration page.",
+              "Displays the error message \"Account already exists\" (400).",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_AUTH_REG_010",
+              "Existing Email",
+              "Email test@email.com already exists.",
+              "1. Enter existing Email.  | 2. Enter unique Account.  | 3. Click Register.",
+              "Email: test@email.com",
+              "1. Status 400 (Bad Request).  | 2. Message: \"Email already exists\".  | 3. Remains on Registration page.",
+              "Displays the error message \"Email already exists\" (400).",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_AUTH_REG_011",
+              "Non-existent Store ID",
+              "On the Registration page.",
+              "1. Enter valid data.  | 2. Select/Enter non-existent Store ID (ST999).  | 3.  Click \"Đăng ký\".",
+              "Store ID: ST999",
+              "1. Status 400 (Bad Request).  | 2. Message: \"Selected store does not exist\".  | 3. Remains on Registration page.",
+              "Displays the error message \"Selected store does not exist\" (400).",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_AUTH_LOGOUT_012",
+              "Logout - Success",
+              "User is logged in (valid sessionToken in cookie).",
+              "1. Click \"Đăng xuất\" button/link on UI.",
+              "N/A",
+              "1. Status 200 (OK).  | 2. Message: \"Logout success\".  | 3. Cookie sessionToken is cleared.  | 4. Redirect to the Login page.",
+              "Logout successful, cookie cleared, redirects to Login page.",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_AUTH_LOGOUT_013",
+              "Logout - Missing Token",
+              "User is NOT logged in.",
+              "1. Attempt to trigger Logout API call directly without cookie token.",
+              "N/A",
+              "1. Status 401 (Unauthorized).  | 2. Message: \"Unauthorized\".",
+              "API returns 401 error with message \"Unauthorized\".",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_AUTH_TOKEN_014",
+              "Access Protected (Post-Logout)",
+              "1. Logged in and then logged out successfully.",
+              "1. After Logout, try sending a request to a Protected Route (API requires auth) using the token from the previous session.",
+              "Token is deleted/invalidated",
+              "1. API returns 401 (Unauthorized) or 403 (Forbidden).",
+              "API returns 401/403 error.",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_AUTH_TOKEN_015",
+              "Access Protected (Missing Token)",
+              "1. Not logged in (No token).",
+              "1. Send request to a Protected Route (API requires authentication).",
+              "N/A",
+              "1. API returns 401 (Unauthorized) or 403 (Forbidden) due to missing Token.",
+              "API returns 401/403 error.",
+              "1.0",
+              "Pass"
+            ]
+          ]
+        },
+        {
+          "title": "Zone Drawing Accuracy",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              "\"StoreLens\" - Real-Time Retail Optimization Powered by edge AI"
+            ],
+            [
+              "Module name",
+              "Camera Management"
+            ],
+            [
+              "Created by",
+              "Vy, Vo Thi Tuong"
+            ],
+            [
+              "Date created",
+              "2025-08-25 00:00:00"
+            ],
+            [
+              "Rated by",
+              "All"
+            ],
+            [
+              "Evaluation date",
+              "2025-08-25 00:00:00"
+            ],
+            [
+              "Pass",
+              "=COUNTIF(I12:I24,\"Pass\")"
+            ],
+            [
+              "Fail",
+              "=COUNTIF(I12:I24,\"Fail\")"
+            ],
+            [
+              "Total",
+              "=(B7+B8)"
+            ],
+            [
+              "Test case ID",
+              "Representation",
+              "Prerequisites",
+              "Testing steps",
+              "Test data",
+              "Expected results",
+              "Actual result",
+              "Number of Tests (Times)",
+              "Status"
+            ],
+            [
+              "TC_ZD_UI_001",
+              "Draw New Zone - Success",
+              "1. User logged in (Store Manager).  | 2. Camera CAM001 selected.",
+              "1. Navigate to Zone Configuration for CAM001.  | 2. Click \"Draw Zone\" mode.  | 3. Click 3+ points to draw a polygon (ROI).  | 4. Name the zone. 5. Click Save.",
+              "Camera: CAM001, Zone Name: Area A",
+              "1. Drawn shape is accurately rendered on the canvas.  | 2. System confirms successful saving (200 OK).  | 3. The new zone appears in the list.",
+              "Drawn shape matches user input; save successful.",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_ZD_UI_002",
+              "Zone Boundary Rendering",
+              "Zone Area A exists for CAM001.",
+              "1. Load Zone Configuration for CAM001.  | 2. Zoom in/out (e.g., to 200%) on the camera frame.",
+              "Camera: CAM001",
+              "1. The drawn zone remains accurately positioned and scaled relative to the background image when zooming/panning.",
+              "The zone is misaligned and coordinates are positioned incorrectly relative to the frame when zoomed 200%.",
+              "2.0",
+              "Fail"
+            ],
+            [
+              "TC_ZD_UI_003",
+              "Edit Existing Zone Coordinates",
+              "Zone Area A exists.",
+              "1. Select Area A.  | 2. Drag a corner point to a new location.  | 3. Click Save.  | 4. Reload the page.",
+              "Camera: CAM001 (Modified coords)",
+              "1. The zone shape updates immediately on the canvas.  | 2. New coordinate data is saved successfully (200 OK) and persists after reload.",
+              "Zone shape updated and persisted correctly.",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_ZD_UI_004",
+              "Draw Zone - Invalid Points",
+              "User is in \"Draw Zone\" mode.",
+              "1. Attempt to save a zone with only two points (a line).",
+              "N/A",
+              "1. The system prevents saving (requires minimum 3 points for a polygon).  | 2. Displays a user-friendly error message.",
+              "System prevents save, displays error message.",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_ZD_API_005",
+              "Create New Zone - Success",
+              "Camera CAM002 exists but has NO zone record.",
+              "Send POST request to /cameras/CAM002 with all valid parameters.",
+              "cameraCode: CAM002, widthFrame: 1280, zones: JSON.stringify(...)",
+              "1. Status 200 (OK).  | 2. Message: \"New cameras saved successfully\".  | 3. A new ZoneModel record is created in DB.",
+              "200 OK, new record created.",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_ZD_API_006",
+              "Update Existing Zone - Success",
+              "Camera CAM001 exists with an existing zone record.",
+              "Send POST request to /cameras/CAM001 with modified data.",
+              "cameraCode: CAM001, zones: JSON.stringify([{\"id\": \"Z1\", \"coords\": [[10,10], ... ]}])",
+              "1. Status 200 (OK).  | 2. Message: \"New cameras saved successfully\".  | 3. The existing ZoneModel record is successfully updated.",
+              "200 OK, existing record updated.",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_ZD_API_007",
+              "Invalid cameraCode",
+              "Camera CAM999 does not exist.",
+              "Send POST request to /cameras/CAM999.",
+              "cameraCode: CAM999",
+              "1. Status 404 (Not Found).  | 2. Message: \"Camera with code CAM999 not found\".",
+              "404 Not Found.",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_ZD_API_008",
+              "Invalid zones format (Non-JSON)",
+              "Camera CAM001 exists.",
+              "Send POST request to /cameras/CAM001 with data in zones field that is not valid JSON.",
+              "zones: \"invalid_json_string\"",
+              "1. Status 400 (Bad Request).  | 2. Message: \"Invalid zones data format.\" (Friendly error).",
+              "Status 500 (Internal Server Error). The request failed due to an unhandled JSON.parse error in the controller.",
+              "2.0",
+              "Fail"
+            ],
+            [
+              "TC_ZD_API_009",
+              "Non-Numeric Coordinates (Data Integrity)",
+              "Camera CAM001 exists.",
+              "Send POST request with coordinates containing non-numeric values.",
+              "zones: JSON.stringify([{\"id\": \"Z1\", \"coords\": [[\"a\", \"b\"], [400, 100], [400, 400]]}])",
+              "1. Status 400 (Bad Request) due to Schema validation. 2. Message: \"Coordinate values must be numeric.\"",
+              "Status 200 (OK). The non-numeric data [\"a\", \"b\"] was saved to the DB, compromising data integrity for FE/AI analysis.",
+              "2.0",
+              "Fail"
+            ],
+            [
+              "TC_ZD_API_010",
+              "Missing widthFrame",
+              "Camera CAM001 exists.",
+              "Send POST request to /cameras/CAM001 omitting the widthFrame field.",
+              "widthFrame: Missing",
+              "1. Status 200 (OK).  | 2. The width_frame field in the DB is set to null or undefined.",
+              "200 OK, null/undefined value saved.",
+              "2.0",
+              "Pass"
+            ],
+            [
+              "TC_ZD_API_011",
+              "Retrieve Camera with Zone",
+              "CAM001 exists and has a zone record.",
+              "Send GET request to /list-camera.",
+              "N/A",
+              "1. Status 200 (OK).  | 2. Response contains CAM001.  | 3. CAM001 object includes zones_info with all saved coordinates.",
+              "200 OK, zone data correctly embedded in zones_info.",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_ZD_API_012",
+              "Retrieve Camera Without Zone",
+              "CAM003 exists but has NO zone record.",
+              "Send GET request to /list-camera.",
+              "N/A",
+              "1. Status 200 (OK).  | 2. Response contains CAM003.  | 3. zones_info for CAM003 is correctly returned as null or an empty object/array.",
+              "200 OK, zones_info is null/empty for CAM003.",
+              "1.0",
+              "Pass"
+            ],
+            [
+              "TC_ZD_API_013",
+              "Filter Camera by type",
+              "CAM001 exists.",
+              "Send GET request to /list-camera?type=CAM001.",
+              "type: CAM001",
+              "1. Status 200 (OK).  | 2. Response data only contains Camera CAM001.",
+              "200 OK, result is filtered accurately.",
+              "1.0",
+              "Pass"
+            ]
+          ]
+        },
+        {
+          "title": " Sprint 1 Test Report",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              null,
+              "\"StoreLens\" - Real-Time Retail Optimization Powered by edge AI",
+              null,
+              null,
+              null,
+              "Test scope",
+              "1.0"
+            ],
+            [
+              "Experimental design by",
+              null,
+              "Team C1SE.20",
+              null,
+              null,
+              null,
+              "Check scope successful",
+              "=(D11/C11)"
+            ],
+            [
+              "Reviewer / Approver",
+              null,
+              "Team C1SE.20",
+              null,
+              null,
+              null,
+              "Version",
+              "Sprint 1 Test Report"
+            ],
+            [
+              "Number",
+              "Module name",
+              "Plan",
+              "Passing",
+              "Failure",
+              null,
+              "Test planning",
+              "Test case passed",
+              "Test case failed"
+            ],
+            [
+              "=1",
+              "Authentication",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6EFC50>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6EC620>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6ED4F0>",
+              null,
+              "=SUM(C8:C10)",
+              "=SUM(D8:D10)",
+              "=SUM(E8:E10)"
+            ],
+            [
+              "2.0",
+              "Edge AI Processing Pipeline",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6ED520>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6EEEA0>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6ED610>"
+            ],
+            [
+              "3.0",
+              "Zone Drawing Accuracy",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6EEAB0>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6ED4F0>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6EC9E0>"
+            ],
+            [
+              "Total",
+              null,
+              "=SUM(C8:C10)",
+              "=SUM(D8:D10)",
+              "=SUM(E8:E10)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "path": "D:\\TAILIEU_CAPSTONE_C1SE20_ver02\\7. TEST PLAN\\C1SE.20_TestCase Sprint2_ver1.0 .xlsx",
+      "sheets": [
+        {
+          "title": "POS Data Integration",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              "Real-Time Retail Optimization Powered by edge AI"
+            ],
+            [
+              "Module name",
+              "POS Data Integration"
+            ],
+            [
+              "Created by",
+              "Phan Nguyen Anh Thu"
+            ],
+            [
+              "Date created",
+              "2025-09-21 00:00:00"
+            ],
+            [
+              "Rated by",
+              "All"
+            ],
+            [
+              "Evaluation date",
+              "2025-09-24 00:00:00"
+            ],
+            [
+              "Pass",
+              "=COUNTIF(H12:H16,\"Pass\")"
+            ],
+            [
+              "Fail",
+              "=COUNTIF(H12:H16,\"Fail\")"
+            ],
+            [
+              "Total",
+              "=(B7+B8)"
+            ],
+            [
+              "Test case ID",
+              "Representation",
+              "Prerequisites",
+              "Testing steps",
+              "Test data",
+              "Expected results",
+              "Actual results",
+              "Status"
+            ],
+            [
+              "TC_SL_POS_FUNC_001",
+              "API Sync (Valid New Invoice)",
+              "1. System is connected to the POS API. | 2. A new, valid invoice (ID: 12345) has just been created in the POS system.",
+              "1. Wait for the sync cycle (e.g., 5 minutes) or trigger the sync manually (if possible). | 2. Check the system's database (DB).",
+              "New invoice (ID: 12345) from POS API.",
+              "1. Sync successful. | 2. Invoice 12345 is saved to the system's DB.",
+              "1. Sync was successful. | 2. Invoice 12345 was saved to the DB.",
+              "Pass"
+            ],
+            [
+              "TC_SL_POS_FUNC_002",
+              "API Sync (Invalid Data)",
+              "1. Connected to POS API. | 2. A new invoice (ID: 67890) is created in POS but is missing a required field (e.g., 'Timestamp').",
+              "1. Wait for/trigger sync. | 2. Check the DB. | 3. Check the system's error log file.",
+              "Invoice (ID: 67890) from POS API, missing 'Timestamp'.",
+              "1. The sync process logs an error for Invoice 67890. | 2. Invoice 67890 is not saved to the DB. | 3. Log records error: \"Sync failed for Invoice 67890: Missing 'Timestamp' field\".",
+              "1. An error was logged for Invoice 67890. | 2. Invoice 67890 not found in the DB. | 3. Log recorded: \"Sync failed for Invoice 67890: Missing 'Timestamp' field\".",
+              "Pass"
+            ],
+            [
+              "TC_SL_POS_FUNC_003",
+              "API Sync (Connection Error)",
+              "1. System is configured for the POS API. | 2. The POS API endpoint is down or inaccessible (e.g., network blocked).",
+              "1. Wait for/trigger sync. | 2. Check the system status logs.",
+              "N/A (Connection test)",
+              "1. Sync fails. | 2. System logs error \"Failed to connect to POS API at [URL]\".",
+              "1. Sync failed. | 2. Log recorded \"Failed to connect to POS API at [URL]\".",
+              "Pass"
+            ],
+            [
+              "TC_SL_POS_UI_004",
+              "Data Correlation (UI)",
+              "1. Logged in, on Analytics page. | 2. 100 (AI) behavior data points exist for 2-3 PM. | 3. POS API has synced 20 invoices between 2-3 PM.",
+              "1. Select time range \"2:00 PM - 3:00 PM\". | 2. Observe \"Conversion Rate\" widget.",
+              "AI: 100, POS (synced): 20",
+              "1. Widget calculates and displays conversion rate: \"20%\".",
+              "1. Widget calculated and displayed: \"20%\".",
+              "Pass"
+            ],
+            [
+              "TC_SL_POS_UI_005",
+              "Data Correlation (No POS Data)",
+              "1. Logged in, on Analytics page. | 2. 100 (AI) data points exist for 2-3 PM. | 3. POS API has synced, but there are (0) invoices between 2-3 PM.",
+              "1. Select time range \"2:00 PM - 3:00 PM\". | 2. Observe \"Conversion Rate\" widget.",
+              "AI: 100, POS (synced): 0",
+              "1. The widget displays \"0%\" or \"N/A\".",
+              "1. The widget displayed \"0%\".",
+              "Pass"
+            ]
+          ]
+        },
+        {
+          "title": "AI Data Integration",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              "Real-Time Retail Optimization Powered by edge AI"
+            ],
+            [
+              "Module name",
+              "AI Data Integration"
+            ],
+            [
+              "Created by",
+              "Lieu Thi Thuy Trang"
+            ],
+            [
+              "Date created",
+              "2025-08-10 00:00:00"
+            ],
+            [
+              "Rated by",
+              "All"
+            ],
+            [
+              "Evaluation date",
+              "2025-08-20 00:00:00"
+            ],
+            [
+              "Pass",
+              "=COUNTIF(H12:H16,\"Pass\")"
+            ],
+            [
+              "Fail",
+              "=COUNTIF(H12:H16,\"Fail\")"
+            ],
+            [
+              "Total",
+              "=(B7+B8)"
+            ],
+            [
+              "Test case ID",
+              "Representation",
+              "Prerequisites",
+              "Testing steps",
+              "Test data",
+              "Expected results",
+              "Actual results",
+              "Status"
+            ],
+            [
+              "TC_SL_AI_INT_005",
+              "Receive Valid Data (Happy Case)",
+              "1. Edge AI service running. | 2. Camera \"Entrance 1\" is \"Online\". | 3. Backend API is \"Up\".",
+              "1. Simulate Edge AI detecting 3 people. | 2. Edge AI sends JSON payload to API.",
+              "Payload: { \"camera_id\": \"cam_01\", ... }",
+              "1. Backend API returns 200 OK status. | 2. Data is correctly saved to the database.",
+              "1. Backend API returned 200 OK status. | 2. Data was correctly saved to the database.",
+              "Pass"
+            ],
+            [
+              "TC_SL_AI_INT_006",
+              "Receive Empty Data",
+              "1. Same as TC_SL_AI_INT_005. | 2. No people in view.",
+              "1. Edge AI sends an empty payload.",
+              "Payload: { \"detections\": [] }",
+              "1. Backend API returns 200 OK. | 2. No new detection data is saved.",
+              "1. Backend API returned 200 OK. | 2. No new detection data was saved.",
+              "Pass"
+            ],
+            [
+              "TC_SL_AI_INT_007",
+              "Receive Malformed Data (Bad JSON)",
+              "1. Same as TC_SL_AI_INT_005.",
+              "1. Simulate Edge AI sending a broken JSON string.",
+              "Payload: { \"camera_id\": \"cam_01\", ...",
+              "1. Backend API returns 400 Bad Request. | 2. No data is saved to the database.",
+              "1. Backend API returned 500 Internal Server Error. | 2. Lỗi NullPointerException được ghi lại trong log.",
+              "Fail"
+            ],
+            [
+              "TC_SL_AI_INT_008",
+              "Receive Data for Non-existent Camera",
+              "1. Same as TC_SL_AI_INT_005. | 2. ID cam_99 does not exist.",
+              "1. Edge AI sends data with invalid camera ID.",
+              "Payload: { \"camera_id\": \"cam_99\", ... }",
+              "1. Backend API returns 404 Not Found (or 422). | 2. No data is saved.",
+              "1. Backend API returned 200 OK. | 2. No data was saved.(Lỗi: API trả về 200 thay vì 404)",
+              "Fail"
+            ],
+            [
+              "TC_SL_AI_INT_009",
+              "Receive Data (Backend Down)",
+              "1. Edge AI service running. | 2. Backend API is offline.",
+              "1. Edge AI attempts to send data.",
+              "Payload: { \"camera_id\": \"cam_01\", ... }",
+              "1. Edge AI's logs show \"Connection refused\" or \"Timeout\". | 2. (If designed) Edge AI queues data locally.",
+              "1. Edge AI's logs showed \"Connection refused\". | 2. Edge AI began queuing data locally.",
+              "Pass"
+            ]
+          ]
+        },
+        {
+          "title": "Dashboard",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              "Real-Time Retail Optimization Powered by edge AI"
+            ],
+            [
+              "Module name",
+              "Dashboard (Overview/Real-time Metrics)"
+            ],
+            [
+              "Created by",
+              "Truong Thanh Dat"
+            ],
+            [
+              "Date created",
+              "06/092025"
+            ],
+            [
+              "Rated by",
+              "All"
+            ],
+            [
+              "Evaluation date",
+              "12/092025"
+            ],
+            [
+              "Pass",
+              "=COUNTIF(H12:H30,\"Pass\")"
+            ],
+            [
+              "Fail",
+              "=COUNTIF(H12:H30,\"Fail\")"
+            ],
+            [
+              "Total",
+              "=(B7+B8)"
+            ],
+            [
+              "Test case ID",
+              "Representation",
+              "Prerequisites",
+              "Testing steps",
+              "Test data",
+              "Expected results",
+              "Actual results",
+              "Status"
+            ],
+            [
+              "TC_DASH_UI_001",
+              "Display Overview Widgets - Zero State (Start of Day)",
+              "1. Logged in.   | 2. It's 00:01, no data for today.   | 3. Yesterday's data exists.",
+              "1. Observe the 5 top-row widgets.",
+              "Today_Data = 0   | Yesterday_Data > 0",
+              "1. All 5 widgets display a main value of 0.   | 2. Comparison % are still displayed correctly.",
+              "1. All 5 widgets displayed 0.   | 2. Comparison % (e.g., \"+12.5%\") displayed correctly.",
+              "Pass"
+            ],
+            [
+              "TC_DASH_UI_002",
+              "Display Overview Widgets - With Data",
+              "1. Logged in.   | 2. Data has been generated.",
+              "1. Observe the 5 top-row widgets.",
+              "Total_Visitors: 50   | Total_Revenue: 10,000,000",
+              "Widgets display the correct generated values (50, 10,000,000, etc.).",
+              "Widgets displayed \"50\" and \"10,000,000\".",
+              "Pass"
+            ],
+            [
+              "TC_DASH_UI_003",
+              "Display Real-time Widgets - Zero State",
+              "1. Logged in.   | 2. No customers in store.   | 3. No active queue.",
+              "1. Observe the 3 bottom-row widgets.",
+              "In_Store_Count: 0   | Queue_Length: 0",
+              "1. \"Customers in Store\" = 0.  2. \"Queue Length\" = 0.",
+              "1. \"Customers in Store\" displayed 0.   | 2. \"Queue Length\" displayed 0.",
+              "Pass"
+            ],
+            [
+              "TC_DASH_UI_004",
+              "Update \"Customers in Store\" Widget - Real-time",
+              "1. Logged in, viewing Dashboard.   | 2. Widget currently shows \"0\".",
+              "1. System sends a \"customer entered\" event.   | 2. Observe the widget.",
+              "Event: +1 customer",
+              "The widget automatically updates from \"0\" to \"1\" instantly (via WebSocket) without a page reload.",
+              "Widget updated from \"0\" to \"1\" in < 1 second. No reload needed.",
+              "Pass"
+            ],
+            [
+              "TC_DASH_UI_005",
+              "Display \"Performance by Zone\" Table - Full Data",
+              "1. Logged in.   | 2. Zone analytics data exists.",
+              "1. Check the \"Entrance Area\" row.",
+              "Row data \"Entrance Area\":  { \"Traffic\": 1256, ... }",
+              "Data for \"Entrance Area\" row displays correctly (1,256, 24m, $245k, 18.5%) with a green \"up\" arrow.",
+              "All data (1256, 24m, $245k, 18.5%) was correct. Green 'up' arrow shown.",
+              "Pass"
+            ],
+            [
+              "TC_DASH_UI_006",
+              "Display \"Performance by Zone\" Table - Trend Icon (Decrease)",
+              "1. Logged in.   | 2. Zone analytics data exists.",
+              "1. Check the \"Cosmetics Zone\" row.",
+              "Row data \"Cosmetics Zone\":  { ... \"Trend\": \"down\" }",
+              "The \"Trend\" column shows a down arrow (red).",
+              "The trend column displayed a red 'down' arrow.",
+              "Pass"
+            ],
+            [
+              "TC_DASH_UI_007",
+              "Display \"Performance by Zone\" Table - No Data",
+              "1. Logged in.   | 2. New store, no zone data.",
+              "1. Observe the table area.",
+              "API response: []",
+              "The table displays a message (e.g., \"No data to display\").",
+              "A text \"No data to display\" was shown.",
+              "Pass"
+            ],
+            [
+              "TC_DASH_UI_008",
+              "Display Charts (Bottom Row) - Empty State",
+              "1. Logged in.   | 2. No data yet (start of day).",
+              "1. Observe \"Traffic & Revenue by Hour\".   | 2. Observe \"Top 5 Products\".",
+              "API (Hourly): []   | API (Top Products): []",
+              "Both chart widgets are empty and show \"No data\" text.",
+              "Both widgets were empty and showed \"No data\".",
+              "Pass"
+            ],
+            [
+              "TC_DASH_UI_009",
+              "Display \"Traffic & Revenue by Hour\" Chart - With Data",
+              "1. Logged in.   | 2. Data has been generated.",
+              "1. Observe the chart.   | 2. Hover over a data point.",
+              "Data: { \"9h\": { traffic: 50, revenue: 1M } }",
+              "1. The chart renders 2 lines.   | 2. On hover, tooltip shows: \"9h: Traffic 50, Revenue 1M\".",
+              "1. Chart rendered 2 lines.   | 2. Tooltip showed correct info on hover.",
+              "Pass"
+            ],
+            [
+              "TC_DASH_UI_010",
+              "Display \"Top 5 Products\" - With Data",
+              "1. Logged in.   | 2. Sales data exists.",
+              "1. Observe the widget.",
+              "Data: [ {name: \"Product A\", sold: 100}, ... ]",
+              "Widget displays a list of 5 products, sorted (Product A at the top).",
+              "List showed 5 products. \"Product A\" was at the top, order was correct.",
+              "Pass"
+            ],
+            [
+              "TC_DASH_FUNC_001",
+              "API Overview - Calculate % Change (Happy Case)",
+              "1. API endpoint GET /api/dashboard/overview",
+              "1. Call the API.",
+              "Today_Visitors: 150   | Yesterday_Visitors: 100",
+              "API returns value: 150 and change: \"+50.0%.",
+              "Response: { \"value\": 150, \"change\": \"+50.0%\" }.",
+              "Pass"
+            ],
+            [
+              "TC_DASH_FUNC_002",
+              "API Overview - Handle \"Yesterday = 0\" (Divide by Zero)",
+              "1. API endpoint GET /api/dashboard/overview",
+              "1. Call the API.",
+              "Today_Visitors: 50   | Yesterday_Visitors: 0",
+              "API returns value: 50 and a valid change (e.g., null), not a 500 error.",
+              "API returned 500 (Internal Server Error). \"Divide by zero\" exception was not handled.",
+              "Fail"
+            ],
+            [
+              "TC_DASH_FUNC_003",
+              "API Overview - Handle \"Today = 0\" (Start of Day)",
+              "1. API endpoint GET /api/dashboard/overview",
+              "1. Call the API.",
+              "Today_Visitors: 0   | Yesterday_Visitors: 50",
+              "API returns value: 0 and change: \"-100.0%\".",
+              "Response: { \"value\": 0, \"change\": \"-100.0%\" }.",
+              "Pass"
+            ],
+            [
+              "TC_DASH_FUNC_004",
+              "API Real-time (WebSocket) - Send \"Customers in Store\" Update",
+              "1. Client is connected to WebSocket.",
+              "1. Trigger a \"customer_entered\" event.",
+              "Event: customer_entered",
+              "Backend pushes a message (e.g., { \"widget\": \"in_store\", \"count\": 1 }).",
+              "WebSocket message received: { \"widget\": \"in_store\", \"count\": 1 }.",
+              "Pass"
+            ],
+            [
+              "TC_DASH_FUNC_005",
+              "API Get \"Performance by Zone\"",
+              "1. API endpoint GET /api/dashboard/zone-performance",
+              "1. Call the API.",
+              "DB: (Multiple data entries)",
+              "1. API returns a JSON array of 5 zones.   | 2. Data matches DB.",
+              "API returned a 5-item JSON array. Data matched DB.",
+              "Pass"
+            ],
+            [
+              "TC_DASH_FUNC_006",
+              "API Calculate \"Conversion Rate\" (Zone)",
+              "1. API endpoint GET /api/dashboard/zone-performance",
+              "1. Call the API.",
+              "DB (Zone A):  Traffic: 100, Purchases: 22",
+              "API response for \"Zone A\" must contain conversionRate: \"22.0%\".",
+              "Response for \"Zone A\" contained \"conversionRate\": 0.22.  | (Incorrect format, UI expected \"22.0%\").",
+              "Fail"
+            ],
+            [
+              "TC_DASH_FUNC_007",
+              "API Get \"Traffic & Revenue by Hour\" - Empty",
+              "1. API endpoint GET /api/dashboard/hourly-stats",
+              "1. Call the API at 00:30.",
+              "Time: 00:30",
+              "API returns an empty array [] and 200 OK status.",
+              "API returned [] and status 200.",
+              "Pass"
+            ],
+            [
+              "TC_DASH_FUNC_008",
+              "API Get \"Traffic & Revenue by Hour\" - Aggregation",
+              "1. API endpoint GET /api/dashboard/hourly-stats",
+              "1. Call the API.",
+              "DB: (9:15, 10T, 1M), (9:45, 5T, 2M)",
+              "API returns: ... { \"hour\": \"9h\", \"traffic\": 15, \"revenue\": 3M } ...",
+              "API response contained: { \"hour\": \"9h\", \"traffic\": 15, \"revenue\": 3000000 }.",
+              "Pass"
+            ],
+            [
+              "TC_DASH_FUNC_009",
+              "API Get \"Top 5 Products\"",
+              "1. API endpoint GET /api/dashboard/top-products   | 2. DB has 10 sold products.",
+              "1. Call the API.",
+              "DB: 10 products",
+              "API returns a JSON array with exactly 5 products, sorted correctly.",
+              "API returned an array with 5 items. Sort order was correct.",
+              "Pass"
+            ]
+          ]
+        },
+        {
+          "title": "Heatmap Analysis",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              "Real-Time Retail Optimization Powered by edge AI"
+            ],
+            [
+              "Module name",
+              "Heatmap Analysis"
+            ],
+            [
+              "Created by",
+              "Vo Thi Tuong Vy"
+            ],
+            [
+              "Date created",
+              "2025-09-13 00:00:00"
+            ],
+            [
+              "Rated by",
+              "All"
+            ],
+            [
+              "Evaluation date",
+              "2025-09-20 00:00:00"
+            ],
+            [
+              "Pass",
+              "=COUNTIF(H12:H22,\"Pass\")"
+            ],
+            [
+              "Fail",
+              "=COUNTIF(H12:H22,\"Fail\")"
+            ],
+            [
+              "Total",
+              "=(B7+B8)"
+            ],
+            [
+              "Test case ID",
+              "Representation",
+              "Prerequisites",
+              "Testing steps",
+              "Test data",
+              "Expected results",
+              "Actual results",
+              "Status"
+            ],
+            [
+              "TC_HA_UI_001",
+              "Display Heatmap (Happy Case)",
+              "1. Logged in, on Heatmap Analysis page. | 2. Data exists for \"STORE_001\" on \"15/11/2025\".",
+              "1. Select \"15/11/2025\" from Date filter. | 2. Select \"STORE_001...\" from Store filter. | 3. Select \"CAM_MAIN_001...\" from Camera filter.",
+              "Data from e8efcd: | • \"Beverage Zone\": High density | • \"Candy Zone\": Low density | • \"Noodle Counter\": High density",
+              "1. Heatmap overlay appears on the grid. | 2. \"Beverage Zone\" is red/orange. | 3. \"Candy Zone\" is green. | 4. \"Noodle Counter\" is orange. | 5. Movement path arrows are visible.",
+              "1. Map displayed. | 2. \"Beverage Zone\" was red/orange. | 3. \"Candy Zone\" was green. | 4. \"Noodle Counter\" was orange. | 5. Paths were visible.",
+              "Pass"
+            ],
+            [
+              "TC_HA_UI_002",
+              "Display KPI Summary Cards",
+              "1. TC_HA_UI_001 is complete.",
+              "1. Observe the 4 KPI cards at the top.",
+              "Data from e8efd1: | • Visitors: 512 | • Revenue: 157,041,415 đ | • Zones: 4 | • Conversion: 54.6%",
+              "1. Four KPI cards are visible. | 2. \"Total Visitors\": 512 | 3. \"Total Revenue\": 157,041,415 đ | 4. \"Number of Zones\": 45.  | \"Avg. Conversion Rate\": 54.6%",
+              "1. Four cards were visible. | 2. All data points were correct.",
+              "Pass"
+            ],
+            [
+              "TC_HA_UI_003",
+              "Display Zone Details Sidebar",
+              "1. TC_HA_UI_001 is complete.",
+              "1. Observe the \"Zone Details\" sidebar on the right.",
+              "Data from e8efcd: | • \"Beverage Zone\": Visitors 217, Revenue 54,186,674, Trend \"Down\". | • \"Candy Zone\": Visitors 62, Trend \"Steady\".",
+              "1. Sidebar is visible. | 2. Lists all zones (Beverage Zone, Candy Zone, etc.). | 3. Data for \"Beverage Zone\" matches (Visitors 217, Revenue 54M, \"Down\" arrow). | 4. Data for \"Candy Zone\" matches (Visitors 62, \"Steady\" icon).",
+              "1. Sidebar was visible. | 2. All zones and data were correct.",
+              "Pass"
+            ],
+            [
+              "TC_HA_FUNC_001",
+              "Filter by Camera",
+              "1. On Heatmap page, showing \"CAM_MAIN_001\" data. | 2. \"CAM_SIDE_002\" exists with different data.",
+              "1. Click the \"Camera\" filter. | 2. Select \"CAM_SIDE_002\" from the list.",
+              "\"CAM_SIDE_002\" Data: | • Total Visitors: 150 | • \"Beverage Zone\" Visitors: 80",
+              "1. Page reloads/updates. | 2. KPI card \"Total Visitors\" updates to 150. | 3. Heatmap grid updates. | 4. \"Zone Details\" sidebar updates (e.g., \"Beverage Zone\" Visitors: 80).",
+              "1. Page updated. | 2. \"Total Visitors\" updated to 150. | 3. Heatmap and sidebar updated.",
+              "Pass"
+            ],
+            [
+              "TC_HA_FUNC_002",
+              "Change Heatmap Opacity",
+              "1. TC_HA_UI_001 is complete. | 2. Heatmap is visible at 70% opacity.",
+              "1. Drag the \"Heatmap Opacity\" slider left to 10%. | 2. Drag the slider right to 100%.",
+              "N/A",
+              "1. At 10%, the heatmap color layer becomes very faint. | 2. At 100%, the heatmap color layer becomes solid and vivid.",
+              "1. The layer became faint. | 2. The layer became solid.",
+              "Pass"
+            ],
+            [
+              "TC_HA_FUNC_003",
+              "Filter by Date",
+              "1. Currently showing \"15/11/2025\" data. | 2. Data exists for \"14/11/2025\".",
+              "1. Click the \"Analysis Date\" filter. | 2. Select \"14/11/2025\" from the calendar.",
+              "\"14/11/2025\" Data: | • Total Visitors: 450 | • Total Revenue: 120,000,000 đ",
+              "1. Page reloads/updates. | 2. KPI cards update (\"Total Visitors\": 450, \"Total Revenue\": 120,000,000 đ). | 3. Heatmap and Zone Details update.",
+              "1. Page updated. | 2. KPI cards updated correctly. | 3. Heatmap and sidebar updated.",
+              "Pass"
+            ],
+            [
+              "TC_HA_FUNC_004",
+              "Toggle UI Elements",
+              "1. TC_HA_UI_001 is complete.",
+              "1. Uncheck \"Show movement flow\". | 2. Uncheck \"Show zone boundaries\". | 3. Re-check both boxes.",
+              "N/A",
+              "1. Movement path arrows disappear from the map. | 2. Dotted zone borders disappear from the map. | 3. Both elements reappear.",
+              "1. Arrows disappeared. | 2. Borders disappeared. | 3. Both reappeared.",
+              "Pass"
+            ],
+            [
+              "TC_HA_FUNC_005",
+              "Export PNG",
+              "1. TC_HA_UI_001 is complete.",
+              "1. Click the \"Export PNG\" button.",
+              "N/A",
+              "1. A file download dialog appears. | 2. A PNG file of the current heatmap view is saved to the user's computer.",
+              "1. heatmap-20251115.png was downloaded.",
+              "Pass"
+            ],
+            [
+              "TC_HA_FUNC_006",
+              "Heatmap Playback",
+              "1. TC_HA_UI_001 is complete.",
+              "1. Click the \"Play\" button on the timeline. | 2. Drag the timeline scrubber to \"15:00\".",
+              "N/A",
+              "1. The timeline scrubber starts moving automatically. |  The heatmap updates dynamically to show data progression through the day. | 2. The timeline jumps to 15:00 and shows the static heatmap for that time.",
+              "1. Playback started and map updated. | 2. Jumped to 15:00 and map updated.",
+              "Pass"
+            ],
+            [
+              "TC_HA_FUNC_007",
+              "Data Consistency Check",
+              "1. TC_HA_UI_002 and TC_HA_UI_003 are complete.",
+              "1. Sum the \"Revenue\" from all zones in the \"Zone Details\" sidebar.",
+              "Sidebar Data (Hypothetical sum): | • 54,186,674 + 53,137,917 + ... = 157,041,415 | KPI Card Data: | • \"Total Revenue\": 157,041,415",
+              "1. The sum of \"Revenue\" from all individual zones (157,041,415)  | must exactly match the \"Total Revenue\"  | KPI card (157,041,415).",
+              "1. Sum from sidebar (157,041,415) matched the KPI card (157,041,415).",
+              "Pass"
+            ],
+            [
+              "TC_HA_FUNC_008",
+              "Data Consistency Check",
+              "1. TC_HA_UI_001 and TC_HA_UI_003 are complete.",
+              "1. Observe the heatmap for \"Candy Zone\". | 2. Observe the data for \"Candy Zone\" in the sidebar.",
+              "Heatmap Data: | • \"Candy Zone\" is green (low traffic).Sidebar Data: | • \"Candy Zone\" Visitors: 500 (very high).",
+              "1. Heatmap color should be consistent with sidebar data. | 2. A low traffic color (green) should correspond to low visitor numbers.",
+              "1. Heatmap for \"Candy Zone\" was green (low). | 2. Sidebar showed \"Visitors: 500\" (high). | 3. The data is inconsistent.",
+              "Fail"
+            ]
+          ]
+        },
+        {
+          "title": " Sprint 2 Test Report",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              null,
+              "Real-Time Retail Optimization Powered by edge AI",
+              null,
+              null,
+              null,
+              "Test scope",
+              "1.0"
+            ],
+            [
+              "Experimental design by",
+              null,
+              "Team C1SE.20",
+              null,
+              null,
+              null,
+              "Check scope successful",
+              "=(D12/C12)"
+            ],
+            [
+              "Reviewer / Approver",
+              null,
+              "Team C1SE.20",
+              null,
+              null,
+              null,
+              "Version",
+              "Sprint 2 Test Report"
+            ],
+            [
+              "Number",
+              "Module name",
+              "Plan",
+              "Passing",
+              "Failure",
+              null,
+              "Test planning",
+              "Test case passed",
+              "Test case failed"
+            ],
+            [
+              "=1",
+              "AI Data Integration",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB860DA0>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB861880>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB860440>",
+              null,
+              "=SUM(C8:C11)",
+              "=SUM(D8:D11)",
+              "=SUM(E8:E11)"
+            ],
+            [
+              "2.0",
+              "Dashboard",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB863770>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB862A80>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB8605C0>"
+            ],
+            [
+              "3.0",
+              "POS Data Integration",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB860380>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB860440>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB861DF0>"
+            ],
+            [
+              "4.0",
+              "Heatmap",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB861A30>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB8605C0>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB862B40>"
+            ],
+            [
+              "Total",
+              null,
+              "=SUM(C8:C11)",
+              "=SUM(D8:D11)",
+              "=SUM(E8:E11)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "path": "D:\\TAILIEU_CAPSTONE_C1SE20_ver02\\7. TEST PLAN\\C1SE.20_TestCase Sprint3_ver1.0.xlsx",
+      "sheets": [
+        {
+          "title": "Full System Flow",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              "StoreLens- Real-Time Retail Optimization Powered by edge AI"
+            ],
+            [
+              "Module name",
+              "Full System Flow"
+            ],
+            [
+              "Created by",
+              "Vo Thi Tuong Vy"
+            ],
+            [
+              "Date created",
+              "2025-10-18 00:00:00"
+            ],
+            [
+              "Rated by",
+              "All"
+            ],
+            [
+              "Evaluation date",
+              "2025-10-20 00:00:00"
+            ],
+            [
+              "Pass",
+              "=COUNTIF(I12:I32,\"Pass\")"
+            ],
+            [
+              "Fail",
+              "=COUNTIF(I12:I23,\"Fail\")"
+            ],
+            [
+              "Total",
+              "=(B7+B8)"
+            ],
+            [
+              "Test case ID",
+              "Representation",
+              "Prerequisites",
+              "Testing steps",
+              "Test data",
+              "Expected results",
+              "Actual results",
+              "Number of Tests (Times)",
+              "Status"
+            ],
+            [
+              "TC_BP_INTEG_001",
+              "Integration of POS Data (Transaction Linking)",
+              "Clean Metadata (Customer ID) and POS transaction data are synchronized.",
+              "1. Simulate customer ID_X dwelling in Z01 @ T=10:00.  | 2. Simulate POS Invoice 001 (Product from Z01 @ T=10:03).  | 3. Check event linkage.",
+              "ID_X (Dwell Z01 @ 10:00). Invoice 001 (Product Z01 @ 10:03).",
+              "The Conversion Data record must link the Dwell Time to the Invoice based on time and zone logic.",
+              "The Dwell event was assigned transaction_id 001. Linkage time was within the 5-minute threshold.",
+              "4.0",
+              "Pass"
+            ],
+            [
+              "TC_BP_INTEG_002",
+              "Data Enrichment (Product/Zone Mapping)",
+              "Clean Metadata received. Product/Zone mapping configuration exists.",
+              "1. Receive Clean Metadata for ID_Y at coordinates (x, y).  | 2. Confirm the coordinates are correctly mapped to Zone Z02.",
+              "Clean Metadata at coordinates (x, y) falls within the boundary of Zone Z02.",
+              "The Conversion Data record must include the zone_id field as Z02.",
+              "The zone_id field was correctly assigned as Z02 based on coordinates. Mapping service functioned accurately.",
+              "3.0",
+              "Pass"
+            ],
+            [
+              "TC_BP_SUM_003",
+              "Data Summarization - Accuracy (Daily Summaries)",
+              "Raw Conversion Data has been stored for 24 hours.",
+              "1. Run the scheduled summarization job for the previous day.  | 2. Manually aggregate Total Invoices from raw data.  | 3. Compare with the generated Zone_Performance_Summary record.",
+              "Raw Data Day D−1​: 50 Invoices linked to Z03.",
+              "The Zone_Performance_Summary record for Z03, Day D−1​ must have Total Invoices=50.",
+              "The Total Invoices value in the Summary was 50.00, matching the manual aggregation.",
+              "5.0",
+              "Pass"
+            ],
+            [
+              "TC_BP_SUM_004",
+              "Data Summarization - Performance (Big Data Volume)",
+              "Very high volume of logs for a single day.",
+              "1. Simulate 10 million raw log lines for one day.  | 2. Run the Data Summarization job.",
+              "10 million log lines.",
+              "The summarization job must complete within an acceptable time limit (e.g., <5 minutes) without OOM/Timeout errors.",
+              "The job completed in 3 minutes 45 seconds. CPU/Memory usage remained stable.",
+              "2.0",
+              "Pass"
+            ],
+            [
+              "TC_BP_SUM_005",
+              "Data Summarization - Handling Missing POS Data",
+              "Clean Metadata exists, but no POS data is available (POS Offline).",
+              "1. Run Data Summarization with only Dwell Time/People Count (POS data = 0).  | 2. Check the summary record.",
+              "People Count>0. Total Invoices=0.",
+              "The Summary record must be created, but Conversion Rate and Total Invoices must be 0 (or Null).",
+              "CR was calculated as 0.00%. The Summary record was fully created without errors.",
+              "3.0",
+              "Pass"
+            ],
+            [
+              "TC_FV_DISPLAY_006",
+              "Instant Loading (Initial Dashboard Load)",
+              "Pre-calculated Summary records are available.",
+              "1. Open the Dashboard page for the first time.  | 2. Measure the Time To Interactive (TTI).",
+              "Yesterday's Summary Data.",
+              "The Dashboard must display instantly (TTI <2 seconds) after the API returns data.",
+              "Measured TTI was 1.8s. Dashboard loaded quickly, data displayed without prolonged loading states.",
+              "5.0",
+              "Pass"
+            ],
+            [
+              "TC_FV_DISPLAY_007",
+              "Heatmap Visualization Accuracy",
+              "API returns regional heat distribution data (Heatmap).",
+              "1. Open the Heatmap view.  | 2. Compare the color/intensity of the Heatmap on the UI with the pre-calculated Dwell Time data.",
+              "Z01 has the highest Dwell Time. Z02 has the lowest Dwell Time.",
+              "Zone Z01 must be shaded with the highest intensity color (e.g., Bright Red/Yellow). Zone Z02 must have the lowest intensity color (e.g., Light Blue).",
+              "Z01 was shaded Dark Red. Z02 was shaded Light Blue. Heatmap display was accurate.",
+              "4.0",
+              "Pass"
+            ],
+            [
+              "TC_FV_DISPLAY_008",
+              "Conversion Funnel Accuracy",
+              "API returns data for the Conversion Funnel steps (Traffic -> Dwell Time -> Conversion).",
+              "1. Open the Conversion Funnel report.  | 2. Compare the displayed rates on the UI with the API data.",
+              "API: Traffic: 1000, Dwellers: 500, Converters: 100.",
+              "The Dwellers/Traffic rate must be 50%. The Converters/Dwellers rate must be 20%.",
+              "Displayed funnel rates were 50% and 20%. The funnel chart visually represented the step sizes correctly.",
+              "4.0",
+              "Pass"
+            ],
+            [
+              "TC_FV_DISPLAY_009",
+              "Date Range Filtering",
+              "Summary data is available for multiple days.",
+              "1. Select the date range from 01/01 to 07/01.  | 2. Check the KPI/Chart data.",
+              "Date Range: 01/01/2025 - 07/01/2025.",
+              "The values displayed on the Dashboard must be the aggregation/average of the data only within the selected 7 days, excluding data outside the range.",
+              "KPI/Chart data only displayed data from the selected 7 days. No errors when switching date ranges.",
+              "3.0",
+              "Pass"
+            ]
+          ]
+        },
+        {
+          "title": "Conversion Data",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              "\"StoreLens\"- Real-Time Retail Optimization Powered by edge AI"
+            ],
+            [
+              "Module name",
+              "Conversion Data"
+            ],
+            [
+              "Created by",
+              "Lieu Thi Thuy Trang"
+            ],
+            [
+              "Date created",
+              "2025-10-17 00:00:00"
+            ],
+            [
+              "Rated by",
+              "All"
+            ],
+            [
+              "Evaluation date",
+              "2025-10-18 00:00:00"
+            ],
+            [
+              "Pass",
+              "=COUNTIF(I12:I31,\"Pass\")"
+            ],
+            [
+              "Fail",
+              "=COUNTIF(I12:I22,\"Fail\")"
+            ],
+            [
+              "Total",
+              "=(B7+B8)"
+            ],
+            [
+              "Test case ID",
+              "Representation",
+              "Prerequisites",
+              "Testing steps",
+              "Test data",
+              "Expected results",
+              "Actual results",
+              "Number of Tests (Times)",
+              "Status"
+            ],
+            [
+              "TC_CD_SYNC_BE_001",
+              "Synchronization of AI Data (People Count/Dwell Time)",
+              "Edge AI data service is stable and sending aggregated data to the backend.",
+              "1. Monitor the backend ingestion pipeline. 2. Verify ZoneSummary is created/updated for a specific zone/date.",
+              "Input from Edge: zone_id: Z01, people_count: 150, total_stop_time: 7200s.",
+              "The ZoneSummary document for Z01 is created/updated, containing accurate people_count and calculated avg_dwell_time (48s).",
+              "ZoneSummary updated. people_count=150. avg_dwell_time=48.0s. Latency < 5s.",
+              "5.0",
+              "Pass"
+            ],
+            [
+              "TC_CD_SYNC_BE_002",
+              "Synchronization of Business Data (Total Invoices/Orders)",
+              "POS integration service is stable and pushing sales data.",
+              "1. Process 5 invoices associated with products in Zone Z02. 2. Verify the associated ZoneSummary or corresponding daily sales record.",
+              "POS Data: 5 invoices. Products linked to zone_id: Z02.",
+              "The ZoneSummary performance metrics for Z02 are updated, reflecting Total Invoices/Orders = 5 correctly.",
+              "Sales record updated. Total Invoices = 5. No data integrity issues observed.",
+              "4.0",
+              "Pass"
+            ],
+            [
+              "TC_CD_CALC_BE_003",
+              "Calculation of Conversion Rate (CR) - Normal Flow",
+              "People Count and Total Invoices are successfully synced for a zone.",
+              "1. Set up mock data where People Count>0. 2. Trigger the report generation or calculation job. 3. Check the resulting Conversion Rate.",
+              "Zone_id: Z03. People Count: 200. Total Invoices: 50.",
+              "Expected CR: (50/200)×100=25.0%.",
+              "Calculated CR: 25.0%. Calculation job completed successfully.",
+              "5.0",
+              "Pass"
+            ],
+            [
+              "TC_CD_CALC_BE_004",
+              "Calculation of Conversion Rate (CR) - Zero People Count",
+              "Total Invoices is positive, but People Count is zero.",
+              "1. Set up mock data where People Count=0. 2. Trigger calculation.",
+              "Zone_id: Z04. People Count: 0. Total Invoices: 10.",
+              "The system must handle division by zero gracefully. Expected CR: 0% (or N/A).",
+              "Calculated CR: 0.0%. System did not crash or produce an infinite value.",
+              "3.0",
+              "Pass"
+            ],
+            [
+              "TC_CD_CALC_BE_005",
+              "Calculation of Conversion Rate (CR) - Zero Invoices",
+              "People Count is positive, but Total Invoices is zero.",
+              "1. Set up mock data where People Count>0 and Total Invoices=0. 2. Trigger calculation.",
+              "Zone_id: Z05. People Count: 100. Total Invoices: 0.",
+              "The Conversion Rate should be 0%.",
+              "Calculated CR: 0.0%.",
+              "3.0",
+              "Pass"
+            ],
+            [
+              "TC_CD_DETAILS_BE_006",
+              "Dwell Time Calculation Accuracy (AI Aggregation)",
+              "Raw DeepSORT data is available (stop events).",
+              "1. Inject raw stop events for a zone. 2. Run the aggregation logic that calculates avg_dwell_time.",
+              "Raw Data: 3 stop events in Z06: Event 1 (10s), Event 2 (30s), Event 3 (20s). People Count: 3.",
+              "Total Stop Time: 60s. Average Dwell Time: 60s/3=20s.",
+              "Total Stop Time: 60s. Average Dwell Time calculated as 20s.",
+              "4.0",
+              "Pass"
+            ],
+            [
+              "TC_CD_DETAILS_UI_007",
+              "Display Conversion Data on Report",
+              "All conversion components are calculated and stored successfully in the database.",
+              "1. Load the Conversion Data Report on the UI. 2. Verify that all four components are displayed.",
+              "Data from Z03: People Count: 200, Dwell Time: 45s, Total Invoices: 50, CR: 25.0%.",
+              "The UI displays the four metrics accurately under the Zone Z03 card/row: People Count, Dwell Time, Total Invoices / Orders, and Conversion Rate.",
+              "All 4 metrics loaded correctly on the UI. Values matched the calculated backend data (e.g., CR displayed as 25.0%).",
+              "3.0",
+              "Pass"
+            ]
+          ]
+        },
+        {
+          "title": "Dwell Time Accuracy",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              "\"StoreLens\"- Real-Time Retail Optimization Powered by edge AI"
+            ],
+            [
+              "Module name",
+              "Dwell Time Accuracy"
+            ],
+            [
+              "Created by",
+              "Phan Nguyen Anh Thu"
+            ],
+            [
+              "Date created",
+              "2025-10-17 00:00:00"
+            ],
+            [
+              "Rated by",
+              "All"
+            ],
+            [
+              "Evaluation date",
+              "2025-10-18 00:00:00"
+            ],
+            [
+              "Pass",
+              "=COUNTIF(I12:I32,\"Pass\")"
+            ],
+            [
+              "Fail",
+              "=COUNTIF(I12:I23,\"Fail\")"
+            ],
+            [
+              "Total",
+              "=(B7+B8)"
+            ],
+            [
+              "Test case ID",
+              "Representation",
+              "Prerequisites",
+              "Testing steps",
+              "Test data",
+              "Expected results",
+              "Actual results",
+              "Number of Tests (Times)",
+              "Status"
+            ],
+            [
+              "TC_DT_KPI_API_001",
+              "Retrieve Dwell Time Overview (KPI) - Success",
+              "Valid ZoneSummary data exists for the store_id and range.",
+              "1. Call getDwellTimeOverview API with valid store_id and range.  | 2. Check HTTP status code.  | 3. Check KPI structure and values.",
+              "store_id: \"store_A01\", range: \"last7days\".",
+              "HTTP status code 200. The returned data has the kpis structure with accurately calculated value and change.",
+              "Code 200. Avg Dwell Time: 45.2s, Increased by 5.1% compared to the previous period. Min/Max Zone and corresponding values are correct.",
+              "5.0",
+              "Pass"
+            ],
+            [
+              "TC_DT_KPI_API_002",
+              "KPI Overview - Non-existent Store ID",
+              "Store ID does not exist in the DB (storeModel).",
+              "1. Call getDwellTimeOverview API with a non-existent store_id.  | 2. Check HTTP status code.  | 3. Check the error message.",
+              "store_id: \"non_existent_id\", range: \"last7days\".",
+              "HTTP status code 404. Error message: \"Store not found\".",
+              "Code 404. Body: { message: \"Store not found\", store_id: \"non\\_existent\\_id\" }.",
+              "3.0",
+              "Pass"
+            ],
+            [
+              "TC_DT_KPI_API_003",
+              "KPI Overview - Missing Parameters",
+              "API is functional.",
+              "1. Call getDwellTimeOverview API missing store_id.  | 2. Call getDwellTimeOverview API missing range.",
+              "1. store_id: null. 2. range: null.",
+              "HTTP status code 400 for both cases. Error message: \"Thiếu store_id hoặc range\" (Missing store_id or range).",
+              "Code 400 for both calls. Error message is correct: \"Thiếu store_id hoặc range\".",
+              "4.0",
+              "Pass"
+            ],
+            [
+              "TC_DT_KPI_BE_004",
+              "KPI Overview - No Data for Current Period",
+              "ZoneSummary data does not exist for the current period but does for the previous period.",
+              "1. Call getDwellTimeOverview with a range corresponding to a period with no data.  | 2. Check KPI values.",
+              "store_id: \"store_A01\", range: \"yesterday\" (if yesterday has no data).",
+              "HTTP status code 200. average_dwell_all_zones.value is 0. change is 0.",
+              "Code 200. All values in KPI are 0. average_dwell_all_zones.change is 0 (as per calculateChange logic).",
+              "2.0",
+              "Pass"
+            ],
+            [
+              "TC_DT_DETAILS_API_005",
+              "Retrieve Zone Performance Details - Success",
+              "Valid ZoneSummary data exists for the store_id and range.",
+              "1. Call getZonePerformanceDetails API.  | 2. Check HTTP status code and data structure.",
+              "store_id: \"store_A01\", range: \"last30days\".",
+              "HTTP status code 200. Each item in the list must have: zone_id, performance, and percentage_change.",
+              "Code 200. A list of 5 zones is returned. avg_dwell_time is accurately rounded to 1 decimal place, percentage_change is correctly calculated.",
+              "5.0",
+              "Pass"
+            ],
+            [
+              "TC_DT_DETAILS_BE_006",
+              "Zone Details Aggregation - Calculation",
+              "getZonePerformanceDetails API is functional.",
+              "1. Provide mock data for Zone A (D1 Dwell=20, D2 Dwell=30).  | 2. Call the API.  | 3. Check the average value.",
+              "Zone A has 2 entries with avg_dwell_time as 20 and 30.",
+              "avg_dwell_time should be calculated as ROUND((20+30)/2,1)=25.0.",
+              "avg_dwell_time for Zone A in the result is 25.0. sumPeople and sumDuration are also summed correctly.",
+              "3.0",
+              "Pass"
+            ],
+            [
+              "TC_DT_CHART_API_007",
+              "Retrieve Bar/Line Chart Data - Success",
+              "ZoneSummary data exists.",
+              "1. Call getBarALineChant API with valid store_id and range.  | 2. Check HTTP status code.  | 3. Check sorting order.",
+              "store_id: \"store_A01\", range: \"lastmonth\".",
+              "HTTP status code 200. The chart data is sorted descendingly by traffic.",
+              "Code 200. Data for 7 zones is returned. The zone with the highest traffic is at the beginning of the array.",
+              "5.0",
+              "Pass"
+            ],
+            [
+              "TC_DT_CHART_UI_008",
+              "Display Bar/Line Chart (Traffic vs Dwell Time)",
+              "getBarALineChant API successfully returns data.",
+              "1. Open the Dwell Time report page on the UI.  | 2. Select range and store_id.  | 3. Verify the Bar/Line chart correctly displays Traffic and Dwell Time by zone.",
+              "Data returned contains 5 zones.",
+              "The chart displays the data accurately, X-axis is zone name, Y-axis represents Traffic (Bar) and Dwell Time (Line). Legend is clear.",
+              "Chart loaded successfully. Bar (Traffic) and Line (Dwell Time) charts displayed correctly with distinct colors. Zone names on X-axis match API data.",
+              "3.0",
+              "Pass"
+            ],
+            [
+              "TC_DT_REVENUE_API_009",
+              "Retrieve Revenue Efficiency Table - Success",
+              "ZoneSummary data exists with Sales, Dwell Time, and People Count fields.",
+              "1. Call getRevenueEfficiencyTable API with valid store_id and range.  | 2. Check HTTP status code and data structure.",
+              "store_id: \"store_A01\", range: \"lastweek\".",
+              "HTTP status code 200. The returned data has a list of zones enriched with evaluation, action, type fields from analyzeZone. benchmarks are calculated correctly.",
+              "Code 200. list returns 4 zones. evaluation and type fields are assigned correctly based on analyzeZone logic.",
+              "4.0",
+              "Pass"
+            ],
+            [
+              "TC_DT_REVENUE_BE_010",
+              "Revenue Efficiency - Calculate Benchmarks",
+              "getRevenueEfficiencyTable API is functional.",
+              "1. Provide mock data for 2 zones.  | 2. Call the API.  | 3. Check the benchmarks values.",
+              "Zone A (Time: 20, Sales: 100), Zone B (Time: 30, Sales: 200).",
+              "benchmarks.avgTime = 25. benchmarks.avgSales = 150.",
+              "benchmarks.avgTime = 25, avgSales = 150 (verified via log and response).",
+              "3.0",
+              "Pass"
+            ],
+            [
+              "TC_DT_REVENUE_UI_011",
+              "Display Analysis and Action (Evaluation/Action)",
+              "getRevenueEfficiencyTable API returns data.",
+              "1. Open the report page.  | 2. Check the Evaluation (Assessment) and Action columns in the table.  | 3. Ensure the UI applies visual formatting (color, icon) based on the type field.",
+              "Data returned contains type: \"Success\" and \"Warning\".",
+              "The Evaluation and Action columns are displayed correctly. Rows with type: \"Success\" are highlighted green, and type: \"Warning\" are highlighted yellow.",
+              "Table loaded with correct data. \"Evaluation\" column highlights \"Success\" in green and \"To be Improved\" in yellow. \"Action\" column displays corresponding recommendation text.",
+              "3.0",
+              "Pass"
+            ]
+          ]
+        },
+        {
+          "title": "AI Data Pipeline",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              "\"StoreLens\"- Real-Time Retail Optimization Powered by edge AI"
+            ],
+            [
+              "Module name",
+              "AI Data Pipeline"
+            ],
+            [
+              "Created by",
+              "Lieu Thi Thuy Trang"
+            ],
+            [
+              "Date created",
+              "2025-10-18 00:00:00"
+            ],
+            [
+              "Rated by",
+              "All"
+            ],
+            [
+              "Evaluation date",
+              "2025-10-19 00:00:00"
+            ],
+            [
+              "Pass",
+              "=COUNTIF(I12:I19,\"Pass\")"
+            ],
+            [
+              "Fail",
+              "=COUNTIF(I12:I18,\"Fail\")"
+            ],
+            [
+              "Total",
+              "=(B7+B8)"
+            ],
+            [
+              "Test case ID",
+              "Representation",
+              "Prerequisites",
+              "Testing steps",
+              "Test data",
+              "Expected results",
+              "Actual results",
+              "Number of Tests (Times)",
+              "Status"
+            ],
+            [
+              "TC_DP_EDGE_001",
+              "Camera Stream Ingestion (RTSP)",
+              "IP Camera is configured and operational, accessible via RTSP.",
+              "1. Connect the Edge AI Processor to the Camera's RTSP stream.  | 2. Check the video stream reception logs.",
+              "Valid RTSP URL.",
+              "The Edge AI Processor receives a stable video stream without interruptions or connection errors.",
+              "Video stream received stably, 25 FPS maintained for 1 hour. No buffer overflow errors recorded.",
+              "3.0",
+              "Pass"
+            ],
+            [
+              "TC_DP_EDGE_002",
+              "Object Detection Accuracy (YOLOv8)",
+              "TC_DP_EDGE_001 passed. YOLOv8 model loaded.",
+              "1. Feed a video stream containing 5 people into the observation area.  | 2. Check the YOLOv8 output.",
+              "Video stream with 5 people.",
+              "Detection accuracy (mAP) must be ≥95%. YOLOv8 returns 5 bounding boxes with the \"person\" label and high confidence scores.",
+              "5/5 people detected. Average accuracy was 96.5%. No false positive errors recorded.",
+              "5.0",
+              "Pass"
+            ],
+            [
+              "TC_DP_EDGE_003",
+              "Anonymous ID Assignment (DeepSORT)",
+              "TC_DP_EDGE_002 passed. DeepSORT loaded.",
+              "1. Observe one person entering, stopping, and exiting the area.  | 2. Check the sequence of Raw Coordinate Data.",
+              "Video stream with 1 person moving continuously for 10 seconds.",
+              "DeepSORT must assign a single unique anonymous ID to the person throughout the 10 seconds of movement, even if temporarily obscured.",
+              "The unique ID (ID_X) was maintained for 10 seconds. Re-identification was successful after 2 seconds of occlusion.",
+              "5.0",
+              "Pass"
+            ],
+            [
+              "TC_DP_EDGE_004",
+              "Data Format Conversion (Raw Coordinate Data)",
+              "TC_DP_EDGE_003 passed.",
+              "1. Run the AI Pipeline for 5 seconds.  | 2. Verify the format of the raw output data.",
+              "Normal video stream.",
+              "The output data is a string/array of metadata records (JSON/Protobuf) in the format: (x,y,ID,timestamp).",
+              "Data was exported in JSON format, with all 4 fields x,y,ID,timestamp present and correct data types (e.g., timestamp as epoch time).",
+              "3.0",
+              "Pass"
+            ],
+            [
+              "TC_DP_NOISE_005",
+              "Noise Reduction - Short Duration Filter (Dwell Time Threshold)",
+              "Pipeline is stable. Noise filter configured with a Time Threshold=1s.",
+              "1. Introduce an object/person appearing and disappearing within 0.5s (below threshold).  | 2. Check the data sent to the Backend (Clean Metadata).",
+              "Object ID: ID_A, appears 0.5s.",
+              "ID_A must be completely filtered out; no Clean Metadata for ID_A should be sent to the Backend.",
+              "ID_A was not recorded in the Clean Metadata. Only the debug log at the Edge recorded the event.",
+              "4.0",
+              "Pass"
+            ],
+            [
+              "TC_DP_NOISE_006",
+              "Noise Reduction - Camera Shake Filter (Kalman Filter)",
+              "Kalman Filter is activated.",
+              "1. Create a scenario of slight camera shake for 5 seconds (simulated noise).  | 2. Check the stability of the coordinates (x, y) for a stationary ID.",
+              "Video stream with slight shake. ID_B is stationary.",
+              "The coordinates (x, y) of ID_B in the Clean Metadata must be stable and not reflect the camera's shaking movement (Kalman Filter smooths the data).",
+              "ID_B's coordinates (x, y) changed by only ±2 pixels (smoothed). The actual camera shake was ±8 pixels.",
+              "4.0",
+              "Pass"
+            ],
+            [
+              "TC_DP_NOISE_007",
+              "Data Cleaning Success - Valid Data Pass-Through",
+              "Noise filter is activated.",
+              "1. Introduce a person standing still for 5 seconds (above 1s threshold).  | 2. Check the data sent to the Backend.",
+              "Object ID: ID_C, appears 5s.",
+              "ID_C must be retained and sent to the Backend as Clean Metadata for Dwell Time calculation.",
+              "ID_C was recorded. Dwell time calculated was 5s. No false filtering of valid data occurred.",
+              "3.0",
+              "Pass"
+            ],
+            [
+              "TC_DP_NOISE_008",
+              "Backend Load Reduction Verification",
+              "System runs for 1 hour. Backend and Edge have record counting mechanisms.",
+              "1. Record the output Raw Coordinate Data count from Stage 1 (Raw Count).  | 2. Record the Clean Metadata count sent to the Backend (Clean Count).",
+              "Average traffic (10-15 people/minute).",
+              "Clean Count must be significantly lower than Raw Count (e.g., Clean Count≤20% Raw Count), proving successful load reduction.",
+              "Raw Count = 100,000 records. Clean Count = 18,500 records (≈18.5%). Load reduction successful.",
+              "2.0",
+              "Pass"
+            ]
+          ]
+        },
+        {
+          "title": "Export File Format",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              "\"StoreLens\"- Real-Time Retail Optimization Powered by edge AI"
+            ],
+            [
+              "Module name",
+              "Export File Format"
+            ],
+            [
+              "Created by",
+              "Vo Thi Tuong Vy"
+            ],
+            [
+              "Date created",
+              "2025-10-17 00:00:00"
+            ],
+            [
+              "Rated by",
+              "All"
+            ],
+            [
+              "Evaluation date",
+              "2025-10-17 00:00:00"
+            ],
+            [
+              "Pass",
+              "=COUNTIF(I12:I30,\"Pass\")"
+            ],
+            [
+              "Fail",
+              "=COUNTIF(I12:I21,\"Fail\")"
+            ],
+            [
+              "Total",
+              "=(B7+B8)"
+            ],
+            [
+              "Test case ID",
+              "Representation",
+              "Prerequisites",
+              "Testing steps",
+              "Test data",
+              "Expected results",
+              "Actual results",
+              "Number of Tests (Times)",
+              "Status"
+            ],
+            [
+              "TC_EXPORT_UI_001",
+              "Initiate Data Export (General UI Flow)",
+              "Any detailed activity report page is loaded and contains data.",
+              "1. Click the \"Export\" button on the UI. 2. Select a valid file format (e.g., PDF). 3. The file download process must initiate.",
+              "Report: Detailed Activity Report (e.g., Zone Performance Details). Time Range: Last Month.",
+              "The download prompt appears. The file name is correctly formatted: StoreLens_ReportName_YYYYMMDD.pdf.",
+              "The download prompt appeared successfully. Filename: StoreLens_ZonePerformance_20251209.pdf.",
+              "3.0",
+              "Pass"
+            ],
+            [
+              "TC_EXPORT_BE_002",
+              "Export to Excel (XLSX) - Data Integrity",
+              "The report has data available (e.g., 50 rows).",
+              "1. Trigger export of the report to XLSX. 2. Download and open the file. 3. Verify the number of records and data accuracy.",
+              "Report: Raw Data Table. 50 records.",
+              "The Excel file opens without error. It contains 50 data rows (excluding headers). All numerical and text values exactly match the source data on the system.",
+              "The XLSX file contained 50 data rows, data matched the source 100%.",
+              "5.0",
+              "Pass"
+            ],
+            [
+              "TC_EXPORT_BE_003",
+              "Export to Excel (XLSX) - Header & Formatting",
+              "TC_EXPORT_BE_002 passed.",
+              "1. Open the exported XLSX file. 2. Check the column headers. 3. Verify numerical formatting.",
+              "Any report.",
+              "Column headers are clear and understandable. Numerical data (e.g., values, percentages) are formatted as numbers (not text) and are calculable within Excel.",
+              "Column headers were properly capitalized. Numerical data like $10.5% $ was formatted as a percentage.",
+              "3.0",
+              "Pass"
+            ],
+            [
+              "TC_EXPORT_BE_004",
+              "Export to PDF - Layout and Structure (Long Report)",
+              "The report contains a large volume of data, requiring multiple pages.",
+              "1. Trigger export of the report to PDF. 2. Download and open the file. 3. Verify the title, overview, and pagination.",
+              "Report: Detailed Activity Report (spans 3 pages).",
+              "The PDF file opens correctly. The overview layout (header, footer) is repeated on each page. No table content is cut off across page breaks.",
+              "A 3-page PDF was generated. Header/Footer appeared on each page. Table data wrapped/paginated correctly.",
+              "5.0",
+              "Pass"
+            ],
+            [
+              "TC_EXPORT_BE_005",
+              "Export Error - No Data Available",
+              "The selected time range has no data to export.",
+              "1. Select a time range known to have no data (e.g., a future date). 2. Trigger the export process for PDF/XLSX.",
+              "Time Range: 01/01/2050 - 02/01/2050.",
+              "The system must display an error message on the UI (e.g., \"No data to export\") and not generate any file.",
+              "The system blocked the export and displayed the message \"No data found for the selected range.\"",
+              "2.0",
+              "Pass"
+            ],
+            [
+              "TC_EXPORT_BE_006",
+              "Export with Very Large Data Volume",
+              "The report contains a data volume near the Excel limit (e.g., 100,000 rows).",
+              "1. Generate a report with 100,000 records. 2. Export to XLSX. 3. Check export completion time and file integrity.",
+              "Data Volume: 100,000 rows.",
+              "The export completes within an acceptable time limit (e.g., < 30 seconds). The XLSX file contains all 100,000 records and can be opened, filtered, and sorted normally.",
+              "Export time was 25s. The XLSX file functioned normally, without crashing when filtered.",
+              "2.0",
+              "Pass"
+            ]
+          ]
+        },
+        {
+          "title": "Product Management",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              "\"StoreLens\"- Real-Time Retail Optimization Powered by edge AI"
+            ],
+            [
+              "Module name",
+              "Product Management"
+            ],
+            [
+              "Created by",
+              "Thu, Phan Nguyen Anh"
+            ],
+            [
+              "Date created",
+              "2025-10-17 00:00:00"
+            ],
+            [
+              "Rated by",
+              "All"
+            ],
+            [
+              "Evaluation date",
+              "2025-10-18 00:00:00"
+            ],
+            [
+              "Pass",
+              "=COUNTIF(I12:I29,\"Pass\")"
+            ],
+            [
+              "Fail",
+              "=COUNTIF(I12:I20,\"Fail\")"
+            ],
+            [
+              "Total",
+              "=(B7+B8)"
+            ],
+            [
+              "Test case ID",
+              "Representation",
+              "Prerequisites",
+              "Testing steps",
+              "Test data",
+              "Expected results",
+              "Actual results",
+              "Number of Tests (Times)",
+              "Status"
+            ],
+            [
+              "TC_PM_UI_001",
+              "Display Product List and Pagination",
+              "Database contains 25 products.",
+              "1. Access the product management page.  | 2. Verify the table displays 10 products (assuming limit=10).  | 3. Check the pagination controls.",
+              "Store ID: S01. Limit: 10.",
+              "The table displays the first 10 products. Pagination buttons (Page 1/3) are displayed correctly.",
+              "The table displayed 10 products. Pagination showed \"1-10 of 25\" and next/prev buttons were functional.",
+              "3.0",
+              "Pass"
+            ],
+            [
+              "TC_PM_UI_002",
+              "Create New Product via Form (Success)",
+              "Product SM002 does not yet exist.",
+              "1. Click \"Add Product\".  | 2. Enter valid data.  | 3. Click \"Save\".",
+              "Name: \"Shirt B02\", SKU: \"SM002\", Price: 450000.",
+              "Product SM002 appears at the top of the list. Success notification is displayed on the UI.",
+              "Product SM002 was added. Toast notification: \"Tạo sản phẩm mới thành công\" displayed in green.",
+              "4.0",
+              "Pass"
+            ],
+            [
+              "TC_PM_UI_003",
+              "Product Creation Error (Duplicate SKU)",
+              "Product SM001 already exists.",
+              "1. Enter an existing SKU (\"SM001\").  | 2. Click \"Save\".",
+              "Name: \"Shirt Z\", SKU: \"SM001\".",
+              "The form displays an immediate or post-submit validation error: \"SKU already exists.\"",
+              "The form displayed a red error message below the SKU field: \"SKU SM001 đã tồn tại.\"",
+              "3.0",
+              "Pass"
+            ],
+            [
+              "TC_PM_UI_004",
+              "Update Product (Success)",
+              "Product ID_001 exists.",
+              "1. Click the \"Edit\" button for ID_001.  | 2. Change the price.  | 3. Click \"Save\".",
+              "ID_001. Change Price to 600000.",
+              "The price of ID_001 is updated to 600000 on the table and in the DB.",
+              "Price on the table updated to 600,000 VND. DB data matched.",
+              "4.0",
+              "Pass"
+            ],
+            [
+              "TC_PM_UI_005",
+              "Single Product Deletion (Confirmation)",
+              "Product ID_002 exists.",
+              "1. Click the \"Delete\" button for ID_002.  | 2. Confirmation dialog appears.  | 3. Click \"Confirm\".",
+              "ID_002.",
+              "Product ID_002 disappears from the list. Success notification is displayed.",
+              "Confirmation dialog appeared. After clicking \"Confirm\", ID_002 disappeared. Toast: \"Xóa sản phẩm thành công.\"",
+              "4.0",
+              "Pass"
+            ],
+            [
+              "TC_PM_UI_006",
+              "Bulk Deletion (Success)",
+              "Products ID_10 and ID_11 exist.",
+              "1. Check the boxes for ID_10 and ID_11.  | 2. Click the \"Bulk Delete\" button.  | 3. Click \"Confirm\".",
+              "Store ID: S01. IDs: [\"ID_10\", \"ID_11\"].",
+              "Both products disappear from the list. Confirmation message shows 2 items deleted.",
+              "The bulk delete button was enabled. After confirmation, 2 products disappeared. Toast: \"Đã xóa thành công 2 sản phẩm.\"",
+              "3.0",
+              "Pass"
+            ],
+            [
+              "TC_PM_BE_007",
+              "Retrieve Products - Missing store_id Error",
+              "API is functional.",
+              "Call /api/products API without store_id.",
+              "Method: GET. Query: Missing store_id.",
+              "Status code 400. Error message: \"Cần cung cấp store_id\".",
+              "Code 400. Body: { message: \"Cần cung cấp store_id\" }.",
+              "3.0",
+              "Pass"
+            ],
+            [
+              "TC_PM_BE_008",
+              "Create Product - Missing Required Field Error",
+              "API is functional.",
+              "Send a POST request missing the price field.",
+              "Method: POST. Body: Missing price.",
+              "Status code 400. Error message indicates validation failure/missing field.",
+              "Code 400. Validation error: \"price is required\" (assuming service validation).",
+              "4.0",
+              "Pass"
+            ],
+            [
+              "TC_PM_BE_009",
+              "Update - Non-existent Product Error",
+              "API is functional.",
+              "Send a PUT request for a non-existent ID.",
+              "Method: PUT. URL: /api/products/ID_NON_EXIST. Body: {name: \"Test\"}.",
+              "Status code 404. Error message: 'Không tìm thấy sản phẩm để cập nhật'.",
+              "Code 404. Body: { message: \"Không tìm thấy sản phẩm để cập nhật\" }.",
+              "3.0",
+              "Pass"
+            ],
+            [
+              "TC_PM_BE_010",
+              "Single Delete - Non-existent Product Error",
+              "API is functional.",
+              "Send a DELETE request for a non-existent ID.",
+              "Method: DELETE. URL: /api/products/ID_NON_EXIST.",
+              "Status code 404. Error message: 'Không tìm thấy sản phẩm để xóa'.",
+              "Code 404. Body: { message: \"Không tìm thấy sản phẩm để xóa\" }.",
+              "3.0",
+              "Pass"
+            ],
+            [
+              "TC_PM_BE_011",
+              "Bulk Delete - Cross Store ID Deletion",
+              "Product ID_15 belongs to S02; request is sent for S01.",
+              "Send a bulk-delete request attempting to delete an ID belonging to a different Store.",
+              "Method: POST. Body: {ids: [\"ID_15\"], store_id: \"S01\"}.",
+              "Status code 200. Response must indicate 0 items were deleted.",
+              "Code 200. deletedCount = 0. Product ID_15 (S02) remained in DB.",
+              "3.0",
+              "Pass"
+            ]
+          ]
+        },
+        {
+          "title": " Sprint 3 Test Report",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              null,
+              "\"StoreLens\"- Real-Time Retail Optimization Powered by edge AI",
+              null,
+              null,
+              null,
+              "Test scope",
+              "1.0"
+            ],
+            [
+              "Experimental design by",
+              null,
+              "Team C1SE.20",
+              null,
+              null,
+              null,
+              "Check scope successful",
+              "=(D14/C14)"
+            ],
+            [
+              "Reviewer / Approver",
+              null,
+              "Team C1SE.20",
+              null,
+              null,
+              null,
+              "Version",
+              "Sprint 3 Test Report"
+            ],
+            [
+              "Number",
+              "Module name",
+              "Plan",
+              "Passing",
+              "Failure",
+              null,
+              "Test planning",
+              "Test case passed",
+              "Test case failed"
+            ],
+            [
+              "=1",
+              "Full System Flow",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB805760>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB806450>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB805640>",
+              null,
+              "=SUM(C8:C12)",
+              "=SUM(D8:D12)",
+              "=SUM(E8:E12)"
+            ],
+            [
+              "2.0",
+              "Conversion Data",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB806480>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB805C10>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB805B20>"
+            ],
+            [
+              "3.0",
+              "Dwell Time Accuracy",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB804E90>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB805640>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB806720>"
+            ],
+            [
+              "4.0",
+              "AI Data Pipeline",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB805C10>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB805790>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB8065D0>"
+            ],
+            [
+              "5.0",
+              "Export File Format",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6E7770>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6E6570>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6E6930>"
+            ],
+            [
+              "6.0",
+              "Product Management",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6E5910>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6E67B0>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6E6090>"
+            ],
+            [
+              "Total",
+              null,
+              "=SUM(C8:C12)",
+              "=SUM(D8:D12)",
+              "=SUM(E8:E12)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "path": "D:\\TAILIEU_CAPSTONE_C1SE20_ver02\\7. TEST PLAN\\C1SE.20_TestCase Sprint1_ver1.0.xlsx",
+      "sheets": [
+        {
+          "title": "Edge AI Processing Pipeline",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              "Real-Time Retail Optimization Powered by edge AI"
+            ],
+            [
+              "Module name",
+              "Edge AI Processing Pipeline"
+            ],
+            [
+              "Created by",
+              "Vo Thi Tuong Vy"
+            ],
+            [
+              "Date created",
+              "2025-08-10 00:00:00"
+            ],
+            [
+              "Rated by",
+              "All"
+            ],
+            [
+              "Evaluation date",
+              "2025-08-20 00:00:00"
+            ],
+            [
+              "Pass",
+              "=COUNTIF(H12:H17,\"Pass\")"
+            ],
+            [
+              "Fail",
+              "=COUNTIF(H12:H17,\"Fail\")"
+            ],
+            [
+              "Total",
+              "=(B7+B8)"
+            ],
+            [
+              "Test case ID",
+              "Representation",
+              "Prerequisites",
+              "Testing steps",
+              "Test data",
+              "Expected results",
+              "Actual results",
+              "Status"
+            ],
+            [
+              "TC_SL_AI_INT_001",
+              "Connect - Valid Stream",
+              "1. Edge AI service is running. | 2. Add camera \"Cam 1\" with a valid RTSP URL.",
+              "1. Observe \"Cam 1\" status. | 2. Check Edge AI logs. | 3. Check backend API (PB-05).",
+              "URL: \"rtsp://valid.stream/live\"",
+              "1. \"Cam 1\" status changes to \"Online\". | 2. Edge AI logs show successful RTSP connection and AI pipeline (YOLOv8, DeepSORT) is running. | 3. Backend API (PB-05) starts receiving metadata.",
+              "1. Status changed to \"Online\". | 2. Logs show \"Connection successful... Starting AI models...\". | 3. Backend API confirmed receiving JSON (metadata) payloads.",
+              "Pass"
+            ],
+            [
+              "TC_SL_AI_INT_002",
+              "Connect - Invalid Stream",
+              "1. Edge AI service is running. | 2. Add camera \"Cam 2\" with a non-existent URL.",
+              "1. Observe \"Cam 2\" status. | 2. Check Edge AI logs. | 3. Check backend API (PB-05).",
+              "URL: \"rtsp://non.existent.stream/live\"",
+              "1. \"Cam 2\" status changes to \"Offline\" / \"Error\". | 2. Edge AI logs show RTSP connection error. | 3. Backend API (PB-05) receives no data.",
+              "1. Status shows \"Error\". | 2. Logs show \"ERROR: Failed to connect to RTSP stream... connection refused\". | 3. Backend API confirmed no data received from \"Cam 2\".",
+              "Pass"
+            ],
+            [
+              "TC_SL_AI_INT_003",
+              "Connect - Stop on Delete",
+              "1. \"Cam 1\" is \"Online\" and sending data.",
+              "1. Delete \"Cam 1\" from the system. | 2. Check Edge AI logs. | 3. Observe the data stream to the backend API.",
+              "N/A",
+              "1. Edge AI logs confirm stream processing for \"Cam 1\" has stopped. | 2. Backend API (PB-05) stops receiving new metadata from \"Cam 1\". | 3. Resources (CPU/GPU) are released.",
+              "1. Logs show \"Stop signal received for Cam 1. Releasing resources...\". | 2. Data stream to backend stopped after 1-2 seconds. | 3. Verified resources were released.",
+              "Pass"
+            ],
+            [
+              "TC_SL_AI_INT_004",
+              "AI Processing - Detect & Track (YOLOv8 + DeepSORT)",
+              "1. \"Cam 1\" is \"Online\" (from TC_001). | 2. A video with moving people is playing on the stream.",
+              "1. One person enters the frame. | 2. A second person enters. | 3. Observe metadata at the backend API (PB-05).",
+              "Video with people",
+              "1. Backend receives metadata (e.g., {\"id\": \"person_1\", ...}). | 2. When the second person enters, backend receives additional metadata (e.g., {\"id\": \"person_2\", ...}). | 3. Each person's ID must be stably maintained (tracked) as they move.",
+              "1. Received {\"id\": \"p-001\", ...} when person 1 appeared. | 2. Received {\"id\": \"p-002\", ...} when person 2 appeared.3. IDs \"p-001\" and \"p-002\" were tracked correctly throughout.",
+              "Pass"
+            ],
+            [
+              "TC_SL_AI_INT_005",
+              "Privacy - No Raw Data / PII Sent",
+              "1. \"Cam 1\" is \"Online\" (from TC_001).",
+              "1. Use ssh to check the Edge service's storage directories. | 2. Use a network monitoring tool (e.g., Wireshark) to inspect payloads sent to Backend API (PB-05).",
+              "N/A",
+              "1. NO video (mp4) or image (jpg) files are stored locally. | 2. Network packets only contain text (JSON) with (ID, coordinates, timestamp). | 3. NO PII or raw image/video data is included.",
+              "1. Checked /var/log/edge-ai/ and /tmp/, no media files found. | 2. Packet analysis confirmed payload is JSON, small size (< 1KB), and contains only (ID, coords, timestamp). No PII/raw images.",
+              "Pass"
+            ],
+            [
+              "TC_SL_AI_INT_006",
+              "AI Processing - Model Load Failure",
+              "1. Edge AI service is running. | 2. The model file config (e.g., yolov8.pt) points to an incorrect path or the file is corrupt.",
+              "1. Add camera \"Cam 4\" with a valid RTSP URL.",
+              "URL: \"rtsp://valid.stream/live\"",
+              "1. \"Cam 4\" status changes to \"Error\". | 2. Edge AI logs report an error: \"Failed to load AI model...\" or \"Model file not found\". | 3. No metadata is sent to the Backend.",
+              "1. \"Cam 4\" status shows \"Error\". | 2. Logs show \"ERROR: [AI_PIPELINE] Failed to load model /models/yolo_v8_broken.pt. Check file integrity.\" | 3. Backend confirmed no data received.",
+              "Fail"
+            ]
+          ]
+        },
+        {
+          "title": "Authentication",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              "Real-Time Retail Optimization Powered by edge AI"
+            ],
+            [
+              "Module name",
+              "Authentication Flow (Login /Logout)"
+            ],
+            [
+              "Created by",
+              "Truong Thanh Dat"
+            ],
+            [
+              "Date created",
+              "2025-08-21 00:00:00"
+            ],
+            [
+              "Rated by",
+              "All"
+            ],
+            [
+              "Evaluation date",
+              "2025-08-25 00:00:00"
+            ],
+            [
+              "Pass",
+              "=COUNTIF(I12:I32,\"Pass\")"
+            ],
+            [
+              "Fail",
+              "=COUNTIF(I12:I23,\"Fail\")"
+            ],
+            [
+              "Total",
+              "=(B7+B8)"
+            ],
+            [
+              "Test case ID",
+              "Function/Display",
+              "Representation",
+              "Prerequisites",
+              "Testing steps",
+              "Test data",
+              "Expected results",
+              "Actual result",
+              "Status"
+            ],
+            [
+              "TC_SL_LOGIN_UI_001",
+              "Authentication",
+              "Login Screen UI",
+              "1. Open Admin Dashboard | 2. Navigate to the Login page",
+              "1. Observe the Login (Sign In) screen.",
+              "N/A",
+              "Displays all fields: Account, Password, \"SIGN IN\" button, \"Forgot your password?\" link.",
+              "All fields and links are displayed correctly.",
+              "Pass"
+            ],
+            [
+              "TC_SL_LOGIN_FUNC_001",
+              "Authentication",
+              "Login - Success",
+              "1. A valid account exists.",
+              "1. Enter registered Account | 2. Enter correct Password | 3. Click \"SIGN IN\"",
+              "Account: \"admin@storelens.com\" | Pass: \"Password@123\"",
+              "1. Login successful. | 2. Redirected to Dashboard Home. | 3. JWT token is stored.",
+              "1. Login successful. | 2. Redirected to Dashboard Home. | 3. Token stored in local storage.",
+              "Pass"
+            ],
+            [
+              "TC_SL_LOGIN_FUNC_002",
+              "Authentication",
+              "Login - Wrong Password",
+              "1. A valid account exists.",
+              "1. Enter registered Account | 2. Enter incorrect Password | 3. Click \"SIGN IN\"",
+              "Account: \"admin@storelens.com\" | Pass: \"WrongPassword!\"",
+              "1. Error message: \"Invalid account or password\" is shown. | 2. Remains on the Login page.",
+              "Error message \"Invalid account or password\" is shown.",
+              "Pass"
+            ],
+            [
+              "TC_SL_LOGIN_FUNC_003",
+              "Authentication",
+              "Login - Non-existent Account",
+              "1. On the Login page",
+              "1. Enter a non-registered Account | 2. Click \"SIGN IN\"",
+              "Account: \"non-existent@storelens.com\"",
+              "1. Error message: \"Invalid account or password\" is shown.",
+              "Error message \"Invalid account or password\" is shown.",
+              "Pass"
+            ],
+            [
+              "TC_SL_LOGOUT_FUNC_001",
+              "Authentication",
+              "Logout - Success",
+              "1. User is logged in. | 2. On the Dashboard Home page.",
+              "1. Find and click the \"Logout\" button. | 2. (If present) Confirm logout.",
+              "N/A",
+              "1. Logout successful. | 2. Client-side JWT token is cleared. | 3. Redirected to the Login page.",
+              "1. Logout successful. | 2. Token removed from local storage. | 3. Redirected to Login page.",
+              "Pass"
+            ],
+            [
+              "TC_SL_JWT_API_001",
+              "Authentication",
+              "API - Access Protected Route (Valid Token)",
+              "1. Logged in, has a valid JWT token. | 2. Using Postman.",
+              "1. Send request (e.g., GET /api/v1/cameras) | 2. Attach \"Authorization: Bearer [token]\" to header.",
+              "Token: [Valid Token]",
+              "1. API returns 200 (OK) response. | 2. Response body contains data .",
+              "API returned 200 (OK) with an empty array []",
+              "Pass"
+            ],
+            [
+              "TC_SL_JWT_API_002",
+              "Authentication",
+              "API - Access Protected Route (No Token)",
+              "1. Not logged in (no token). | 2. Using Postman.",
+              "1. Send request (e.g., GET /api/v1/cameras) | 2. Do not attach Authorization header.",
+              "N/A",
+              "1. API returns 401 (Unauthorized) response. | 2. Response body contains an error message.",
+              "API returned 401 (Unauthorized) with {\"detail\": \"Not authenticated\"}.",
+              "Pass"
+            ],
+            [
+              "TC_SL_JWT_API_003",
+              "Authentication",
+              "API - Access Protected Route (Invalid Token)",
+              "1. Using Postman.",
+              "1. Send request (e.g., GET /api/v1/cameras) | 2. Attach an invalid or expired token.",
+              "Token: \"invalid_token_string\"",
+              "1. API returns 401 (Unauthorized) response. | 2. Response body: \"Token is invalid or expired\".",
+              "API returned 500 (Internal Server Error).  | The server crashed instead of handling the invalid token.",
+              "Fail"
+            ]
+          ]
+        },
+        {
+          "title": "Camera Management",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              "Real-Time Retail Optimization Powered by edge AI"
+            ],
+            [
+              "Module name",
+              "Camera Management"
+            ],
+            [
+              "Created by",
+              "Nguyen Khanh Duy"
+            ],
+            [
+              "Date created",
+              "26/08/2025"
+            ],
+            [
+              "Rated by",
+              "All"
+            ],
+            [
+              "Evaluation date",
+              "28/08/2025"
+            ],
+            [
+              "Pass",
+              "=COUNTIF(H12:H24,\"Pass\")"
+            ],
+            [
+              "Fail",
+              "=COUNTIF(H12:H18,\"Fail\")"
+            ],
+            [
+              "Total",
+              "=(B7+B8)"
+            ],
+            [
+              "Test case ID",
+              "Representation",
+              "Prerequisites",
+              "Testing steps",
+              "Test data",
+              "Expected results",
+              "Actual results",
+              "Status"
+            ],
+            [
+              "TC_DASH_READ_001",
+              "View - Empty Dashboard",
+              "1. User is logged in.   | 2. No cameras added.",
+              "1. Navigate to \"Dashboard Thống kê\".",
+              "N/A",
+              "1. All \"Tổng...\" cards show 0.   | 2. \"Chi tiết theo Camera\" list is empty.",
+              "1. All \"Tổng...\" cards showed 0.  | 2. \"Chi tiết theo Camera\" list was empty.",
+              "Pass"
+            ],
+            [
+              "TC_DASH_READ_002",
+              "View - Data (1 Unconfigured)",
+              "1. User is logged in.   | 2. \"Camera 1\" exists (no image, no zones).",
+              "1. Navigate to \"Dashboard Thống kê\".",
+              "N/A",
+              "1. \"Tổng số camera\" shows 1.   | 2. \"Tổng số zones\" shows 0.   | 3. \"Camera chưa setup\" shows 1.",
+              "1. \"Tổng số camera\" showed 1.   | 2. \"Tổng số zones\" showed 0.   | 3. \"Camera chưa setup\" showed 1.",
+              "Pass"
+            ],
+            [
+              "TC_DASH_READ_003",
+              "View - Detail Card (Unconfigured)",
+              "1. User is logged in.   | 2. \"Camera 1\" exists (\"Chưa setup\").",
+              "1. Navigate to \"Dashboard Thống kê\".   | 2. Observe \"Camera 1\" card.",
+              "N/A",
+              "1. Card shows \"Camera 1\".   | 2. Shows tags: \"Chưa có ảnh\", \"Chưa setup\".   | 3. An \"Cập nhật\" button is visible.",
+              "1. Card showed \"Camera 1\".   | 2. Showed tags: \"Chưa có ảnh\", \"Chưa setup\".   | 3. The \"Cập nhật\" button was missing.",
+              "Fail"
+            ],
+            [
+              "TC_DASH_NAV_004",
+              "Navigation - Click \"Cập nhật\"",
+              "1. User is logged in.   | 2. \"Camera 1\" exists.",
+              "1. Navigate to \"Dashboard\".   | 2. Click \"Cập nhật\" on \"Camera 1\".",
+              "N/A",
+              "1. User is redirected to \"Khu vực giám sát\".   | 2. \"Camera 1\" is auto-selected.",
+              "1. User was redirected to \"Khu vực giám sát\".   | 2. \"Camera 1\" was auto-selected.",
+              "Pass"
+            ],
+            [
+              "TC_DASH_READ_001",
+              "View - Empty Dashboard",
+              "1. User is logged in.   | 2. No cameras added.",
+              "1. Navigate to \"Dashboard Thống kê\".",
+              "N/A",
+              "1. All \"Tổng...\" cards show 0.   | 2. \"Chi tiết theo Camera\" list is empty.",
+              "1. All \"Tổng...\" cards showed 0.   | 2. \"Chi tiết theo Camera\" list was empty.",
+              "Pass"
+            ],
+            [
+              "TC_DASH_READ_002",
+              "View - Data (1 Unconfigured)",
+              "1. User is logged in.   | 2. \"Camera 1\" exists (no image, no zones).",
+              "1. Navigate to \"Dashboard Thống kê\".",
+              "N/A",
+              "1. \"Tổng số camera\" shows 1.   | 2. \"Tổng số zones\" shows 0.   | 3. \"Camera chưa setup\" shows 1.",
+              "1. \"Tổng số camera\" showed 1.   | 2. \"Tổng số zones\" showed 0.   | 3. \"Camera chưa setup\" showed 1.",
+              "Pass"
+            ],
+            [
+              "TC_DASH_READ_003",
+              "View - Detail Card (Unconfigured)",
+              "1. User is logged in.   | 2. \"Camera 1\" exists (\"Chưa setup\").",
+              "1. Navigate to \"Dashboard Thống kê\".   | 2. Observe \"Camera 1\" card.",
+              "N/A",
+              "1. Card shows \"Camera 1\".   | 2. Shows tags: \"Chưa có ảnh\", \"Chưa setup\".   | 3. An \"Cập nhật\" button is visible.",
+              "1. Card showed \"Camera 1\".   | 2. Showed tags: \"Chưa có ảnh\", \"Chưa setup\".   | 3. The \"Cập nhật\" button was missing.",
+              "Fail"
+            ],
+            [
+              "TC_DASH_NAV_004",
+              "Navigation - Click \"Cập nhật\"",
+              "1. User is logged in.   | 2. \"Camera 1\" exists.",
+              "1. Navigate to \"Dashboard\".   | 2. Click \"Cập nhật\" on \"Camera 1\".",
+              "N/A",
+              "1. User is redirected to \"Khu vực giám sát\".   | 2. \"Camera 1\" is auto-selected.",
+              "1. User was redirected to \"Khu vực giám sát\".   | 2. \"Camera 1\" was auto-selected.",
+              "Pass"
+            ],
+            [
+              "TC_ZONE_CREATE_001",
+              "Setup Zone - Success",
+              "1. \"Camera 1\" exists (0 zones).",
+              "1. Select \"Camera 1\".   | 2. Draw one zone.  3. Click \"Save\".",
+              "Zone Name: \"Main Entrance\"",
+              "1. Save is successful.  | 2. \"Camera 1\" list item updates to show \"1 zones\".",
+              "1. Save was successful.   | 2. \"Camera 1\" list item updated to show \"1 zones\".",
+              "Pass"
+            ],
+            [
+              "TC_ZONE_DEL_003",
+              "Setup Zone - Delete",
+              "1. \"Camera 1\" exists (1 zone).",
+              "1. Select \"Camera 1\".   | 2. Select the zone.   | 3. Click \"Delete Zone\".   | 4. Click \"Save\".",
+              "N/A",
+              "1. Save is successful.   | 2. \"Camera 1\" list item updates to show \"0 zones\".",
+              "1. Save was successful.   | 2. \"Camera 1\" list item updated to show \"0 zones\".",
+              "Pass"
+            ],
+            [
+              "TC_SYNC_001",
+              "Add Camera -> Dashboard Update",
+              "1. Dashboard shows \"Tổng số camera\" = 0.",
+              "1. Go to \"Khu vực giám sát\".   | 2. Add new camera \"Cam Sync 1\".   | 3. Navigate back to \"Dashboard\".",
+              "N/A",
+              "1. \"Tổng số camera\" card shows 1.   | 2. \"Camera chưa setup\" card shows 1.   | 3. \"Cam Sync 1\" appears in the \"Chi tiết\" list.",
+              "1. \"Tổng số camera\" card still showed 0.   | 2. \"Camera chưa setup\" card showed 0.   | 3. \"Cam Sync 1\" did not appear. (Data only updated after manual refresh).",
+              "Fail"
+            ],
+            [
+              "TC_SYNC_002",
+              "Delete Camera -> Dashboard Update",
+              "1. Dashboard shows \"Tổng số camera\" = 1.",
+              "1. Go to \"Khu vực giám sát\".   | 2. Delete \"Cam Sync 1\".   | 3. Navigate back to \"Dashboard\".",
+              "N/A",
+              "1. \"Tổng số camera\" card shows 0.   | 2. \"Camera chưa setup\" card shows 0.   | 3. \"Cam Sync 1\" is removed from list.",
+              "1. \"Tổng số camera\" card showed 0.   | 2. \"Camera chưa setup\" card showed 0.   | 3. \"Cam Sync 1\" was removed from list.",
+              "Pass"
+            ],
+            [
+              "TC_SYNC_003",
+              "Add Zone -> Dashboard Update",
+              "1. \"Camera 1\" exists (0 zones).   | 2. Dashboard shows \"Tổng số zones\" = 0.",
+              "1. Go to \"Khu vực giám sát\".   | 2. Add 1 zone to \"Camera 1\" & save.   | 3. Navigate back to \"Dashboard\".",
+              "N/A",
+              "1. \"Tổng số zones\" card shows 1.   | 2. \"Camera chưa setup\" card shows 0.",
+              "1. \"Tổng số zones\" card showed 1.   | 2. \"Camera chưa setup\" card showed 0.",
+              "Pass"
+            ]
+          ]
+        },
+        {
+          "title": " Sprint 1 Test Report",
+          "max_row": null,
+          "max_column": null,
+          "rows": [
+            [
+              "Project name",
+              null,
+              "Real-Time Retail Optimization Powered by edge AI",
+              null,
+              null,
+              null,
+              "Test scope",
+              "1.0"
+            ],
+            [
+              "Experimental design by",
+              null,
+              "Team C1SE.20",
+              null,
+              null,
+              null,
+              "Check scope successful",
+              "=(D11/C11)"
+            ],
+            [
+              "Reviewer / Approver",
+              null,
+              "Team C1SE.20",
+              null,
+              null,
+              null,
+              "Version",
+              "Sprint 1 Test Report"
+            ],
+            [
+              "Number",
+              "Module name",
+              "Plan",
+              "Passing",
+              "Failure",
+              null,
+              "Test planning",
+              "Test case passed",
+              "Test case failed"
+            ],
+            [
+              "=1",
+              "Authentication",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6D21B0>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6DCC80>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6D2750>",
+              null,
+              "=SUM(C8:C10)",
+              "=SUM(D8:D10)",
+              "=SUM(E8:E10)"
+            ],
+            [
+              "2.0",
+              "Edge AI Processing Pipeline",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6DDA00>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6DFAD0>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB6DE750>"
+            ],
+            [
+              "3.0",
+              "Camera Management",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB8557F0>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB8568D0>",
+              "<openpyxl.worksheet.formula.ArrayFormula object at 0x000001E7AB854680>"
+            ],
+            [
+              "Total",
+              null,
+              "=SUM(C8:C10)",
+              "=SUM(D8:D10)",
+              "=SUM(E8:E10)"
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "docx": {
+    "path": "D:\\TAILIEU_CAPSTONE_C1SE20_ver02\\7. TEST PLAN\\C1SE.20_TestPlan_ver1.0.docx",
+    "paragraphs": [
+      "International School",
+      "Capstone Project 1",
+      "CMU-SE 450",
+      "Test Plan",
+      "Version 1.0",
+      "Date: Nov 10, 2025",
+      "Real-Time Retail Optimization Powered by edge AI",
+      "Created by C1SE.20",
+      "Duy ,Nguyen Khanh",
+      "Dat, Truong Thanh",
+      "Thu, Phan Nguyen Anh",
+      "Trang, Lieu Thi Thuy",
+      "Vy, Vo Thi Tuong",
+      "Approved by",
+      "MSc Hieu, Vo Dinh",
+      "Test Plan Review Panel Representative:",
+      "Name\t\t\t\tSignature\t\tDate",
+      "Capstone Project 1- Mentor:",
+      "Name\t\t\t\tSignature\t\tDate",
+      "PROJECT INFORMATION",
+      "DOCUMENT APPROVALS",
+      "The following signatures are required for approval of this document.",
+      "TEST PLAN DOCUMENT",
+      "REVISION HISTORY",
+      "Quality objectives",
+      "The main goal of testing the StoreLens system is to ensure:",
+      "●\tReliable and accurate performance of Edge AI video processing (RTSP streams, YOLOv8, DeepSORT).",
+      "●\tStable data synchronization between Edge device – Backend – Dashboard (React).",
+      "●\tCompatibility across browsers and operating systems.",
+      "●\tConsistent real-time performance under expected network loads.",
+      "●\tSmooth, intuitive user experience on the Admin Dashboard.",
+      "●\tMinimum 90% of functional requirements verified and validated by the end of testing phase.",
+      "Scope of test",
+      "2.1. \tFunctions",
+      "User Functions (Admin Dashboard):",
+      "Authentication:",
+      "Login / Logout new user.",
+      "JWT token-based session validation.",
+      "Camera Management:",
+      "Add / edit / delete camera streams (RTSP URL).",
+      "Define ROI (region of interest) zones.",
+      "Enable or disable detection per camera.",
+      "Edge AI Integration:",
+      "Process live camera feeds using YOLOv8.",
+      "Detect, track, and anonymize customer movements.",
+      "Send metadata (count, dwell time, zones) to backend.",
+      "Data Visualization Dashboard:",
+      "View real-time occupancy, heatmap, and statistics.",
+      "Filter data by date/time/camera ID.",
+      "Report Export:",
+      "Export daily/weekly statistics to CSV or PDF.",
+      "2.2. \tUser interface",
+      "Admin Dashboard Screens:",
+      "Login / Register: Account + Password form with validation.",
+      "Dashboard Home: Overview metrics, graphs, alerts.",
+      "Camera Management: Table view + camera card preview; add/edit form; ROI drawing panel.",
+      "Analytics Page: Heatmap visualization, bar charts of people counts, trends over time.",
+      "Edge Device UI (minimal):",
+      "Console or local webpage to manage stream connection and system logs.",
+      "Test strategy",
+      "Testing Levels:",
+      "Unit Testing: Performed by developers for isolated functions and API endpoints.",
+      "Integration Testing:",
+      "System Testing: Validate the full workflow under realistic data streams.",
+      "Acceptance Testing: Validate requirements with mentor and stakeholders.",
+      "Testing Approach:",
+      "Black-box testing for user interface and functional validation.",
+      "Manual testing for UI, data display, and real-time video feedback.",
+      "Automated testing (Postman / Jest) for backend endpoints.",
+      "Exploratory testing to identify unexpected issues in live streaming integration.",
+      "Test Environment:",
+      "Frontend: React 18, Vite, TailwindCSS",
+      "Backend: FastAPI, MongoDB",
+      "Edge Device: NVIDIA Jetson Nano / Laptop with GPU",
+      "Browsers: Chrome, Edge, Firefox",
+      "Network: LAN and Wi-Fi environment with variable latency.",
+      "Test criteria",
+      "All critical and high-priority functions (authentication, video detection, dashboard updates) must pass.",
+      "80% or higher test case pass rate required before delivery.",
+      "No High severity unresolved defects are allowed in release.",
+      "All test cases must be executed at least once before sprint closure.",
+      "Testing completion confirmed when all acceptance criteria in Product Backlog are satisfied.",
+      "Test management",
+      "5.1. \tCommunication tools",
+      "Jira: Sprint task tracking & progress reporting",
+      "Gmail, Zalo, Discord: Daily communication and test coordination.",
+      "Test management tools",
+      "Test Schedule",
+      "Risks & Assumptions",
+      "Risks",
+      "Assumptions"
+    ],
+    "tables": [
+      [
+        [
+          "Project acronym",
+          "StoreLens",
+          "StoreLens",
+          "StoreLens"
+        ],
+        [
+          "Project Title",
+          "“StoreLens” – Real-Time Retail Optimization Powered by edge AI",
+          "“StoreLens” – Real-Time Retail Optimization Powered by edge AI",
+          "“StoreLens” – Real-Time Retail Optimization Powered by edge AI"
+        ],
+        [
+          "Start Date",
+          "2 Aug 2025",
+          "End Date",
+          "12 Dec  2025"
+        ],
+        [
+          "Lead Institution",
+          "International School, Duy Tan University",
+          "International School, Duy Tan University",
+          "International School, Duy Tan University"
+        ],
+        [
+          "Project Mentor",
+          "MSc Hieu, Vo Dinh",
+          "MSc Hieu, Vo Dinh",
+          "MSc Hieu, Vo Dinh"
+        ],
+        [
+          "Scrum master / Project Leader & contact details",
+          "Duy, Nguyen Khanh | Email: nguyenkhanhduy27032004@gmail.com | Tel: 0889 266 484  | ID: 28219228870",
+          "Duy, Nguyen Khanh | Email: nguyenkhanhduy27032004@gmail.com | Tel: 0889 266 484  | ID: 28219228870",
+          "Duy, Nguyen Khanh | Email: nguyenkhanhduy27032004@gmail.com | Tel: 0889 266 484  | ID: 28219228870"
+        ],
+        [
+          "Product Owner",
+          "Thu, Phan Nguyen Anh",
+          "Thu, Phan Nguyen Anh",
+          "Thu, Phan Nguyen Anh"
+        ],
+        [
+          "Partner Organization",
+          "Duy Tan University",
+          "Duy Tan University",
+          "Duy Tan University"
+        ],
+        [
+          "Team members",
+          "Name",
+          "Email",
+          "Tel"
+        ],
+        [
+          "1",
+          "Duy, Nguyen Khanh",
+          "nguyenkhanhduy9@dtu.edu.vn",
+          "0889266484"
+        ],
+        [
+          "2",
+          "Dat, Truong Thanh",
+          "thanhdatqs2004@gmail.com",
+          "0905480556"
+        ],
+        [
+          "3",
+          "Thu, Phan Nguyen Anh",
+          "phannanhthu1@dtu.edu.vn",
+          "0911309340"
+        ],
+        [
+          "4",
+          "Trang, Lieu Thi Thuy",
+          "lieutthuytrang@dtu.edu.vn",
+          "0353093304"
+        ],
+        [
+          "5",
+          "Vy, Vo Thi Tuong",
+          "vottuongvy5@dtu.edu.vn",
+          "0762596410"
+        ]
+      ],
+      [
+        [
+          "Thu, Phan Nguyen Anh | Student ID: 28201500155 | Scrum Master",
+          "Signature",
+          "Date"
+        ],
+        [
+          "Dat, Truong Thanh | Student ID: 28211100559 | Team Member",
+          "Signature",
+          "Date"
+        ],
+        [
+          "Duy, Nguyen Khanh | Student ID: 28219228870 | Team Member",
+          "Signature",
+          "Date"
+        ],
+        [
+          "Trang, Lieu Thi Thuy | Student ID: 28209024783 | Team Member",
+          "Signature",
+          "Date"
+        ],
+        [
+          "Vy, Vo Thi Tuong | Student ID: 28209203950 | Team Member",
+          "Signature",
+          "Date"
+        ]
+      ],
+      [
+        [
+          "Document Title",
+          "Test Plan Document",
+          "Test Plan Document",
+          "Test Plan Document"
+        ],
+        [
+          "Author(s)",
+          "Phan Nguyen Anh Thu",
+          "Phan Nguyen Anh Thu",
+          "Phan Nguyen Anh Thu"
+        ],
+        [
+          "Role",
+          "Team Member",
+          "Team Member",
+          "Team Member"
+        ],
+        [
+          "Date",
+          "Nov 10, 2025",
+          "File name:",
+          "C1SE.20_TestPlan_v1.0.doc"
+        ]
+      ],
+      [
+        [
+          "Version",
+          "Date",
+          "Comments",
+          "Author",
+          "Approval"
+        ],
+        [
+          "1.0",
+          "Nov 10, 2025",
+          "Initial Document",
+          "Thu",
+          "Vo Dinh Hieu"
+        ]
+      ],
+      [
+        [
+          "Purpose",
+          "Tool",
+          "Vendor / In-house",
+          "Version"
+        ],
+        [
+          "Test Case Tracking",
+          "Google Sheets / Excel",
+          "Microsoft",
+          "Latest"
+        ],
+        [
+          "API Testing",
+          "Postman",
+          "Postman Inc.",
+          "Latest"
+        ],
+        [
+          "Bug Tracking",
+          "Trello",
+          "Atlassian",
+          "Latest"
+        ],
+        [
+          "UI Testing",
+          "Manual (Browser DevTools)",
+          "In-house",
+          "N/A"
+        ]
+      ],
+      [
+        [
+          "No",
+          "Task Name",
+          "Start Date",
+          "End Date",
+          "Effort (Hours)",
+          "Resources"
+        ],
+        [
+          "1",
+          "Initial Project Phase",
+          "02/08/2025",
+          "08/08/2025",
+          "28",
+          "All Members"
+        ],
+        [
+          "1.1",
+          "Kick-off Meeting",
+          "02/08/2025",
+          "02/08/2025",
+          "4",
+          "All Members"
+        ],
+        [
+          "1.2",
+          "Discuss Project Idea",
+          "03/08/2025",
+          "03/08/2025",
+          "4",
+          "All Members"
+        ],
+        [
+          "1.3",
+          "Proposal Document",
+          "04/08/2025",
+          "04/08/2025",
+          "4",
+          "All Members"
+        ],
+        [
+          "1.4",
+          "Project Plan Document",
+          "05/08/2025",
+          "05/08/2025",
+          "4",
+          "Thu"
+        ],
+        [
+          "1.5",
+          "Product Backlog",
+          "06/08/2025",
+          "06/08/2025",
+          "4",
+          "Duy"
+        ],
+        [
+          "1.6",
+          "User Story",
+          "07/08/2025",
+          "07/08/2025",
+          "4",
+          "All"
+        ],
+        [
+          "1.7",
+          "Review Document",
+          "08/08/2025",
+          "08/08/2025",
+          "4",
+          "All Members"
+        ],
+        [
+          "2",
+          "Development Phase",
+          "09/08/2025",
+          "14/11/2025",
+          "504",
+          "All Members"
+        ],
+        [
+          "2.1",
+          "Sprint 1",
+          "09/08/2025",
+          "29/08/2025",
+          "180",
+          "All Members"
+        ],
+        [
+          "2.1.1",
+          "Sprint 1 Planning",
+          "09/08/2025",
+          "09/08/2025",
+          "4",
+          "Thu"
+        ],
+        [
+          "2.1.2",
+          "Learn React (Setup & Learning)",
+          "10/08/2025",
+          "20/08/2025",
+          "40",
+          "All Members"
+        ],
+        [
+          "2.1.3",
+          "Edge AI Processing Pipeline (Core Setup)",
+          "10/08/2025",
+          "20/08/2025",
+          "40",
+          "System Engineer"
+        ],
+        [
+          "2.1.4",
+          "Authentication",
+          "21/08/2025",
+          "25/08/2025",
+          "32",
+          "Duy, Dat"
+        ],
+        [
+          "2.1.5",
+          "Camera Management",
+          "26/08/2025",
+          "28/08/2025",
+          "24",
+          "Duy"
+        ],
+        [
+          "2.1.6",
+          "Sprint 1 Review & Retrospective",
+          "29/08/2025",
+          "29/08/2025",
+          "4",
+          "All Members"
+        ],
+        [
+          "2.2",
+          "Sprint 2",
+          "30/08/2025",
+          "26/09/2025",
+          "124",
+          "All Members"
+        ],
+        [
+          "2.2.1",
+          "Sprint 2 Planning",
+          "30/08/2025",
+          "30/08/2025",
+          "4",
+          "Thu"
+        ],
+        [
+          "2.2.2",
+          "AI data integration",
+          "31/08/2025",
+          "05/09/2025",
+          "24",
+          "Dat , Duy"
+        ],
+        [
+          "2.2.3",
+          "Dashboard (Overview/Real-time Metrics)",
+          "06/09/2025",
+          "12/09/2025",
+          "24",
+          "Duy, Dat"
+        ],
+        [
+          "2.2.4",
+          "Heatmap Analysis",
+          "13/09/2025",
+          "20/09/2025",
+          "32",
+          "Duy, Vy"
+        ],
+        [
+          "2.2.5",
+          "POS Data Integration",
+          "21/09/2025",
+          "24/09/2025",
+          "16",
+          "Dat, Thu"
+        ],
+        [
+          "2.2.6",
+          "Sprint 2 Integration Testing & Optimization",
+          "25/09/2025",
+          "26/09/2025",
+          "16",
+          "All Members"
+        ],
+        [
+          "2.2.7",
+          "Sprint 2 Review & Retrospective",
+          "26/09/2025",
+          "26/09/2025",
+          "4",
+          "All Members"
+        ],
+        [
+          "2.3",
+          "Sprint 3",
+          "27/09/2025",
+          "14/11/2025",
+          "200",
+          "All Members"
+        ],
+        [
+          "2.3.1",
+          "Sprint 3 Planning",
+          "27/09/2025",
+          "27/09/2025",
+          "4",
+          "Thu"
+        ],
+        [
+          "2.3.2",
+          "Dwell Time Analysis",
+          "28/09/2025",
+          "12/10/2025",
+          "52",
+          "Vy, Thu, Trang"
+        ],
+        [
+          "2.3.3",
+          "Product Management",
+          "13/10/2025",
+          "19/10/2025",
+          "28",
+          "Dat, Trang"
+        ],
+        [
+          "2.3.4",
+          "Data Import/Export",
+          "20/10/2025",
+          "26/10/2025",
+          "28",
+          "Dat, Thu"
+        ],
+        [
+          "2.3.5",
+          "Reporting & Export",
+          "27/10/2025",
+          "07/11/2025",
+          "48",
+          "Thu, Vy"
+        ],
+        [
+          "2.3.6",
+          "Final Integration Testing",
+          "08/11/2025",
+          "13/11/2025",
+          "20",
+          "All Members"
+        ],
+        [
+          "2.3.7",
+          "Sprint 3 Review & Retrospective",
+          "14/11/2025",
+          "14/11/2025",
+          "4",
+          "All Members"
+        ],
+        [
+          "3",
+          "Complete Project Documents",
+          "15/11/2025",
+          "04/12/2025",
+          "80",
+          "Thu, Vy"
+        ],
+        [
+          "3.1",
+          "Finalize All Documentation",
+          "15/11/2025",
+          "04/12/2025",
+          "80",
+          "Thu, Vy"
+        ],
+        [
+          "4",
+          "Project Retrospective Meeting",
+          "05/12/2025",
+          "05/12/2025",
+          "4",
+          "All Members"
+        ],
+        [
+          "5",
+          "Final Release Activities",
+          "06/12/2025",
+          "19/12/2025",
+          "60",
+          "All Members"
+        ],
+        [
+          "5.1",
+          "Final Preparation & Handover",
+          "06/12/2025",
+          "19/12/2025",
+          "60",
+          "All Members"
+        ]
+      ],
+      [
+        [
+          "Probability",
+          "Probability",
+          "Severity",
+          "Severity"
+        ],
+        [
+          "L",
+          "Rarely happened.",
+          "L",
+          "Low damaged"
+        ],
+        [
+          "M",
+          "Sometime happened",
+          "M",
+          "Medium damaged"
+        ],
+        [
+          "H",
+          "Usually happened",
+          "H",
+          "High damaged"
+        ]
+      ],
+      [
+        [
+          "Risk",
+          "Definition",
+          "Probability",
+          "Severity",
+          "Mitigation Strategy"
+        ],
+        [
+          "Scope Risk",
+          "A high number of modules",
+          "H",
+          "H",
+          "All team members join to test the system | Testing in each plan"
+        ],
+        [
+          "Scheduling Risk",
+          "Testing projects are not efficiently or completely",
+          "M",
+          "M",
+          "Move the not finish part of module to the next sprint"
+        ],
+        [
+          "Time management",
+          "Most of the time is for development, not for testing.",
+          "M",
+          "H",
+          "Overtime"
+        ],
+        [
+          "Operation Risk",
+          "Ineffective processing, system failures, or unanticipated circumstance define operational risk",
+          "M",
+          "M",
+          "Estimate more time to testing and other issues."
+        ]
+      ],
+      [
+        [
+          "Assumption",
+          "Impact if Incorrect",
+          "Owner"
+        ],
+        [
+          "Network connection is stable during live testing",
+          "Delayed or failed stream ingestion",
+          "Network provider"
+        ],
+        [
+          "Edge device performance supports real-time detection",
+          "Lower FPS or dropped frames",
+          "AI Developer"
+        ],
+        [
+          "All APIs are accessible with correct auth",
+          "Data not shown on dashboard",
+          "Backend Dev"
+        ],
+        [
+          "Database remains consistent between tests",
+          "Test results invalid or inconsistent",
+          "Database Admin"
+        ]
+      ]
+    ],
+    "sections": 4
+  }
+}

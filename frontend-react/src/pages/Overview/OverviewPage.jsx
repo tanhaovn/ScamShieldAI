@@ -1,3 +1,5 @@
+import { API_BASE } from "../../hooks/useAppController";
+
 const iconPaths = {
   scan: ["M4 8V5a1 1 0 0 1 1-1h3", "M16 4h3a1 1 0 0 1 1 1v3", "M20 16v3a1 1 0 0 1-1 1h-3", "M8 20H5a1 1 0 0 1-1-1v-3", "M8 12h8"],
   shield: ["M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6Z", "m9 12 2 2 4-5"],
@@ -26,6 +28,13 @@ function riskLabel(level, language) {
   if (level === "nguy_hiem") return language === "en" ? "Danger" : "Nguy hiểm";
   if (level === "nghi_ngo") return language === "en" ? "Review" : "Cần kiểm tra";
   return language === "en" ? "Safe" : "An toàn";
+}
+
+function imageSource(item) {
+  const value = String(item?.image_url || "").trim();
+  if (!value) return "";
+  if (/^(?:data:|blob:|https?:\/\/)/i.test(value)) return value;
+  return `${API_BASE}${value.startsWith("/") ? "" : "/"}${value}`;
 }
 
 function SparkBars({ tone }) {
@@ -65,20 +74,16 @@ export default function OverviewPage({ history, user, onStartScan, language = "v
     { icon: "pulse", label: en ? "Needs review" : "Cần kiểm tra thêm", value: stats.suspicious, note: en ? "Suspicious signals" : "Tín hiệu nghi ngờ", tone: "warning" },
     { icon: "alert", label: en ? "Danger alerts" : "Cảnh báo nguy hiểm", value: stats.danger, note: en ? "Do not interact" : "Không nên tương tác", tone: "danger" },
   ];
-  const pipeline = [
-    ["eye", "OCR ENGINE", en ? "Reads Vietnamese text" : "Đọc văn bản Việt"],
-    ["link", "PHISHVN + GOOGLE", en ? "Cross-checks URLs" : "Đối chiếu liên kết"],
-    ["image", "VISUAL FORENSICS", en ? "Analyzes image signals" : "Phân tích hình ảnh"],
-    ["brain", "RISK AI", en ? "Explains the warning" : "Tổng hợp cảnh báo"],
-  ];
-
   return (
     <div className="console-overview">
       <section className="console-hero">
         <div className="console-hero-copy">
           <span className="console-live"><i /> {en ? "PROTECTION SYSTEM · LIVE" : "HỆ THỐNG BẢO VỆ · TRỰC TUYẾN"}</span>
           <p className="console-greeting">{en ? `Hello, ${firstName}` : `Chào ${firstName},`}</p>
-          <h2>{en ? <>Digital safety starts<br />with one check.</> : <>An toàn số bắt đầu từ<br />một lần kiểm tra.</>}</h2>
+          <h2>
+            <span className="hero-title-wide">{en ? <>Digital safety starts<br />with one check.</> : <>An toàn số bắt đầu từ<br />một lần kiểm tra.</>}</span>
+            <span className="hero-title-mobile">{en ? <>Check first.<br />Stay safe.</> : <>Kiểm tra nhanh,<br />an toàn hơn.</>}</span>
+          </h2>
           <p className="console-hero-lead">{en ? "OCR, verified URL intelligence and image analysis work together to protect every decision." : "OCR, nguồn đối chiếu URL và phân tích hình ảnh phối hợp để bảo vệ từng quyết định của bạn."}</p>
           <div className="console-hero-actions">
             <button onClick={onStartScan}><Icon name="scan" /> {en ? "Check now" : "Kiểm tra ngay"} <Icon name="arrow" /></button>
@@ -108,13 +113,6 @@ export default function OverviewPage({ history, user, onStartScan, language = "v
         {statCards.map((card) => <article className={`console-stat-card ${card.tone}`} key={card.label}><span className="console-stat-icon"><Icon name={card.icon} /></span><div><small>{card.label}</small><strong>{card.value}</strong><span>{card.note}</span></div><SparkBars tone={card.tone} /></article>)}
       </section>
 
-      <section className="console-pipeline">
-        <div className="console-pipeline-title"><span>SYSTEM PIPELINE</span><strong>{en ? "4 analysis layers are active" : "4 lớp phân tích đang hoạt động"}</strong></div>
-        <div className="console-pipeline-flow">
-          {pipeline.map(([icon, title, note], index) => <article key={title}><b>{String(index + 1).padStart(2, "0")}</b><span><Icon name={icon} /></span><div><strong>{title}</strong><small>{note}</small></div><i>{index === 3 ? "READY" : "ONLINE"}</i></article>)}
-        </div>
-      </section>
-
       <section className="console-analytics-grid">
         <article className="console-panel console-trend-panel">
           <header><div><span>{en ? "RISK TELEMETRY" : "DỮ LIỆU RỦI RO"}</span><h3>{en ? "Recent risk trend" : "Xu hướng rủi ro"}</h3><p>{en ? "Last 10 checks" : "10 lượt kiểm tra gần nhất"}</p></div><b><i /> {en ? "Risk score" : "Điểm rủi ro"} <strong>0–100</strong></b></header>
@@ -130,7 +128,10 @@ export default function OverviewPage({ history, user, onStartScan, language = "v
 
       <section className="console-panel console-recent-panel">
         <header><div><span>{en ? "LATEST ACTIVITY" : "HOẠT ĐỘNG GẦN ĐÂY"}</span><h3>{en ? "Recent checks" : "Lượt kiểm tra gần nhất"}</h3></div><button onClick={onStartScan}>{en ? "New check" : "Kiểm tra mới"}<Icon name="arrow" /></button></header>
-        <div className="console-recent-list">{recent.length ? recent.map((item) => <article key={item.id}><span className={`console-recent-icon ${item.risk_level}`}><Icon name={item.source_type === "url" ? "link" : item.source_type === "image" ? "image" : "scan"} /></span><div><strong>{item.original_filename || (en ? "Checked content" : "Nội dung đã kiểm tra")}</strong><small><Icon name="clock" /> {formatTime(item.created_at, language)}</small></div><b className={item.risk_level}>{riskLabel(item.risk_level, language)} · {item.risk_score || 0}</b></article>) : <div className="console-empty"><span><Icon name="scan" /></span><div><strong>{en ? "No checks yet" : "Chưa có lượt kiểm tra"}</strong><small>{en ? "Start with an image, message, URL or PDF." : "Bắt đầu với ảnh, tin nhắn, URL hoặc PDF đáng ngờ."}</small></div><button onClick={onStartScan}>{en ? "Start now" : "Bắt đầu ngay"}</button></div>}</div>
+        <div className="console-recent-list">{recent.length ? recent.map((item) => {
+          const thumbnail = imageSource(item);
+          return <article key={item.id}><span className={`console-recent-icon ${thumbnail ? "has-image" : ""} ${item.risk_level}`}>{thumbnail ? <img src={thumbnail} alt="" /> : <Icon name={item.source_type === "url" ? "link" : item.source_type === "image" ? "image" : "scan"} />}</span><div><strong>{item.original_filename || (en ? "Checked content" : "Nội dung đã kiểm tra")}</strong><small><Icon name="clock" /> {formatTime(item.created_at, language)}</small></div><b className={item.risk_level}>{riskLabel(item.risk_level, language)} · {item.risk_score || 0}</b></article>;
+        }) : <div className="console-empty"><span><Icon name="scan" /></span><div><strong>{en ? "No checks yet" : "Chưa có lượt kiểm tra"}</strong><small>{en ? "Start with an image, message, URL or PDF." : "Bắt đầu với ảnh, tin nhắn, URL hoặc PDF đáng ngờ."}</small></div><button onClick={onStartScan}>{en ? "Start now" : "Bắt đầu ngay"}</button></div>}</div>
       </section>
     </div>
   );
