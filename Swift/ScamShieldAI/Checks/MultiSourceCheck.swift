@@ -51,7 +51,7 @@ final class MockScanProtocol: URLProtocol {
         let multipart = String(decoding: MockScanProtocol.bodies.last!, as: UTF8.self)
         precondition(multipart.contains("application/pdf") && multipart.contains("sample.pdf") && multipart.contains("name=\"file\""))
         let image = try await service.analyze(imageData: Data([1,2,3]), categoryID: 4)
-        precondition(MockScanProtocol.requests.last!.url!.path == "/check-image")
+        precondition(MockScanProtocol.requests.last!.url!.path == "/check-image/guest")
         precondition(MockScanProtocol.requests.last!.url!.query == "scam_category_id=4")
         let batch = try await service.analyzeBatch(input: "https://example.com; invalid\n")
         precondition(batch.results.count == 2 && batch.results[1].risk_level == "unknown")
@@ -63,7 +63,7 @@ final class MockScanProtocol: URLProtocol {
         precondition(feedback["verdict"] as? String == "false_alarm" && feedback["note"] as? String == "Review")
         precondition(feedback["urls"] as? [String] == ["https://example.com"])
         precondition(MockScanProtocol.requests.map { $0.url!.path } ==
-            ["/check-text", "/check-url", "/check-document", "/check-image", "/check-urls-batch", "/scan-feedback"])
+            ["/check-text", "/check-url", "/check-document", "/check-image/guest", "/check-urls-batch", "/scan-feedback"])
         precondition(BatchInput.urls(from: " a,b; c\r\n\n") == ["a", "b", "c"])
         let malicious = BatchURLResult(url: "=SUM(1,2)", status: "invalid", risk_score: 0, risk_level: "unknown")
         let csv = String(decoding: BatchCSV.data([malicious]), as: UTF8.self)

@@ -9,6 +9,7 @@ enum APIEndpoint {
     case checkText, checkURL, checkDocument, batch, feedback, health
     case scamCategories
     case checkImage(categoryID: Int?)
+    case checkImageGuest(categoryID: Int?)
 
     // MARK: - Request Configuration
 
@@ -26,13 +27,17 @@ enum APIEndpoint {
             var path = "/check-image"
             if let categoryID { path += "?scam_category_id=\(categoryID)" }
             return path
+        case .checkImageGuest(let categoryID):
+            var path = "/check-image/guest"
+            if let categoryID { path += "?scam_category_id=\(categoryID)" }
+            return path
         }
     }
 
     var method: HTTPMethod {
         switch self {
         case .scamCategories, .health: return .get
-        case .checkImage, .checkText, .checkURL, .checkDocument, .batch, .feedback: return .post
+        case .checkImage, .checkImageGuest, .checkText, .checkURL, .checkDocument, .batch, .feedback: return .post
         }
     }
 
@@ -40,7 +45,7 @@ enum APIEndpoint {
         switch self {
         case .health: return 15
         case .batch: return 180
-        case .checkImage, .checkDocument, .checkText, .checkURL: return 90
+        case .checkImage, .checkImageGuest, .checkDocument, .checkText, .checkURL: return 90
         default: return 30
         }
     }

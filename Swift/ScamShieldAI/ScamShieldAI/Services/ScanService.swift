@@ -17,8 +17,9 @@ final class ScanService {
     }
 
     func analyze(imageData: Data, categoryID: Int?) async throws -> ScanResult {
-        try await apiClient.upload(
-            endpoint: .checkImage(categoryID: categoryID),
+        let admin = await MainActor.run { AccountSession.shared.isSignedIn }
+        return try await apiClient.upload(
+            endpoint: admin ? .checkImage(categoryID: categoryID) : .checkImageGuest(categoryID: categoryID),
             imageData: imageData,
             filename: "scam-check-\(UUID().uuidString).jpg",
             mimeType: "image/jpeg"

@@ -13,7 +13,8 @@ enum APIError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidURL:
-            return L10n.text("Địa chỉ máy chủ không hợp lệ.")
+            return L10n.choose("Chưa cấu hình máy chủ HTTPS hợp lệ cho ứng dụng.",
+                               "A valid HTTPS server has not been configured for this app.")
         case .invalidResponse:
             return L10n.text("Máy chủ trả về phản hồi không hợp lệ.")
         case .server(let message):

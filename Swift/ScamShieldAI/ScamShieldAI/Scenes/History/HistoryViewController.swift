@@ -17,11 +17,13 @@ final class HistoryViewController: UIViewController {
     // MARK: - Properties
 
     private var items: [ScanHistoryItem] = []
+    private var localItemIDs = Set<Int>()
     private var currentState: State = .loading
     private var animatedItemIDs = Set<Int>()
     private var loadTask: Task<Void, Never>?
     private let pushAnimator = SlideInPushAnimator()
     private let searchController = UISearchController(searchResultsController: nil)
+    private var clearLocalButton: UIBarButtonItem?
 
     // MARK: - UI Components
 
@@ -107,6 +109,12 @@ private extension HistoryViewController {
         searchController.searchBar.tintColor = AppTheme.primaryColor
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
+        let clearButton = UIBarButtonItem(image: UIImage(systemName: "trash"), style: .plain,
+                                          target: self, action: #selector(confirmClearLocalHistory))
+        clearButton.accessibilityLabel = L10n.choose("Xóa lịch sử trên iPhone", "Delete iPhone history")
+        clearButton.isEnabled = false
+        navigationItem.rightBarButtonItem = clearButton
+        clearLocalButton = clearButton
         definesPresentationContext = true
         tableView.keyboardDismissMode = .onDrag
 
@@ -270,6 +278,8 @@ private extension HistoryViewController {
                 }
                 guard !Task.isCancelled else { return }
                 items = loadedItems
+                localItemIDs = Set(local.map(\.id))
+                clearLocalButton?.isEnabled = !localItemIDs.isEmpty
                 storageHintLabel.text = hint
                 tableView.refreshControl?.endRefreshing()
                 tableView.reloadData()
@@ -347,6 +357,48 @@ private extension HistoryViewController {
         loadHistory(showLoadingState: items.isEmpty)
     }
 
+    @objc func confirmClearLocalHistory() {
+        guard !localItemIDs.isEmpty, presentedViewController == nil else { return }
+        let alert = UIAlertController(
+            title: L10n.choose("Xóa lịch sử trên iPhone?", "Delete iPhone history?"),
+            message: L10n.choose("Ảnh và kết quả lưu trên iPhone này sẽ bị xóa vĩnh viễn. Lịch sử tài khoản trên máy chủ không bị ảnh hưởng.",
+                                 "Photos and results stored on this iPhone will be permanently deleted. Account history on the server is unaffected."),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: L10n.choose("Hủy", "Cancel"), style: .cancel))
+        alert.addAction(UIAlertAction(title: L10n.choose("Xóa trên iPhone", "Delete on iPhone"), style: .destructive) { [weak self] _ in
+            guard let self else { return }
+            Task {
+                do {
+                    _ = try await self.historyService.clearHistory()
+                    NotificationCenter.default.post(name: .historyDidChange, object: nil)
+                } catch { self.showErrorAlert(message: error.localizedDescription) }
+            }
+        })
+        present(alert, animated: true)
+    }
+
+    func confirmDeleteLocalItem(_ item: ScanHistoryItem) {
+        guard localItemIDs.contains(item.id), presentedViewController == nil else { return }
+        let alert = UIAlertController(
+            title: L10n.choose("Xóa lượt kiểm tra?", "Delete this check?"),
+            message: L10n.choose("Ảnh và kết quả lưu trên iPhone này sẽ bị xóa vĩnh viễn.",
+                                 "The photo and result stored on this iPhone will be permanently deleted."),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: L10n.choose("Hủy", "Cancel"), style: .cancel))
+        alert.addAction(UIAlertAction(title: L10n.choose("Xóa", "Delete"), style: .destructive) { [weak self] _ in
+            guard let self else { return }
+            Task {
+                do {
+                    try await self.historyService.deleteHistoryItem(id: item.id)
+                    NotificationCenter.default.post(name: .historyDidChange, object: nil)
+                } catch { self.showErrorAlert(message: error.localizedDescription) }
+            }
+        })
+        present(alert, animated: true)
+    }
+
 
 }
 
@@ -368,6 +420,18 @@ extension HistoryViewController: UITableViewDataSource {
 // MARK: - Table Delegate
 
 extension HistoryViewController: UITableViewDelegate {
+
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        guard filteredItems.indices.contains(indexPath.row) else { return nil }
+        let item = filteredItems[indexPath.row]
+        guard localItemIDs.contains(item.id) else { return nil }
+        let action = UIContextualAction(style: .destructive, title: L10n.choose("Xóa", "Delete")) { [weak self] _, _, completion in
+            completion(false)
+            self?.confirmDeleteLocalItem(item)
+        }
+        action.image = UIImage(systemName: "trash")
+        return UISwipeActionsConfiguration(actions: [action])
+    }
 
     func tableView(
         _ tableView: UITableView,

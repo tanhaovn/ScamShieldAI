@@ -40,7 +40,7 @@ App build và mở giao diện độc lập, nhưng phân tích ảnh/tin nhắn
 
 Chạy backend theo README của repository, từ thư mục gốc để backend tìm được `models/` và `uploads/`. Cấu hình iOS ở `ScamShieldAI/Utils/Constants.swift`:
 
-- Backend mặc định của bản này: `https://brussels-mario-weapon-archived.trycloudflare.com`. Đây là tunnel tạm thời; khi bạn nhận link mới, thay phần gốc `https://...trycloudflare.com` trong Build Setting `SCAMSHIELD_API_BASE_URL` (Debug và Release) và `fallbackAPIBaseURL` tại `Constants.swift`, rồi dựng lại app. Không chép phần `?zarsrc=...` hoặc `#admin-login` vào API URL.
+- Đặt địa chỉ backend trong Build Setting `SCAMSHIELD_API_BASE_URL` của cấu hình cần chạy. Chỉ dán phần gốc `https://domain`, không chép `?zarsrc=...` hoặc `#admin-login`. Trong Debug, nếu setting trống, app dùng tunnel tạm ở `fallbackAPIBaseURL` trong `Constants.swift`; Release không dùng tunnel dự phòng và cần một địa chỉ HTTPS ổn định.
 - Debug trên Simulator dùng `SCAMSHIELD_DEBUG_API_BASE_URL` trong mục Run của scheme Xcode nếu cần trỏ tới backend khác, ví dụ `http://127.0.0.1:8000`. Địa chỉ HTTP chỉ được dùng cho localhost trong bản Debug.
 - iPhone thật cần truy cập được backend HTTPS. Không phải cùng Wi-Fi khi dùng tunnel Cloudflare.
 
@@ -49,7 +49,8 @@ Các endpoint app cần:
 | Chức năng | Endpoint |
 | --- | --- |
 | Danh mục | `GET /scam-categories` |
-| Ảnh / QR | `POST /check-image` |
+| Ảnh / QR khách | `POST /check-image/guest` (ảnh tạm được xóa trên máy chủ sau phân tích) |
+| Ảnh / QR Admin | `POST /check-image` (lưu vào lịch sử tài khoản) |
 | Tin nhắn | `POST /check-text` |
 | Liên kết | `POST /check-url` |
 | PDF | `POST /check-document` |
@@ -69,9 +70,9 @@ Tab **Admin** là giao diện UIKit chạy trực tiếp trên iPhone. Đăng nh
 
 Admin dùng cùng địa chỉ backend API với màn kiểm tra; không cần chạy frontend React.
 
-Đối chiếu chức năng người dùng với web nhánh `main`, commit `0d9d930`. API ảnh dùng `/check-image` không đăng nhập như web; danh mục được chọn tự động như web. Các trường Grad-CAM, vùng ảnh, AI thị giác và nguồn đối chiếu là optional để vẫn mở được kết quả cũ. Dữ liệu phụ thuộc model/cấu hình của backend; app hiển thị trạng thái chưa có dữ liệu khi máy chủ không trả kết quả.
+Đối chiếu chức năng người dùng với web nhánh `main`, commit `0d9d930`. App dùng endpoint ảnh dành riêng cho khách để tránh lưu ảnh trên máy chủ; Admin dùng endpoint ảnh gắn với tài khoản. Các trường Grad-CAM, vùng ảnh, AI thị giác và nguồn đối chiếu là optional để vẫn mở được kết quả cũ. Dữ liệu phụ thuộc model/cấu hình của backend; app hiển thị trạng thái chưa có dữ liệu khi máy chủ không trả kết quả.
 
-Lịch sử được lưu cục bộ trong Application Support trên thiết bị. Lịch sử đã có có thể xem không cần mạng; clone mới không mang theo dữ liệu người dùng hoặc lịch sử trong Simulator của máy cũ.
+Lịch sử được lưu cục bộ trong Application Support trên thiết bị. Lịch sử đã có có thể xem không cần mạng; có thể xóa từng lượt hoặc toàn bộ lịch sử trên iPhone trong tab Lịch sử. Xóa cục bộ không xóa lịch sử Admin trên máy chủ. Clone mới không mang theo dữ liệu người dùng hoặc lịch sử trong Simulator của máy cũ. Trước lần phân tích đầu tiên với mỗi máy chủ, app hỏi đồng ý gửi nội dung và nêu khả năng dùng Google Gemini/Safe Browsing; có thể đặt lại lựa chọn trong trang Quyền riêng tư.
 
 ## Kiểm tra source
 

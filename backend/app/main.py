@@ -1030,6 +1030,8 @@ async def check_document(file: UploadFile = File(...)):
 async def check_image(
     file: UploadFile = File(...),
     scam_category_id: int | None = None,
+    user_id: int = 1,
+    save_history: bool = True,
     db: Session = Depends(get_db),
     authorization: str | None = Header(default=None, alias="Authorization"),
 ):
@@ -1084,7 +1086,7 @@ async def check_image(
         saved_name = final_path.name
 
         category_id = scam_category_id
-        if category_id is None:
+        if category_id is None and save_history and admin_user:
             category = db.query(ScamCategory).filter(ScamCategory.code == "phishing_screenshot").first()
             category_id = category.id if category else None
 
@@ -1115,7 +1117,7 @@ async def check_image(
 
         scan_id = None
         created_at = datetime.utcnow()
-        if admin_user:
+        if admin_user and save_history:
             scan_record = ScanHistory(
                 user_id=admin_user.id,
                 image_url=f"/uploads/{saved_name}",
@@ -1145,21 +1147,45 @@ async def check_image(
         response = {
             **analysis,
             "scan_id": scan_id,
-            "image_url": f"/uploads/{saved_name}",
+            "image_url": f"/uploads/{saved_name}" if save_history else None,
             "original_filename": file.filename,
             "created_at": created_at.isoformat(),
-            "storage": "database" if admin_user else "local_storage",
+            "storage": "database" if admin_user and save_history else "local_storage",
             "source_type": "image",
             "scam_category_id": category_id,
             "image_annotations": image_annotations,
             "image_dimensions": image_dimensions,
         }
+        if not save_history and isinstance(response.get("image_model_gradcam"), dict):
+            response["image_model_gradcam"] = {
+                **response["image_model_gradcam"],
+                "available": False,
+                "image_url": "",
+            }
         completed_scan = True
         return response
 
     finally:
-        if not completed_scan:
+        if not completed_scan or not save_history:
             Path(saved_path).unlink(missing_ok=True)
+            Path(saved_path).with_name(f"{Path(saved_path).stem}.gradcam.jpg").unlink(missing_ok=True)
+
+
+@app.post("/check-image/guest")
+async def check_image_guest(
+    file: UploadFile = File(...),
+    scam_category_id: int | None = None,
+    db: Session = Depends(get_db),
+):
+    """Phân tích tạm cho app không tài khoản, không giữ ảnh trên máy chủ."""
+    return await check_image(
+        file=file,
+        scam_category_id=scam_category_id,
+        user_id=0,
+        save_history=False,
+        db=db,
+        authorization=None,
+    )
 
 
 @app.get("/history/{user_id}")

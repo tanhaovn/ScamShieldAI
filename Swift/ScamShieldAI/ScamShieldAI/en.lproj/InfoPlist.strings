@@ -1,0 +1,3 @@
+"NSCameraUsageDescription" = "ScamShield AI uses the camera only to photograph content you choose to check for scam signals.";
+"NSPhotoLibraryUsageDescription" = "ScamShield AI reads only the photo you choose to check for scam signals.";
+"NSLocalNetworkUsageDescription" = "ScamShield AI connects to a backend running on your Mac during local development.";

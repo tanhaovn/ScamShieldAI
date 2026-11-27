@@ -4,14 +4,19 @@ struct Constants {
 
     // MARK: - API Environment
 
+    static let analysisConsentServerKey = "scamShield.analysisConsentServer"
+
+    // Development tunnel only. Release must use SCAMSHIELD_API_BASE_URL from Xcode.
     static let fallbackAPIBaseURL = "https://florida-naturals-junction-balance.trycloudflare.com"
 
     static var defaultAPIBaseURL: String {
-        if let primary = normalizedServerURL(fallbackAPIBaseURL) {
-            return primary
-        }
         let configured = Bundle.main.object(forInfoDictionaryKey: "SCAMSHIELD_API_BASE_URL") as? String ?? ""
-        return normalizedServerURL(configured) ?? fallbackAPIBaseURL
+        if let primary = normalizedServerURL(configured) { return primary }
+        #if DEBUG
+        return normalizedServerURL(fallbackAPIBaseURL) ?? ""
+        #else
+        return ""
+        #endif
     }
 
     static var apiBaseURL: String {
@@ -53,10 +58,20 @@ struct Constants {
         guard let rawValue, !rawValue.isEmpty else { return nil }
 
         if rawValue.hasPrefix("local-history/") {
-            return HistoryService.localImageURL(filename: String(rawValue.dropFirst(14)))
+            let filename = String(rawValue.dropFirst(14))
+            guard !filename.isEmpty, filename != ".", filename != "..",
+                  !filename.contains("/"), !filename.contains("\\") else { return nil }
+            return HistoryService.localImageURL(filename: filename)
         }
 
         if let absoluteURL = URL(string: rawValue), absoluteURL.scheme != nil {
+            guard let base = URLComponents(string: apiBaseURL),
+                  let absolute = URLComponents(url: absoluteURL, resolvingAgainstBaseURL: false),
+                  absolute.scheme == base.scheme,
+                  absolute.host?.lowercased() == base.host?.lowercased(),
+                  absolute.port == base.port,
+                  absolute.user == nil, absolute.password == nil,
+                  absolute.fragment == nil else { return nil }
             return absoluteURL
         }
 

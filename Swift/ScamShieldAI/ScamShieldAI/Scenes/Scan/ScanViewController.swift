@@ -472,9 +472,7 @@ private extension ScanViewController {
 
     @objc func didTapPhotoLibrary() {
         guard !isAnalyzing, presentedViewController == nil else { return }
-        AccessConsent.confirm(on: self, title: L10n.text("Chọn ảnh để kiểm tra?"), message: L10n.text("App chỉ đọc ảnh bạn chọn, không xem toàn bộ thư viện. Ảnh chỉ được gửi đến máy chủ khi bạn nhấn Phân tích ngay.")) { [weak self] in
-            self?.presentPhotoPicker()
-        }
+        presentPhotoPicker()
     }
 
     @objc func didTapPasteImage() {
@@ -564,6 +562,28 @@ private extension ScanViewController {
                 showErrorAlert(message: L10n.text("Nhập một liên kết hợp lệ, ví dụ https://example.com. Liên kết chỉ được phân tích, không tự mở."))
                 return
             }
+        }
+        guard let serverURL = Constants.apiURL(path: "/health") else {
+            showErrorAlert(message: APIError.invalidURL.localizedDescription)
+            return
+        }
+        let server = serverURL.deletingLastPathComponent().absoluteString
+        if UserDefaults.standard.string(forKey: Constants.analysisConsentServerKey) != server {
+            let alert = UIAlertController(
+                title: L10n.choose("Cho phép gửi nội dung để phân tích?", "Allow content to be sent for analysis?"),
+                message: L10n.choose(
+                    "Nội dung bạn chọn sẽ được gửi đến máy chủ ScamShield AI khi nhấn Đồng ý. Tùy cấu hình, ảnh có thể được xử lý bởi Google Gemini và liên kết có thể được kiểm tra bằng Google Safe Browsing. Lịch sử của tài khoản Admin có thể được lưu trên máy chủ. Bạn có thể thu hồi lựa chọn này trong Quyền riêng tư.",
+                    "Your selected content will be sent to the ScamShield AI server when you agree. Depending on server settings, images may be processed by Google Gemini and links may be checked with Google Safe Browsing. Admin account history may be stored on the server. You can reset this choice in Privacy."
+                ),
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: L10n.choose("Hủy", "Cancel"), style: .cancel))
+            alert.addAction(UIAlertAction(title: L10n.choose("Đồng ý và phân tích", "Agree and analyze"), style: .default) { [weak self] _ in
+                UserDefaults.standard.set(server, forKey: Constants.analysisConsentServerKey)
+                self?.didTapAnalyze()
+            })
+            present(alert, animated: true)
+            return
         }
         setLoading(true)
         scanTask?.cancel()
@@ -864,13 +884,10 @@ extension ScanViewController: UITextViewDelegate, UIDocumentPickerDelegate {
         documentLabel.numberOfLines = 0
         let choose = makeSourceButton(title: L10n.text("Chọn PDF từ Tệp"), imageName: "folder")
         choose.addAction(UIAction { [weak self] _ in
-            guard let self, !self.isAnalyzing else { return }
-            AccessConsent.confirm(on: self, title: L10n.text("Chọn tài liệu để kiểm tra?"), message: L10n.text("App chỉ đọc tệp PDF bạn chọn. Tài liệu chỉ được gửi đến máy chủ khi bạn nhấn Phân tích ngay.")) { [weak self] in
-                guard let self else { return }
-                let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.pdf], asCopy: true)
-                picker.delegate = self
-                self.present(picker, animated: true)
-            }
+            guard let self, !self.isAnalyzing, self.presentedViewController == nil else { return }
+            let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.pdf], asCopy: true)
+            picker.delegate = self
+            self.present(picker, animated: true)
         }, for: .touchUpInside)
         [choose, documentLabel, limits].forEach(documentSection.addArrangedSubview)
     }
