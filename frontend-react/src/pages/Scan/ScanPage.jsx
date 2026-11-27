@@ -188,93 +188,39 @@ function ResultFeedback({ result, apiBase, language }) {
   );
 }
 
-function EvidenceSources({ result, language }) {
-  const en = language === "en";
-  const google = result.google_safe_browsing;
-  const googleState = google?.matches?.length ? "danger" : google?.configured && google?.available ? "checked" : "unavailable";
-  const cards = [
-    {
-      key: "text", state: "checked", title: en ? "Content & OCR" : "Nội dung & OCR",
-      value: `${Number(result.text_risk_score) || 0}/100`,
-      copy: en ? "Reads visible wording and sensitive requests." : "Đọc câu chữ hiển thị và yêu cầu thông tin nhạy cảm.",
-    },
-    {
-      key: "phishvn", state: result.phishvn_available ? "checked" : "unavailable", title: "PhishVN",
-      value: result.phishvn_available ? `${Number(result.phishvn_url_risk_score) || 0}/100` : (en ? "Unavailable" : "Chưa sẵn sàng"),
-      copy: en ? "Vietnamese phishing URL model; a prediction, not an official blacklist." : "Mô hình URL lừa đảo Việt Nam; là dự đoán, không phải danh sách đen chính thức.",
-    },
-    {
-      key: "google", state: googleState, title: "Google Safe Browsing",
-      value: googleState === "danger" ? (en ? "Threat match" : "Có khớp đe dọa") : googleState === "checked" ? (en ? "No known match" : "Chưa có khớp đã biết") : (en ? "Not configured" : "Chưa cấu hình"),
-      copy: googleState === "danger" ? (en ? "Independent threat-list confirmation." : "Nguồn độc lập đã xác nhận mối đe dọa đã biết.") : (en ? "No match does not prove a URL is safe." : "Không có kết quả khớp không có nghĩa URL chắc chắn an toàn."),
-    },
-    ...(result.source_type === "image" ? [{
-      key: "vision", state: result.vlm_analysis?.available ? "checked" : "unavailable", title: en ? "Image context AI" : "AI hiểu ngữ cảnh ảnh",
-      value: result.vlm_analysis?.available ? `${Number(result.vlm_analysis.risk_score) || 0}/100` : (en ? "Unavailable" : "Chưa sẵn sàng"),
-      copy: en ? "Combines text, links, layout and visual signals." : "Tổng hợp chữ, đường link, bố cục và tín hiệu hình ảnh.",
-    }] : []),
-  ];
-  return <section className="scan-evidence-sources"><header><div><small>{en ? "EVIDENCE TRACE" : "TRUY VẾT BẰNG CHỨNG"}</small><h3>{en ? "Which systems contributed?" : "Kết quả dựa vào những nguồn nào?"}</h3></div><span>{en ? "Prediction ≠ confirmation" : "Dự đoán ≠ xác nhận"}</span></header><div>{cards.map((card) => <article className={card.state} key={card.key}><i /><small>{card.title}</small><strong>{card.value}</strong><p>{card.copy}</p></article>)}</div></section>;
-}
-
 function ResultConsole({ result, apiBase, language }) {
   const en = language === "en";
   const score = Math.min(100, Math.max(0, Number(result.risk_score) || 0));
   const levelLabels = en ? { an_toan: "Safe", nghi_ngo: "Suspicious", nguy_hiem: "Dangerous" } : { an_toan: "An toàn", nghi_ngo: "Nghi ngờ", nguy_hiem: "Nguy hiểm" };
   const level = levelLabels[result.risk_level] || result.risk_level;
-  const sourceLabel = (en ? { image: "Image / QR", text: "Message", url: "Direct URL", pdf: "PDF document" } : { image: "Ảnh / QR", text: "Tin nhắn", url: "URL trực tiếp", pdf: "Tài liệu PDF" })[result.source_type] || (en ? "Content" : "Nội dung");
-  const scamTypeLabel = (en ? {
-    none: "Scam type not identified",
-    phishing: "Credential phishing",
-    phishing_url: "Potential phishing link",
-    impersonation: "Organization impersonation",
-    fake_invoice: "Fake invoice or payment request",
-    job_scam: "Employment scam",
-    urgent_account_threat: "Urgent account threat",
-  } : {
-    none: "Chưa xác định loại lừa đảo",
-    phishing: "Giả mạo để lấy thông tin",
-    phishing_url: "Đường link có dấu hiệu giả mạo",
-    impersonation: "Mạo danh cơ quan hoặc tổ chức",
-    fake_invoice: "Hóa đơn hoặc yêu cầu thanh toán giả",
-    job_scam: "Lừa đảo tuyển dụng, việc làm",
-    urgent_account_threat: "Đe dọa khóa hoặc trừ tiền tài khoản",
-  })[result.scam_type] || (en ? "Content needs further review" : "Nội dung cần kiểm tra thêm");
   const levelCopy = (en ? {
     an_toan: {
-      title: "No clear scam signs found",
-      body: "No strong signals were found. Review carefully if the content involves money, passwords or personal information.",
+      title: "Low scam risk",
       icon: "✓",
     },
     nghi_ngo: {
-      title: "This content has suspicious details",
-      body: "Do not act yet. Contact the organization yourself using its official phone number or website.",
+      title: "Suspicious content",
       icon: "!",
     },
     nguy_hiem: {
-      title: "Warning: high scam risk",
-      body: "Do not click links, transfer money, or share passwords, OTP codes or banking information.",
+      title: "High scam risk",
       icon: "!",
     },
   } : {
     an_toan: {
-      title: "Chưa thấy dấu hiệu lừa đảo rõ ràng",
-      body: "Hệ thống chưa tìm thấy tín hiệu mạnh. Bạn vẫn nên kiểm tra lại nếu nội dung liên quan đến tiền, mật khẩu hoặc thông tin cá nhân.",
+      title: "Nguy cơ lừa đảo thấp",
       icon: "✓",
     },
     nghi_ngo: {
-      title: "Nội dung này có một số điểm đáng ngờ",
-      body: "Đừng làm theo ngay. Hãy tự liên hệ đơn vị được nhắc đến bằng số điện thoại hoặc website chính thức để xác minh.",
+      title: "Nội dung đáng nghi",
       icon: "!",
     },
     nguy_hiem: {
-      title: "Cảnh báo: nguy cơ lừa đảo cao",
-      body: "Không bấm đường link, không chuyển tiền và không cung cấp mật khẩu, mã OTP hay thông tin ngân hàng.",
+      title: "Nguy cơ lừa đảo cao",
       icon: "!",
     },
   })[result.risk_level] || {};
   const suspiciousUrls = (result.phishvn_urls || []).map((item) => item.url || item.normalized_url);
-  const suspiciousCount = (result.highlighted_terms?.length || 0) + suspiciousUrls.length;
   const hasGradcamPayload = Object.prototype.hasOwnProperty.call(result, "image_model_gradcam");
   const gradcam = result.image_model_gradcam || {};
   const gradcamTarget = gradcam.target_class || result.image_model_label || "unavailable";
@@ -288,62 +234,30 @@ function ResultConsole({ result, apiBase, language }) {
   const aiExplanationItems = Array.isArray(vlm.explanation_items) ? vlm.explanation_items : [];
   const hasAiExplanation = vlm.explanation_source === "vision_language_model"
     && aiExplanationItems.length > 0;
-  const plainReasons = [];
-  if (result.highlighted_terms?.length) {
-    plainReasons.push(en ? `Urgent wording or sensitive requests found: ${result.highlighted_terms.slice(0, 5).join(", ")}.` : `Có từ ngữ thúc giục hoặc yêu cầu nhạy cảm: ${result.highlighted_terms.slice(0, 5).join(", ")}.`);
-  }
-  if (suspiciousUrls.length) {
-    plainReasons.push(en ? `${suspiciousUrls.length} link(s) need review; the highest-risk link scored ${result.phishvn_url_risk_score || 0}/100.` : `Tìm thấy ${suspiciousUrls.length} đường link cần kiểm tra; đường link đáng chú ý nhất có điểm ${result.phishvn_url_risk_score || 0}/100.`);
-  }
-  if ((result.visual_risk_score || 0) >= 25) {
-    plainReasons.push(en ? "The image contains visual details that require caution or may have been edited." : "Hình ảnh có đặc điểm trình bày cần thận trọng hoặc có thể đã qua chỉnh sửa.");
-  }
-  if (!plainReasons.length) plainReasons.push(en ? "No notable wording, links or visual signals were found." : "Chưa tìm thấy từ ngữ, đường link hoặc dấu hiệu hình ảnh nổi bật.");
-  const nextSteps = (en ? {
-    nguy_hiem: ["Stop the conversation and do not click any links.", "Do not transfer money or send OTP codes, passwords or identity documents.", "Call the official hotline or open the official app to verify."],
-    nghi_ngo: ["Do not follow the request yet.", "Verify the domain and phone number using official sources.", "Ask someone you trust or the relevant organization before continuing."],
-    an_toan: ["Still review carefully if money or accounts are involved.", "Never share OTP codes or passwords.", "Run another check if you receive new content or a new link."],
-  } : {
-    nguy_hiem: ["Dừng nhắn tin và không bấm đường link.", "Không chuyển tiền, không gửi OTP, mật khẩu hay ảnh giấy tờ.", "Tự gọi tổng đài hoặc mở ứng dụng chính thức để xác minh."],
-    nghi_ngo: ["Chưa thực hiện yêu cầu trong nội dung.", "Đối chiếu tên miền và số điện thoại bằng nguồn chính thức.", "Hỏi người thân hoặc đơn vị liên quan trước khi tiếp tục."],
-    an_toan: ["Vẫn kiểm tra kỹ nếu nội dung liên quan đến tiền hoặc tài khoản.", "Không chia sẻ OTP và mật khẩu trong mọi trường hợp.", "Quét lại nếu nhận được nội dung hoặc đường link mới."],
-  })[result.risk_level] || [];
-
   return (
     <section className="scan-result-console">
       <header className="scan-result-header">
-        <div>
+        <div className="scan-result-heading">
           <span className="scan-result-live"><i /> {en ? "ANALYSIS COMPLETE" : "ĐÃ PHÂN TÍCH XONG"}</span>
           <h2>{en ? "Check result" : "Kết quả kiểm tra"}</h2>
           <p>{en ? "A clear explanation to help you understand and respond safely." : "Giải thích ngắn gọn để mọi người đều có thể hiểu và xử lý an toàn."}</p>
+          <span className={`scan-level-badge ${result.risk_level}`}>{en ? "Risk level" : "Mức độ"}: <strong>{level}</strong></span>
         </div>
         <div className="scan-result-header-actions">
           <button type="button" className="scan-report-button" onClick={() => exportScanReport(result, language)}>
-            <span aria-hidden="true">⇩</span> {en ? "Export PDF" : "Xuất báo cáo PDF"}
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17v3h14v-3" /></svg>
+            <span>{en ? "Export PDF" : "Xuất báo cáo PDF"}</span>
           </button>
-          <div className="scan-result-score" style={{ "--scan-score": `${score * 3.6}deg` }}>
-            <div><strong>{score}</strong><small>/100</small></div>
+          <div className="scan-result-score" style={{ "--scan-score": `${score * 3.6}deg` }} aria-label={en ? `Risk score ${score} out of 100` : `Điểm rủi ro ${score} trên 100`}>
+            <div><small>{en ? "RISK" : "RỦI RO"}</small><span><strong>{score}</strong><small>/100</small></span></div>
           </div>
         </div>
       </header>
 
       <section className={`scan-plain-verdict ${result.risk_level}`}>
         <span>{levelCopy.icon || "i"}</span>
-        <div>
-          <small>{en ? "PLAIN-LANGUAGE VERDICT" : "KẾT LUẬN DỄ HIỂU"}</small>
-          <h3>{levelCopy.title || level}</h3>
-          <p>{levelCopy.body || result.explanation}</p>
-        </div>
-        <b>{suspiciousCount ? (en ? `${suspiciousCount} detail(s) to review` : `${suspiciousCount} chi tiết cần chú ý`) : (en ? "No notable details" : "Chưa có chi tiết nổi bật")}</b>
+        <h3>{levelCopy.title || level}</h3>
       </section>
-
-      <div className="scan-result-context">
-        <span>{en ? "Checked" : "Đã kiểm tra"}: <strong>{sourceLabel}</strong></span>
-        <span>{en ? "Detected" : "Nhận diện"}: <strong>{scamTypeLabel}</strong></span>
-        {result.phishvn_urls?.length > 0 && <span>{en ? "Links" : "Đường link"}: <strong>{result.phishvn_urls.length} {en ? "to review" : "link cần chú ý"}</strong></span>}
-      </div>
-
-      {result.source_type !== "image" && <EvidenceSources result={result} language={language} />}
 
       {result.source_type === "image" && (
         <section className={`scan-gradcam-card ${gradcam.available ? "available" : "unavailable"}`}>
@@ -407,17 +321,6 @@ function ResultConsole({ result, apiBase, language }) {
           )}
         </section>
       )}
-
-      {result.source_type !== "image" && <div className="scan-simple-result-grid">
-        <section className="scan-why-card">
-          <div className="scan-friendly-heading"><span>01</span><div><small>{en ? "WHY IT WAS FLAGGED" : "LÝ DO CẢNH BÁO"}</small><h3>{en ? "Why did I get this result?" : "Vì sao có kết quả này?"}</h3></div></div>
-          <ol>{plainReasons.map((reason, index) => <li key={reason}><b>{index + 1}</b><span>{reason}</span></li>)}</ol>
-        </section>
-        <section className="scan-next-steps-card">
-          <div className="scan-friendly-heading"><span>02</span><div><small>{en ? "SAFE NEXT STEPS" : "HÀNH ĐỘNG AN TOÀN"}</small><h3>{en ? "What should you do next?" : "Bạn nên làm gì tiếp theo?"}</h3></div></div>
-          <ol>{nextSteps.map((step, index) => <li key={step}><b>{index + 1}</b><span>{step}</span></li>)}</ol>
-        </section>
-      </div>}
 
       <div className="scan-readable-content">
           <details className="scan-ocr-console" open>

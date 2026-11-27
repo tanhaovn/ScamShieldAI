@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 from PIL import Image
 
-import backend.app.main as main
+import backend.app.services.analysis as analysis_service
 
 
 def test_confident_vlm_safe_overrides_isolated_resnet_false_positive(tmp_path, monkeypatch):
@@ -10,7 +10,7 @@ def test_confident_vlm_safe_overrides_isolated_resnet_false_positive(tmp_path, m
     Image.new("RGB", (640, 480), color=(185, 175, 165)).save(image_path)
 
     monkeypatch.setattr(
-        main,
+        analysis_service,
         "analyze_phishing_image",
         lambda _path: SimpleNamespace(
             available=True,
@@ -25,12 +25,12 @@ def test_confident_vlm_safe_overrides_isolated_resnet_false_positive(tmp_path, m
         ),
     )
     monkeypatch.setattr(
-        main,
+        analysis_service,
         "analyze_image_visual",
         lambda _path, use_deepfake_model=False: SimpleNamespace(visual_score=0, flags=[]),
     )
     monkeypatch.setattr(
-        main,
+        analysis_service,
         "analyze_image_context",
         lambda *_args, **_kwargs: SimpleNamespace(
             available=True,
@@ -55,7 +55,9 @@ def test_confident_vlm_safe_overrides_isolated_resnet_false_positive(tmp_path, m
         ),
     )
 
-    payload = main._analyze_content_payload("", image_path=str(image_path), qr_codes=[])
+    payload = analysis_service.analyze_content_payload(
+        "", image_path=str(image_path), qr_codes=[]
+    )
 
     assert payload["image_model_score"] == 80
     assert payload["vlm_analysis"]["verdict"] == "safe"

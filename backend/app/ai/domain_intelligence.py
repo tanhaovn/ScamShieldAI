@@ -103,14 +103,20 @@ def inspect_url(value: str) -> DomainFinding | None:
     if _entropy(name.replace("-", "")) > 3.75 and len(name) >= 12:
         score += 12
         signals.append("Tên miền có chuỗi ký tự ngẫu nhiên khó đọc")
+    embedded_brand = ""
     for brand in BRANDS:
         if brand in host and brand != name:
+            embedded_brand = brand
             score += 24
             signals.append(f"Tên thương hiệu “{brand}” xuất hiện ngoài tên miền chính")
             break
-    if re.search(r"(?:login|verify|secure|account|otp|payment|wallet|update)", name) and any(brand in host for brand in BRANDS):
-        score += 18
-        signals.append("Kết hợp thương hiệu với từ khóa đăng nhập/xác minh")
+    suspicious_brand_context = re.search(
+        r"(?:login|verify|secure|account|otp|payment|wallet|update|shop|seller)",
+        f"{name} {parsed.path.lower()}",
+    )
+    if embedded_brand and suspicious_brand_context:
+        score += 28
+        signals.append("Kết hợp thương hiệu với từ khóa đăng nhập, thanh toán hoặc bán hàng")
 
     if trusted and not signals:
         score = 0

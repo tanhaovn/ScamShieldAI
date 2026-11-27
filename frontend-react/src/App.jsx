@@ -38,6 +38,7 @@ function App() {
     scan: ["Kiểm tra lừa đảo", "Phân tích ảnh, tin nhắn, đường link hoặc PDF"],
     history: ["Lịch sử kiểm tra", "Xem lại và quản lý các kết quả trước đây"],
     profile: ["Tài khoản của bạn", "Dữ liệu và lịch sử đang lưu trên thiết bị"],
+    login: ["Tài khoản người dùng", "Đăng nhập để đồng bộ lịch sử kiểm tra"],
     "admin-login": ["Đăng nhập quản trị", "Khu vực dành riêng cho quản trị viên"],
     "admin-dataset": ["Training Dataset", "Quản lý dữ liệu phục vụ huấn luyện"],
     "admin-models": ["AI Models", "Quản lý các phiên bản mô hình"],
@@ -52,6 +53,7 @@ function App() {
     scan: ["Scam check", "Analyze images, messages, links or PDF files"],
     history: ["Check history", "Review and manage your previous results"],
     profile: ["Your account", "Data and history saved on this device"],
+    login: ["User account", "Sign in to sync your check history"],
     "admin-login": ["Administrator sign in", "Restricted administrator area"],
     "admin-dataset": ["Training Dataset", "Manage model training data"],
     "admin-models": ["AI Models", "Manage model versions"],
@@ -78,22 +80,28 @@ function App() {
     setLanguageState(nextLanguage === "en" ? "en" : "vi");
   }
 
-  if (app.activePage === "admin-login" && app.me.role !== "admin") {
+  const isAuthPage = app.activePage === "login" || app.activePage === "admin-login";
+  const needsAuthPage = isAuthPage && (app.me.role === "guest" || app.activePage === "admin-login" && app.me.role !== "admin");
+  if (needsAuthPage) {
     return (
       <AuthPage
         form={app.form}
         setForm={app.setForm}
         loading={app.loading}
         authError={app.authError}
+        authMode={app.authMode}
+        setAuthMode={app.setAuthMode}
+        adminMode={app.activePage === "admin-login"}
         onSubmit={app.handleAuth}
         onBack={() => app.navigate("overview")}
+        onAdminLogin={() => app.navigate("admin-login")}
         language={language}
       />
     );
   }
 
   function renderPage() {
-    if (app.activePage === "overview" || (app.activePage === "admin-login" && app.me.role === "admin")) {
+    if (app.activePage === "overview" || (isAuthPage && app.me.role !== "guest")) {
       return (
         <OverviewPage
           history={app.history}
@@ -126,7 +134,7 @@ function App() {
           selectedHistory={app.selectedHistory}
           setSelectedHistory={app.setSelectedHistory}
           apiBase={API_BASE}
-          isGuest={app.me.role !== "admin"}
+          isGuest={app.me.role === "guest"}
           language={language}
         />
       );
@@ -152,7 +160,7 @@ function App() {
         <Card className="panel guest-admin-gate">
           <span>ADMIN ACCESS</span>
           <h3>{language === "en" ? "Administrator-only area" : "Khu vực dành riêng cho quản trị viên"}</h3>
-          <p>{language === "en" ? "Standard users do not need to sign in to check content." : "Người dùng thông thường không cần đăng nhập để kiểm tra ảnh."}</p>
+          <p>{language === "en" ? "Sign in with an administrator account to continue." : "Hãy đăng nhập bằng tài khoản quản trị để tiếp tục."}</p>
           <Button onClick={() => app.navigate("admin-login")}>{language === "en" ? "Administrator sign in" : "Đăng nhập quản trị"}</Button>
         </Card>
       );
@@ -175,6 +183,7 @@ function App() {
         navigate={app.navigate}
         user={app.me}
         onLogout={app.logout}
+        onLogin={() => app.navigate("login")}
         onAdminLogin={() => app.navigate("admin-login")}
         language={language}
       />

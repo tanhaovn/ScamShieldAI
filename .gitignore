@@ -17,8 +17,14 @@ phishing_dataset/
 .pytest-work/
 .codex-work/
 outputs/
+artifacts/
+tmp_testplan/
+node_modules/
+artifact_node_modules/
 frontend-react/node_modules/
 frontend-react/dist/
 frontend-react/.vite/
+cloudflared.exe
+source_inventory.json
 .DS_Store
 *.log

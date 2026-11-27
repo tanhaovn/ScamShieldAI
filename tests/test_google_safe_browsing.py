@@ -68,7 +68,7 @@ def test_google_match_cannot_be_overridden_as_safe(monkeypatch):
         ],
     )
     monkeypatch.setattr(
-        "backend.app.main.check_google_safe_browsing",
+        "backend.app.services.analysis.check_google_safe_browsing",
         lambda urls: verified_match,
     )
 

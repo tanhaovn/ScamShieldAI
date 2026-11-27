@@ -387,6 +387,12 @@ def analyze_image_context(
             verdict = str(data.get("verdict", "insufficient_evidence")).strip().lower()
             if verdict not in {"safe", "suspicious", "high_risk", "insufficient_evidence"}:
                 verdict = "insufficient_evidence"
+            # An abstention is not a useful final verdict. Preserve the VLM's
+            # uncertainty by falling back to the deterministic multimodal
+            # reasoning engine, which can still evaluate OCR, QR and URL
+            # evidence without pretending the vision model reached a result.
+            if verdict == "insufficient_evidence":
+                raise ValueError("VLM không đủ bằng chứng để đưa ra kết luận.")
             confidence = max(0.0, min(float(data.get("confidence", 0.0)), 1.0))
             score_by_verdict = {"safe": 10, "suspicious": 45, "high_risk": 75, "insufficient_evidence": 0}
             explanation_items = _clean_explanation_items(data.get("evidence"))
