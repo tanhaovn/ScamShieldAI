@@ -1,6 +1,9 @@
+import { useState } from "react";
+
 const primaryItems = [
   { page: "overview", vi: "Tổng quan", en: "Overview", icon: "dashboard" },
   { page: "scan", vi: "Kiểm tra lừa đảo", en: "Scam check", icon: "scan" },
+  { page: "statistics", vi: "Thống kê", en: "Statistics", icon: "chart" },
   { page: "history", vi: "Lịch sử", en: "History", icon: "history" },
   { page: "profile", vi: "Cá nhân", en: "Profile", icon: "user" },
 ];
@@ -75,7 +78,9 @@ function NavGroup({ label, items, activePage, navigate, language, mobileAction }
 }
 
 export default function Navbar({ activePage, navigate, user, onLogout, onLogin, onAdminLogin, language = "vi" }) {
+  const [mobileOpen, setMobileOpen] = useState(false);
   const isAdmin = user.role === "admin";
+  const isAdminLayout = activePage.startsWith("admin-");
   const isSignedIn = user.role !== "guest";
   const isEnglish = language === "en";
   const displayName = isEnglish && user.full_name === "Người dùng khách" ? "Guest user" : user.full_name;
@@ -86,9 +91,56 @@ export default function Navbar({ activePage, navigate, user, onLogout, onLogin, 
     .slice(0, 2)
     .toUpperCase();
 
+  const goTo = (page) => {
+    setMobileOpen(false);
+    navigate(page);
+  };
+
+  if (!isAdminLayout) {
+    return (
+      <header className="site-header">
+        <div className="site-header-inner">
+          <button className="site-brand" onClick={() => goTo("overview")} aria-label={isEnglish ? "Scam Detector home" : "Trang chủ Scam Detector"}>
+            <span className="site-brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 32 32"><path d="M16 3 6 7v7c0 7.2 4.1 12.1 10 15 5.9-2.9 10-7.8 10-15V7Z" /><path d="m11.5 16 3 3 6.5-8" /></svg>
+            </span>
+            <span><strong>Scam Detector</strong><small>{isEnglish ? "Digital safety platform" : "Nền tảng an toàn số"}</small></span>
+          </button>
+
+          <nav className="site-nav" aria-label={isEnglish ? "Main navigation" : "Điều hướng chính"}>
+            {primaryItems.map((item) => (
+              <button key={item.page} className={activePage === item.page ? "active" : ""} onClick={() => goTo(item.page)}>
+                {item[language] || item.vi}
+              </button>
+            ))}
+          </nav>
+
+          <div className="site-header-actions">
+            <button className="site-live-pill" type="button" onClick={() => goTo("scan")}><i />{isEnglish ? "Detector live" : "Bộ quét trực tuyến"}</button>
+            {isAdmin && <button className="site-admin-link" onClick={() => goTo("admin-dataset")}>{isEnglish ? "Admin" : "Quản trị"}</button>}
+            <button className="site-primary-action" onClick={() => goTo("scan")}>{isEnglish ? "Check now" : "Kiểm tra ngay"}</button>
+            <button className="site-account-button" onClick={isSignedIn ? () => goTo("profile") : onLogin} title={displayName}>
+              <span>{initials}</span><b>{isSignedIn ? displayName : (isEnglish ? "Sign in" : "Đăng nhập")}</b>
+            </button>
+            {isSignedIn && <button className="site-logout-button" onClick={onLogout} aria-label={isEnglish ? "Sign out" : "Đăng xuất"}><NavIcon name="logout" /></button>}
+            <button className="site-menu-toggle" type="button" aria-expanded={mobileOpen} aria-label={isEnglish ? "Toggle navigation" : "Mở menu"} onClick={() => setMobileOpen((value) => !value)}>
+              <span /><span /><span />
+            </button>
+          </div>
+        </div>
+
+        <div className={`site-mobile-menu ${mobileOpen ? "open" : ""}`}>
+          {primaryItems.map((item) => <button key={item.page} className={activePage === item.page ? "active" : ""} onClick={() => goTo(item.page)}><NavIcon name={item.icon} />{item[language] || item.vi}</button>)}
+          {isAdmin && <button onClick={() => goTo("admin-dataset")}><NavIcon name="database" />{isEnglish ? "Administration" : "Quản trị hệ thống"}</button>}
+          {!isSignedIn && <button onClick={() => { setMobileOpen(false); onLogin(); }}><NavIcon name="login" />{isEnglish ? "Sign in / Register" : "Đăng nhập / Đăng ký"}</button>}
+        </div>
+      </header>
+    );
+  }
+
   return (
-    <aside className="app-sidebar">
-      <button className="sidebar-brand" onClick={() => navigate("overview")}>
+    <aside className="app-sidebar admin-navigation">
+      <button className="sidebar-brand" onClick={() => goTo("overview")}>
         <span className="sidebar-logo" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6Z" /><path d="m9 12 2 2 4-5" /></svg>
         </span>
@@ -103,13 +155,13 @@ export default function Navbar({ activePage, navigate, user, onLogout, onLogin, 
           label={isEnglish ? "Main menu" : "Menu chính"}
           items={primaryItems}
           activePage={activePage}
-          navigate={navigate}
+          navigate={goTo}
           language={language}
           mobileAction={{
             label: isAdmin ? (isEnglish ? "Admin" : "Quản trị") : "Admin",
             icon: isAdmin ? "database" : "login",
             active: activePage.startsWith("admin-"),
-            onClick: isAdmin ? () => navigate("admin-dataset") : onAdminLogin,
+            onClick: isAdmin ? () => goTo("admin-dataset") : onAdminLogin,
           }}
         />
         {isAdmin && (
@@ -117,14 +169,14 @@ export default function Navbar({ activePage, navigate, user, onLogout, onLogin, 
             label={isEnglish ? "Administration" : "Quản trị hệ thống"}
             items={adminItems}
             activePage={activePage}
-            navigate={navigate}
+            navigate={goTo}
             language={language}
           />
         )}
       </div>
 
       <div className="sidebar-bottom">
-        <button className="sidebar-new-scan" onClick={() => navigate("scan")}>
+        <button className="sidebar-new-scan" onClick={() => goTo("scan")}>
           <span>+</span> {isEnglish ? "New check" : "Tạo lượt kiểm tra"}
         </button>
         {!isSignedIn && (
@@ -135,7 +187,7 @@ export default function Navbar({ activePage, navigate, user, onLogout, onLogin, 
         <div className={`sidebar-user${activePage === "profile" ? " active" : ""}`}>
           <button
             className="sidebar-user-profile"
-            onClick={() => navigate("profile")}
+            onClick={() => goTo("profile")}
             title={isEnglish ? "Open profile" : "Mở trang cá nhân"}
             aria-label={`${isEnglish ? "Open profile for" : "Mở trang cá nhân của"} ${displayName || user.email}`}
           >

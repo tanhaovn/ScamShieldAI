@@ -139,6 +139,74 @@ function HighlightedContent({ text, terms = [], urls = [], language }) {
   return output;
 }
 
+function AiExplanationAssistant({ result, apiBase, language, evidence }) {
+  const en = language === "en";
+  const [open, setOpen] = useState(false);
+  const [question, setQuestion] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  async function askGemini(value) {
+    const nextQuestion = String(value || question).trim();
+    if (!nextQuestion || loading) return;
+    setMessages((current) => [...current, { role: "user", text: nextQuestion }]);
+    setQuestion("");
+    setLoading(true);
+    try {
+      const response = await fetch(`${apiBase}/explain-result`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: nextQuestion,
+          language,
+          risk_score: Math.min(100, Math.max(0, Number(result.risk_score) || 0)),
+          risk_level: result.risk_level || "unknown",
+          source_type: result.source_type || "unknown",
+          explanation: String(result.explanation || "").slice(0, 8000),
+          extracted_text: String(result.extracted_text || "").slice(0, 6000),
+          evidence: (evidence || []).slice(0, 8).map((item) => ({
+            observation: String(item.observation || "").slice(0, 1000),
+            why_risky: String(item.why_risky || "").slice(0, 2000),
+          })),
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload.detail || (en ? "Gemini is unavailable right now." : "Gemini hiện chưa sẵn sàng."));
+      setMessages((current) => [...current, { role: "assistant", text: payload.answer, model: payload.model }]);
+    } catch (error) {
+      setMessages((current) => [...current, { role: "error", text: error.message }]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const quickQuestion = en ? "Why was this content flagged?" : "Tại sao nội dung này bị đánh dấu?";
+  return <>
+    <button type="button" className="scan-ai-ask-trigger" onClick={() => setOpen(true)}><span className="scan-ai-trigger-icon">AI</span>{en ? "Ask" : "Hỏi"}</button>
+    {open && <div className="scan-ai-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
+      <section className="scan-ai-assistant" role="dialog" aria-modal="true" aria-label={en ? "AI explanation assistant" : "Trợ lý AI giải thích kết quả"}>
+        <header>
+          <span className="scan-ai-avatar" aria-hidden="true"><i /><b>AI</b></span>
+          <div><small>{en ? "AI EXPLANATION ASSISTANT" : "TRỢ LÝ AI GIẢI THÍCH"}</small><strong>{en ? "Ask why this result was produced" : "Hỏi thêm vì sao có kết quả này"}</strong></div>
+          <span className="scan-ai-online"><i />{en ? "Ready" : "Sẵn sàng"}</span>
+          <button type="button" className="scan-ai-dialog-close" onClick={() => setOpen(false)} aria-label={en ? "Close" : "Đóng"}>×</button>
+        </header>
+        <div className="scan-ai-chat">
+          <div className="scan-ai-message assistant"><span className="scan-ai-avatar mini" aria-hidden="true"><b>AI</b></span><p>{en ? "I can explain the evidence above in simpler terms. What would you like to understand?" : "Mình có thể giải thích các bằng chứng phía trên theo cách dễ hiểu hơn. Bạn muốn hỏi điều gì?"}</p></div>
+          {!messages.length && <button type="button" className="scan-ai-quick-question" onClick={() => askGemini(quickQuestion)}>{quickQuestion}</button>}
+          {messages.map((message, index) => <div className={`scan-ai-message ${message.role}`} key={`${message.role}-${index}`}><span>{message.role === "user" ? (en ? "You" : "Bạn") : message.role === "error" ? "!" : "AI"}</span><p>{message.text}</p>{message.model && <small>{message.model}</small>}</div>)}
+          {loading && <div className="scan-ai-message assistant loading"><span className="scan-ai-avatar mini"><b>AI</b></span><p>{en ? "AI is reviewing the evidence" : "AI đang xem lại các bằng chứng"}<i /><i /><i /></p></div>}
+        </div>
+        <form onSubmit={(event) => { event.preventDefault(); askGemini(); }}>
+          <input value={question} onChange={(event) => setQuestion(event.target.value)} maxLength={600} autoFocus placeholder={en ? "Ask a follow-up question..." : "Hỏi thêm về kết quả này..."} />
+          <button type="submit" disabled={!question.trim() || loading}>{en ? "Ask" : "Hỏi"}<span>→</span></button>
+        </form>
+        <p className="scan-ai-disclaimer">{en ? "The current result and extracted text are sent to the AI only when you ask. AI answers may be inaccurate." : "Kết quả hiện tại và văn bản trích xuất chỉ được gửi tới AI khi bạn đặt câu hỏi. Câu trả lời AI có thể chưa hoàn toàn chính xác."}</p>
+      </section>
+    </div>}
+  </>;
+}
+
 function ResultFeedback({ result, apiBase, language }) {
   const en = language === "en";
   const [choice, setChoice] = useState("");
@@ -287,7 +355,10 @@ function ResultConsole({ result, apiBase, language }) {
                 <span>{en ? "Lower contribution" : "Ít tác động"}</span><i /><span>{en ? "Higher contribution" : "Tác động mạnh"}</span>
               </div>
               <div className="scan-gradcam-explanation">
-                <h4>{en ? "Explanation" : "Giải thích"}</h4>
+                <div className="scan-explanation-title-row">
+                  <h4>{en ? "Explanation" : "Giải thích"}</h4>
+                  <AiExplanationAssistant key={result.id || result.created_at || result.scan_id || "result"} result={result} apiBase={apiBase} language={language} evidence={aiExplanationItems} />
+                </div>
                 {hasAiExplanation ? (
                   <ol className="scan-ai-evidence-list">
                     {aiExplanationItems.map((item, index) => (
@@ -418,7 +489,7 @@ export default function ScanPage({
   ];
 
   return (
-    <div className={`scan-experience ${loading ? "loading" : ""}`}>
+    <div className={`scan-experience ${loading ? "loading" : ""} ${result ? "has-result" : ""} ${sourceReady ? "has-source" : ""}`}>
       <section className="scan-command-banner">
         <div>
           <span className="scan-banner-live"><i /> {en ? "SAFETY CHECK" : "KIỂM TRA AN TOÀN"}</span>
@@ -437,7 +508,7 @@ export default function ScanPage({
       <div className="scan-workbench">
         <section className="scan-control-panel panel">
           <header className="scan-panel-heading">
-            <div><span className="eyebrow">{en ? "STEP 1" : "BƯỚC 1"}</span><h3>{en ? "Choose content to check" : "Chọn nội dung cần kiểm tra"}</h3></div>
+            <div><span className="eyebrow">{en ? "CONTENT TO CHECK" : "NỘI DUNG CẦN KIỂM TRA"}</span><h3>{en ? "Choose what you received" : "Chọn loại nội dung bạn nhận được"}</h3></div>
             <span className="scan-private-badge">🔒 {en ? "PROTECTED" : "ĐƯỢC BẢO VỆ"}</span>
           </header>
 
@@ -524,7 +595,7 @@ export default function ScanPage({
 
         <section className="scan-viewer-panel panel">
           <header className="scan-panel-heading">
-            <div><span className="eyebrow">{en ? "STEP 2" : "BƯỚC 2"}</span><h3>{en ? "Preview and result" : "Xem trước và kết quả"}</h3></div>
+            <div><span className="eyebrow">{en ? "SAFE PREVIEW" : "XEM TRƯỚC AN TOÀN"}</span><h3>{en ? "Preview before analysis" : "Xem trước trước khi phân tích"}</h3></div>
             <span className={`scan-viewer-status ${loading ? "active" : ""}`}><i /> {loading ? (en ? "SCANNING" : "ĐANG QUÉT") : result ? (en ? "COMPLETE" : "HOÀN TẤT") : (en ? "READY" : "SẴN SÀNG")}</span>
           </header>
           <ScanViewport imageSource={scanMode === "image" ? imageSource : ""} loading={loading} result={result} mode={scanMode} textPreview={textPreview} documentName={scanMode === "pdf" ? documentFile?.name : ""} language={language} />

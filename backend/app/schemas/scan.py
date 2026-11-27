@@ -18,6 +18,22 @@ class BatchUrlRequest(BaseModel):
     urls: list[str] = Field(min_length=1, max_length=50)
 
 
+class ExplanationEvidence(BaseModel):
+    observation: str = Field(default="", max_length=1000)
+    why_risky: str = Field(default="", max_length=2000)
+
+
+class ExplanationFollowupRequest(BaseModel):
+    question: str = Field(min_length=2, max_length=600)
+    language: str = Field(default="vi", pattern="^(vi|en)$")
+    risk_score: int = Field(default=0, ge=0, le=100)
+    risk_level: str = Field(default="unknown", max_length=30)
+    source_type: str = Field(default="unknown", max_length=30)
+    explanation: str = Field(default="", max_length=8000)
+    extracted_text: str = Field(default="", max_length=6000)
+    evidence: list[ExplanationEvidence] = Field(default_factory=list, max_length=8)
+
+
 class ScanFeedbackRequest(BaseModel):
     scan_id: int | None = None
     client_scan_id: str | None = Field(default=None, max_length=100)

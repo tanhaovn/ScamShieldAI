@@ -1,5 +1,3 @@
-import { API_BASE } from "../../hooks/useAppController";
-
 const iconPaths = {
   scan: ["M4 8V5a1 1 0 0 1 1-1h3", "M16 4h3a1 1 0 0 1 1 1v3", "M20 16v3a1 1 0 0 1-1 1h-3", "M8 20H5a1 1 0 0 1-1-1v-3", "M8 12h8"],
   shield: ["M12 3 5 6v5c0 5 3 8 7 10 4-2 7-5 7-10V6Z", "m9 12 2 2 4-5"],
@@ -11,127 +9,88 @@ const iconPaths = {
   brain: ["M9 4a3 3 0 0 0-3 3v1a3 3 0 0 0-1 5 3 3 0 0 0 3 4h1v3", "M15 4a3 3 0 0 1 3 3v1a3 3 0 0 1 1 5 3 3 0 0 1-3 4h-1v3", "M9 4v16M15 4v16"],
   arrow: ["M5 12h14", "m14 12-5-5", "m14 12-5 5"],
   clock: ["M12 3a9 9 0 1 0 9 9", "M12 7v5l3 2"],
+  people: ["M16 20v-1.5a4.5 4.5 0 0 0-4.5-4.5h-3A4.5 4.5 0 0 0 4 18.5V20", "M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z", "M17 4.5a3.5 3.5 0 0 1 0 6.8", "M18 14a4 4 0 0 1 3 3.9V20"],
+  check: ["M20 6 9 17l-5-5"],
 };
 
 function Icon({ name }) {
   return <svg viewBox="0 0 24 24" aria-hidden="true">{iconPaths[name].map((path) => <path key={path} d={path} />)}</svg>;
 }
 
-function formatTime(value, language) {
-  if (!value) return language === "en" ? "Just now" : "Vừa xong";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return language === "en" ? "Just now" : "Vừa xong";
-  return date.toLocaleString(language === "en" ? "en-US" : "vi-VN", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
-}
-
-function riskLabel(level, language) {
-  if (level === "nguy_hiem") return language === "en" ? "Danger" : "Nguy hiểm";
-  if (level === "nghi_ngo") return language === "en" ? "Review" : "Cần kiểm tra";
-  return language === "en" ? "Safe" : "An toàn";
-}
-
-function imageSource(item) {
-  const value = String(item?.image_url || "").trim();
-  if (!value) return "";
-  if (/^(?:data:|blob:|https?:\/\/)/i.test(value)) return value;
-  return `${API_BASE}${value.startsWith("/") ? "" : "/"}${value}`;
-}
-
-function SparkBars({ tone }) {
-  return <span className={`console-spark ${tone}`} aria-hidden="true">{[3, 6, 4, 8, 10, 7, 11].map((height, index) => <i key={index} style={{ height: `${height + 4}px` }} />)}</span>;
-}
-
-export default function OverviewPage({ history, user, onStartScan, language = "vi" }) {
+export default function OverviewPage({ history, user, onStartScan, onOpenStatistics, language = "vi" }) {
   const en = language === "en";
   const stats = history.reduce((summary, item) => {
     summary.total += 1;
     summary.score += Number(item.risk_score) || 0;
     if (item.risk_level === "an_toan") summary.safe += 1;
-    if (item.risk_level === "nghi_ngo") summary.suspicious += 1;
-    if (item.risk_level === "nguy_hiem") summary.danger += 1;
     return summary;
-  }, { total: 0, safe: 0, suspicious: 0, danger: 0, score: 0 });
+  }, { total: 0, safe: 0, score: 0 });
 
   const safePercent = stats.total ? Math.round((stats.safe / stats.total) * 100) : 100;
   const avgRisk = stats.total ? Math.round(stats.score / stats.total) : 0;
-  const safeShare = stats.total ? (stats.safe / stats.total) * 100 : 100;
-  const warningShare = stats.total ? (stats.suspicious / stats.total) * 100 : 0;
-  const distribution = { background: `conic-gradient(#4f9d7f 0 ${safeShare}%, #d9a441 ${safeShare}% ${safeShare + warningShare}%, #d86666 ${safeShare + warningShare}% 100%)` };
-  const recent = history.slice(0, 5);
-  const trend = history.slice(0, 10).reverse();
-  const chartData = trend.length ? trend : [{ risk_score: 0 }, { risk_score: 0 }];
-  const chartPoints = chartData.map((item, index, list) => {
-    const x = 24 + (index * 552) / Math.max(1, list.length - 1);
-    const y = 150 - Math.min(100, Math.max(0, Number(item.risk_score) || 0)) * 1.15;
-    return `${x},${y}`;
-  }).join(" ");
   const displayName = en && user?.full_name === "Người dùng khách" ? "Guest" : user?.full_name;
   const firstName = (displayName || (en ? "Guest" : "bạn")).trim().split(/\s+/).pop();
 
-  const statCards = [
-    { icon: "scan", label: en ? "Total analyses" : "Tổng lượt phân tích", value: stats.total, note: en ? "Processed records" : "Hồ sơ đã xử lý", tone: "neutral" },
-    { icon: "shield", label: en ? "Safe results" : "Kết quả an toàn", value: stats.safe, note: `${stats.total ? safePercent : 0}% ${en ? "of all checks" : "tổng lượt"}`, tone: "safe" },
-    { icon: "pulse", label: en ? "Needs review" : "Cần kiểm tra thêm", value: stats.suspicious, note: en ? "Suspicious signals" : "Tín hiệu nghi ngờ", tone: "warning" },
-    { icon: "alert", label: en ? "Danger alerts" : "Cảnh báo nguy hiểm", value: stats.danger, note: en ? "Do not interact" : "Không nên tương tác", tone: "danger" },
-  ];
   return (
     <div className="console-overview">
       <section className="console-hero">
         <div className="console-hero-copy">
-          <span className="console-live"><i /> {en ? "PROTECTION SYSTEM · LIVE" : "HỆ THỐNG BẢO VỆ · TRỰC TUYẾN"}</span>
-          <p className="console-greeting">{en ? `Hello, ${firstName}` : `Chào ${firstName},`}</p>
+          <span className="console-live"><i /> {en ? "FREE DIGITAL SAFETY CHECK" : "KIỂM TRA AN TOÀN SỐ MIỄN PHÍ"}</span>
+          <p className="console-greeting">{en ? `Hello, ${firstName}` : `Xin chào ${firstName},`}</p>
           <h2>
-            <span className="hero-title-wide">{en ? <>Digital safety starts<br />with one check.</> : <>An toàn số bắt đầu từ<br />một lần kiểm tra.</>}</span>
-            <span className="hero-title-mobile">{en ? <>Check first.<br />Stay safe.</> : <>Kiểm tra nhanh,<br />an toàn hơn.</>}</span>
+            <span className="hero-title-wide">{en ? <>Are you browsing<br /><em>safely?</em></> : <>Bạn có đang lướt mạng<br /><em>an toàn?</em></>}</span>
+            <span className="hero-title-mobile">{en ? <>Are you<br /><em>safe online?</em></> : <>Bạn có đang<br /><em>an toàn?</em></>}</span>
           </h2>
-          <p className="console-hero-lead">{en ? "OCR, verified URL intelligence and image analysis work together to protect every decision." : "OCR, nguồn đối chiếu URL và phân tích hình ảnh phối hợp để bảo vệ từng quyết định của bạn."}</p>
+          <p className="console-hero-lead">{en ? "Check a suspicious image, message, link or document before you trust, reply or make a payment." : "Kiểm tra hình ảnh, tin nhắn, đường link hoặc tài liệu đáng ngờ trước khi bạn tin tưởng, phản hồi hay chuyển tiền."}</p>
           <div className="console-hero-actions">
-            <button onClick={onStartScan}><Icon name="scan" /> {en ? "Check now" : "Kiểm tra ngay"} <Icon name="arrow" /></button>
-            <span><i /> {stats.danger ? (en ? `${stats.danger} danger alert${stats.danger > 1 ? "s" : ""}` : `${stats.danger} cảnh báo nguy hiểm`) : (en ? "No critical alerts" : "Không có cảnh báo nghiêm trọng")}</span>
+            <button onClick={onStartScan}><Icon name="scan" /> {en ? "Start a safety check" : "Bắt đầu kiểm tra"}</button>
+            <span><i /> {en ? "Image · Message · URL · PDF" : "Ảnh · Tin nhắn · URL · PDF"}</span>
           </div>
         </div>
 
-        <div className="console-radar-zone" aria-label={en ? `Average risk ${avgRisk} out of 100` : `Rủi ro trung bình ${avgRisk} trên 100`}>
-          <div className="console-radar">
-            <span className="radar-ring ring-a" /><span className="radar-ring ring-b" /><span className="radar-ring ring-c" />
-            <span className="radar-cross horizontal" /><span className="radar-cross vertical" /><span className="radar-sweep" />
-            <span className="radar-lock-frame" />
-            <span className="radar-blip blip-a" /><span className="radar-blip blip-b" /><span className="radar-blip blip-c" /><span className="radar-blip blip-d" />
-            <span className="radar-node node-ocr"><i />OCR</span><span className="radar-node node-url"><i />URL</span><span className="radar-node node-ai"><i />AI</span>
-            <div className="radar-core"><strong>{avgRisk}</strong><small>{en ? "RISK AVG" : "RỦI RO TB"}</small></div>
+        <div className="public-protection-visual" aria-label={en ? `Average risk ${avgRisk} out of 100` : `Rủi ro trung bình ${avgRisk} trên 100`}>
+          <span className="protection-orbit orbit-one" /><span className="protection-orbit orbit-two" /><span className="protection-orbit orbit-three" />
+          <div className="protection-eye-character" aria-hidden="true">
+            <div className="protection-eye-face">
+              <img className="protection-eye-asset" src="/static/hero-safety-eye.png" alt="" />
+              <span className="protection-eye-lid" />
+            </div>
           </div>
-          <div className="console-readout">
-            <span>{en ? "SECURITY READOUT" : "CHỈ SỐ AN TOÀN"}</span>
-            <div><strong>{String(stats.total).padStart(2, "0")}</strong><small>{en ? "OBJECTS SCANNED" : "LƯỢT ĐÃ QUÉT"}</small></div>
-            <div><strong>{safePercent}%</strong><small>{en ? "SAFE RATIO" : "TỶ LỆ AN TOÀN"}</small></div>
-            <SparkBars tone="safe" />
-          </div>
+          <span className="protection-tag protection-ai">AI</span><span className="protection-tag protection-url">URL</span><span className="protection-tag protection-ocr">OCR</span>
+          <div className="protection-summary"><span><strong>{stats.total}</strong>{en ? "checks" : "lượt kiểm tra"}</span><span><strong>{safePercent}%</strong>{en ? "safe" : "an toàn"}</span></div>
         </div>
       </section>
 
-      <section className="console-stat-grid">
-        {statCards.map((card) => <article className={`console-stat-card ${card.tone}`} key={card.label}><span className="console-stat-icon"><Icon name={card.icon} /></span><div><small>{card.label}</small><strong>{card.value}</strong><span>{card.note}</span></div><SparkBars tone={card.tone} /></article>)}
+      <section className="public-services-section">
+        <header><span>{en ? "FREE TOOLS" : "CÔNG CỤ MIỄN PHÍ"}</span><h3>{en ? "Check suspicious content in one place" : "Kiểm tra nội dung đáng ngờ tại một nơi"}</h3><p>{en ? "Choose the type of information you received. The same analysis flow will explain the risks and recommend next steps." : "Chọn loại thông tin bạn nhận được. Hệ thống sẽ giải thích tín hiệu rủi ro và đề xuất cách xử lý tiếp theo."}</p></header>
+        <div className="public-service-grid">
+          {[
+            ["image", en ? "Images & QR" : "Hình ảnh & QR", en ? "Read text, QR codes and visual warning signs." : "Đọc văn bản, mã QR và dấu hiệu bất thường trên ảnh."],
+            ["link", en ? "Links & domains" : "Link & tên miền", en ? "Review URL structure and security intelligence." : "Đối chiếu cấu trúc URL và nguồn dữ liệu an toàn."],
+            ["eye", en ? "Messages & email" : "Tin nhắn & email", en ? "Spot impersonation, urgency and payment traps." : "Phát hiện mạo danh, thúc ép và bẫy chuyển tiền."],
+            ["brain", en ? "PDF documents" : "Tài liệu PDF", en ? "Extract and review notices, invoices and forms." : "Trích xuất và kiểm tra giấy báo, hóa đơn và biểu mẫu."],
+          ].map(([icon, title, copy]) => <button type="button" onClick={onStartScan} key={title}><span><Icon name={icon} /></span><strong>{title}</strong><p>{copy}</p></button>)}
+        </div>
       </section>
 
-      <section className="console-analytics-grid">
-        <article className="console-panel console-trend-panel">
-          <header><div><span>{en ? "RISK TELEMETRY" : "DỮ LIỆU RỦI RO"}</span><h3>{en ? "Recent risk trend" : "Xu hướng rủi ro"}</h3><p>{en ? "Last 10 checks" : "10 lượt kiểm tra gần nhất"}</p></div><b><i /> {en ? "Risk score" : "Điểm rủi ro"} <strong>0–100</strong></b></header>
-          <div className="console-chart-wrap"><div className="console-chart-axis"><span>100</span><span>75</span><span>50</span><span>25</span><span>0</span></div><svg viewBox="0 0 600 170" preserveAspectRatio="none" aria-label={en ? "Risk trend chart" : "Biểu đồ xu hướng rủi ro"}><defs><linearGradient id="riskArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#579f84" stopOpacity=".3" /><stop offset="1" stopColor="#579f84" stopOpacity="0" /></linearGradient></defs><path className="console-chart-grid" d="M20 35H580M20 64H580M20 93H580M20 122H580M20 150H580" /><polygon points={`24,150 ${chartPoints} 576,150`} fill="url(#riskArea)" /><polyline points={chartPoints} fill="none" />{chartData.map((item, index, list) => { const cx = 24 + (index * 552) / Math.max(1, list.length - 1); const cy = 150 - Math.min(100, Math.max(0, Number(item.risk_score) || 0)) * 1.15; return <circle key={index} cx={cx} cy={cy} r="4" />; })}</svg></div>
-        </article>
-
-        <article className="console-panel console-distribution-panel">
-          <header><div><span>{en ? "THREAT MAP" : "PHÂN BỐ KẾT QUẢ"}</span><h3>{en ? "Result distribution" : "Mức độ an toàn"}</h3><p>{en ? "All analyzed content" : "Tất cả lượt đã phân tích"}</p></div></header>
-          <div className="console-donut" style={distribution}><div><strong>{stats.total}</strong><span>{en ? "checks" : "lượt quét"}</span></div></div>
-          <div className="console-donut-legend"><span className="safe"><i />{en ? "Safe" : "An toàn"}<b>{stats.safe}</b></span><span className="warning"><i />{en ? "Review" : "Kiểm tra"}<b>{stats.suspicious}</b></span><span className="danger"><i />{en ? "Danger" : "Nguy hiểm"}<b>{stats.danger}</b></span></div>
-        </article>
+      <section className="public-safety-guide">
+        <div className="public-guide-copy">
+          <span>{en ? "SAFER IN THREE STEPS" : "AN TOÀN HƠN TRONG 3 BƯỚC"}</span>
+          <h3>{en ? "Pause before you trust" : "Chậm lại một nhịp trước khi tin"}</h3>
+          <p>{en ? "Scams work by creating urgency. A short check can help you recognize the signal and make a safer decision." : "Lừa đảo thường tạo cảm giác khẩn cấp. Một lần kiểm tra ngắn giúp bạn nhận diện tín hiệu và đưa ra quyết định an toàn hơn."}</p>
+          <button type="button" onClick={onStartScan}>{en ? "Check suspicious content" : "Kiểm tra nội dung đáng ngờ"}<Icon name="arrow" /></button>
+        </div>
+        <ol className="public-guide-steps">
+          <li><b>01</b><div><strong>{en ? "Recognize" : "Nhận diện"}</strong><p>{en ? "Look for impersonation, urgency and unusual payment requests." : "Chú ý dấu hiệu mạo danh, thúc ép và yêu cầu chuyển tiền bất thường."}</p></div></li>
+          <li><b>02</b><div><strong>{en ? "Verify" : "Kiểm chứng"}</strong><p>{en ? "Check the image, message, link or document with multiple signals." : "Kiểm tra ảnh, tin nhắn, đường link hoặc tài liệu qua nhiều tín hiệu."}</p></div></li>
+          <li><b>03</b><div><strong>{en ? "Act safely" : "Xử lý an toàn"}</strong><p>{en ? "Stop the interaction and contact the organization through an official channel." : "Dừng tương tác và liên hệ tổ chức qua kênh chính thức."}</p></div></li>
+        </ol>
       </section>
 
-      <section className="console-panel console-recent-panel">
-        <header><div><span>{en ? "LATEST ACTIVITY" : "HOẠT ĐỘNG GẦN ĐÂY"}</span><h3>{en ? "Recent checks" : "Lượt kiểm tra gần nhất"}</h3></div><button onClick={onStartScan}>{en ? "New check" : "Kiểm tra mới"}<Icon name="arrow" /></button></header>
-        <div className="console-recent-list">{recent.length ? recent.map((item) => {
-          const thumbnail = imageSource(item);
-          return <article key={item.id}><span className={`console-recent-icon ${thumbnail ? "has-image" : ""} ${item.risk_level}`}>{thumbnail ? <img src={thumbnail} alt="" /> : <Icon name={item.source_type === "url" ? "link" : item.source_type === "image" ? "image" : "scan"} />}</span><div><strong>{item.original_filename || (en ? "Checked content" : "Nội dung đã kiểm tra")}</strong><small><Icon name="clock" /> {formatTime(item.created_at, language)}</small></div><b className={item.risk_level}>{riskLabel(item.risk_level, language)} · {item.risk_score || 0}</b></article>;
-        }) : <div className="console-empty"><span><Icon name="scan" /></span><div><strong>{en ? "No checks yet" : "Chưa có lượt kiểm tra"}</strong><small>{en ? "Start with an image, message, URL or PDF." : "Bắt đầu với ảnh, tin nhắn, URL hoặc PDF đáng ngờ."}</small></div><button onClick={onStartScan}>{en ? "Start now" : "Bắt đầu ngay"}</button></div>}</div>
+      <section className="public-community-cta">
+        <span className="community-cta-icon"><Icon name="people" /></span>
+        <div><small>{en ? "YOUR PERSONAL SAFETY DATA" : "DỮ LIỆU AN TOÀN CỦA BẠN"}</small><h3>{en ? "See every check in one clear dashboard" : "Theo dõi mọi lượt kiểm tra trong một trang thống kê"}</h3><p>{en ? "View totals, risk trends, result distribution and your latest activity." : "Xem tổng số lượt, xu hướng rủi ro, phân bố kết quả và hoạt động gần đây."}</p></div>
+        <button type="button" onClick={onOpenStatistics}>{en ? "Open statistics" : "Mở trang thống kê"}<Icon name="arrow" /></button>
       </section>
     </div>
   );

@@ -8,6 +8,7 @@ from PIL import Image, UnidentifiedImageError
 from sqlalchemy.orm import Session
 
 from backend.app.ai.phishvn_url_model import extract_url_candidates
+from backend.app.ai.gemini_explainer import explain_scan_result
 from backend.app.api.dependencies import get_optional_current_user
 from backend.app.core.config import UPLOAD_DIR
 from backend.app.db.database import get_db
@@ -15,13 +16,34 @@ from backend.app.db.models import ScamCategory, User
 from backend.app.document.pdf_service import extract_pdf_content
 from backend.app.ocr.highlight_service import build_suspicious_regions
 from backend.app.ocr.ocr_service import extract_text_and_boxes, get_image_dimensions
-from backend.app.schemas.scan import BatchUrlRequest, TextCheckRequest, UrlCheckRequest
+from backend.app.schemas.scan import BatchUrlRequest, ExplanationFollowupRequest, TextCheckRequest, UrlCheckRequest
 from backend.app.services.analysis import analyze_content_payload, local_analysis_response
 from backend.app.services.history import account_analysis_response, save_scan_history
 from backend.app.visual.qr_analysis import decode_qr_codes
 
 
 router = APIRouter(tags=["Scanning"])
+
+
+@router.post("/explain-result")
+def explain_result(payload: ExplanationFollowupRequest):
+    context = {
+        "risk_score": payload.risk_score,
+        "risk_level": payload.risk_level,
+        "source_type": payload.source_type,
+        "existing_explanation": payload.explanation,
+        "evidence": [item.model_dump() for item in payload.evidence],
+        "analyzed_text_excerpt": payload.extracted_text,
+    }
+    try:
+        answer, model = explain_scan_result(
+            question=payload.question.strip(),
+            context=context,
+            language=payload.language,
+        )
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    return {"answer": answer, "model": model}
 
 
 @router.post("/check-text")

@@ -11,7 +11,7 @@
   "lang": "vi",
   "icons": [
     {
-      "src": "/scam-detector-icon.svg",
+      "src": "/static/scam-detector-icon.svg?v=2",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

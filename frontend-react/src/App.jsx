@@ -11,6 +11,7 @@ import HistoryPage from "./pages/History/HistoryPage";
 import OverviewPage from "./pages/Overview/OverviewPage";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import ScanPage from "./pages/Scan/ScanPage";
+import StatisticsPage from "./pages/Statistics/StatisticsPage";
 
 function StatusRadar() {
   return (
@@ -36,6 +37,7 @@ function App() {
   const pageMetaVi = {
     overview: ["Xin chào 👋", "Không gian an toàn số dành cho bạn"],
     scan: ["Kiểm tra lừa đảo", "Phân tích ảnh, tin nhắn, đường link hoặc PDF"],
+    statistics: ["Thống kê an toàn", "Theo dõi kết quả và xu hướng rủi ro của bạn"],
     history: ["Lịch sử kiểm tra", "Xem lại và quản lý các kết quả trước đây"],
     profile: ["Tài khoản của bạn", "Dữ liệu và lịch sử đang lưu trên thiết bị"],
     login: ["Tài khoản người dùng", "Đăng nhập để đồng bộ lịch sử kiểm tra"],
@@ -51,6 +53,7 @@ function App() {
   const pageMetaEn = {
     overview: ["Hello 👋", "Your safer space for everyday digital life"],
     scan: ["Scam check", "Analyze images, messages, links or PDF files"],
+    statistics: ["Safety statistics", "Track your results and risk trends"],
     history: ["Check history", "Review and manage your previous results"],
     profile: ["Your account", "Data and history saved on this device"],
     login: ["User account", "Sign in to sync your check history"],
@@ -107,6 +110,7 @@ function App() {
           history={app.history}
           user={app.me}
           onStartScan={() => app.navigate("scan")}
+          onOpenStatistics={() => app.navigate("statistics")}
           language={language}
           backendStatus={app.backendStatus}
         />
@@ -123,6 +127,15 @@ function App() {
           onOpenCamera={app.openCamera}
           onCapturePhoto={app.capturePhoto}
           onCloseCamera={app.closeCamera}
+          language={language}
+        />
+      );
+    }
+    if (app.activePage === "statistics") {
+      return (
+        <StatisticsPage
+          history={app.history}
+          onStartScan={() => app.navigate("scan")}
           language={language}
         />
       );
@@ -177,7 +190,7 @@ function App() {
     pageMeta[app.activePage] || ["Scam Detector", language === "en" ? "Risk analysis system" : "Hệ thống phân tích rủi ro"];
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${app.activePage.startsWith("admin-") ? "admin-shell" : "public-shell"} route-${app.activePage}`}>
       <Navbar
         activePage={app.activePage}
         navigate={app.navigate}

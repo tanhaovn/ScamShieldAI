@@ -14,6 +14,7 @@ from backend.app.schemas.auth import (
 from backend.app.schemas.devices import DeviceHeartbeatRequest
 from backend.app.schemas.scan import (
     BatchUrlRequest,
+    ExplanationFollowupRequest,
     ScanFeedbackRequest,
     ScanImageRequest,
     TextCheckRequest,
@@ -24,6 +25,7 @@ __all__ = [
     "AiModelRequest",
     "BatchUrlRequest",
     "DeviceHeartbeatRequest",
+    "ExplanationFollowupRequest",
     "GoogleAuthRequest",
     "LoginRequest",
     "ModelEvaluationRequest",
