@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import re
+import shutil
 import subprocess
 import webbrowser
 from pathlib import Path
@@ -23,7 +24,7 @@ else:
     print("   Frontend da san sang!", flush=True)
 
 print("2. Khoi dong Backend FastAPI tai cong 8000...", flush=True)
-# Thiet lap cac bien moi truong AI local
+
 backend_env = os.environ.copy()
 backend_env["USE_VLM_ANALYZER"] = "true"
 backend_env["VLM_MODEL_ID"] = "HuggingFaceTB/SmolVLM-500M-Instruct"
@@ -48,14 +49,20 @@ backend_proc = subprocess.Popen(
 time.sleep(2)
 
 print("3. Khoi dong Cloudflare Tunnel tao link HTTPS...", flush=True)
-cloudflared_exe = ROOT / "cloudflared.exe"
-if not cloudflared_exe.exists():
-    print("[LOI] Khong tim thay cloudflared.exe tai thu muc goc!")
+local_cloudflared = ROOT / "cloudflared.exe"
+cloudflared_exe = (
+    str(local_cloudflared)
+    if local_cloudflared.exists()
+    else shutil.which("cloudflared")
+)
+if not cloudflared_exe:
+    print("[LOI] Chua cai cloudflared hoac cloudflared chua co trong PATH!")
+    print("Tai va cai dat tai: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/")
     backend_proc.terminate()
     sys.exit(1)
 
 cf_proc = subprocess.Popen(
-    [str(cloudflared_exe), "tunnel", "--url", "http://127.0.0.1:8000"],
+    [cloudflared_exe, "tunnel", "--url", "http://127.0.0.1:8000"],
     cwd=ROOT,
     stdout=subprocess.PIPE,
     stderr=subprocess.STDOUT,
@@ -77,13 +84,9 @@ while time.time() - start_time < 30:
 
 if tunnel_url:
     print("\n" + "=" * 65)
-    print("DA KHOI TAO DUONG LINK ONLINE CONG KHAI THANH CONG!")
     print(f"Link website: {tunnel_url}")
     print("=" * 65)
-    print("\n[Luu y]:")
-    print("- Ban co the gui link nay cho ban be, thay co, khach hang mo tren dien thoai hoac may tinh khac.")
-    print("- Toan bo AI se chay truc tiep bang phan cung may tinh cua ban (100% chuan xac).")
-    print("- De tat web: Chi can dong cua so dong lenh nay lai.\n")
+
 
     try:
         webbrowser.open(tunnel_url)

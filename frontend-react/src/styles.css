@@ -11962,6 +11962,8 @@ body {
 .sidebar-nav-item:hover:not(:disabled) { transform: translateX(2px); background: var(--console-green-soft); color: var(--console-green-dark); }
 .sidebar-nav-item.active { color: var(--console-green-dark); background: var(--console-green-soft); border-color: color-mix(in srgb, var(--console-green) 18%, transparent); box-shadow: inset 3px 0 var(--console-green); }
 .sidebar-new-scan { min-height: 46px; border-radius: 11px; background: linear-gradient(135deg, #5ca286, #448b70); box-shadow: 0 10px 24px rgba(62, 137, 108, .18); }
+.sidebar-login-button { background: transparent; color: var(--console-green); border: 1px solid color-mix(in srgb, var(--console-green) 45%, transparent); box-shadow: none; }
+.sidebar-login-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .sidebar-user { border-color: var(--console-line); }
 .sidebar-user-profile { border-radius: 12px; }
 .user-avatar { background: var(--console-green-soft); border-color: color-mix(in srgb, var(--console-green) 24%, transparent); color: var(--console-green-dark); }

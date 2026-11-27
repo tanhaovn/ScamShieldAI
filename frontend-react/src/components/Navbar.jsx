@@ -74,8 +74,9 @@ function NavGroup({ label, items, activePage, navigate, language, mobileAction }
   );
 }
 
-export default function Navbar({ activePage, navigate, user, onLogout, onAdminLogin, language = "vi" }) {
+export default function Navbar({ activePage, navigate, user, onLogout, onLogin, onAdminLogin, language = "vi" }) {
   const isAdmin = user.role === "admin";
+  const isSignedIn = user.role !== "guest";
   const isEnglish = language === "en";
   const displayName = isEnglish && user.full_name === "Người dùng khách" ? "Guest user" : user.full_name;
   const initials = (displayName || user.email || "U")
@@ -126,6 +127,11 @@ export default function Navbar({ activePage, navigate, user, onLogout, onAdminLo
         <button className="sidebar-new-scan" onClick={() => navigate("scan")}>
           <span>+</span> {isEnglish ? "New check" : "Tạo lượt kiểm tra"}
         </button>
+        {!isSignedIn && (
+          <button className="sidebar-new-scan sidebar-login-button" onClick={onLogin}>
+            <NavIcon name="login" /> {isEnglish ? "Sign in / Register" : "Đăng nhập / Đăng ký"}
+          </button>
+        )}
         <div className={`sidebar-user${activePage === "profile" ? " active" : ""}`}>
           <button
             className="sidebar-user-profile"
@@ -136,16 +142,16 @@ export default function Navbar({ activePage, navigate, user, onLogout, onAdminLo
             <span className="user-avatar">{initials}</span>
             <span className="sidebar-user-copy">
               <strong>{displayName || (isEnglish ? "User" : "Người dùng")}</strong>
-              <small>{isAdmin ? (isEnglish ? "Administrator" : "Quản trị viên") : (isEnglish ? "History saved on device" : "Lịch sử lưu trên thiết bị")}</small>
+              <small>{isAdmin ? (isEnglish ? "Administrator" : "Quản trị viên") : isSignedIn ? (isEnglish ? "Account history synced" : "Lịch sử đã đồng bộ") : (isEnglish ? "History saved on device" : "Lịch sử lưu trên thiết bị")}</small>
             </span>
           </button>
           <button
             className="sidebar-logout"
-            onClick={isAdmin ? onLogout : onAdminLogin}
-            title={isAdmin ? (isEnglish ? "Sign out" : "Đăng xuất") : (isEnglish ? "Administrator sign in" : "Đăng nhập quản trị")}
-            aria-label={isAdmin ? (isEnglish ? "Sign out administrator" : "Đăng xuất quản trị") : (isEnglish ? "Open administrator sign in" : "Mở đăng nhập quản trị")}
+            onClick={isSignedIn ? onLogout : onLogin}
+            title={isSignedIn ? (isEnglish ? "Sign out" : "Đăng xuất") : (isEnglish ? "Sign in" : "Đăng nhập")}
+            aria-label={isSignedIn ? (isEnglish ? "Sign out" : "Đăng xuất") : (isEnglish ? "Open sign in" : "Mở đăng nhập")}
           >
-            <NavIcon name={isAdmin ? "logout" : "login"} />
+            <NavIcon name={isSignedIn ? "logout" : "login"} />
           </button>
         </div>
       </div>

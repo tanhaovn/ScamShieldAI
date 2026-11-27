@@ -107,7 +107,8 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 90000) {
 export default function useAppController() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [me, setMe] = useState(() => createGuestUser());
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "", full_name: "" });
+  const [authMode, setAuthMode] = useState("login");
   const [scanMode, setScanModeState] = useState("image");
   const [file, setFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
@@ -241,7 +242,7 @@ export default function useAppController() {
     fetch(`${API_BASE}/me`, { headers: authHeaders })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data?.role === "admin") {
+        if (data?.id) {
           setMe(data);
           return;
         }
@@ -261,8 +262,10 @@ export default function useAppController() {
   useEffect(() => {
     fetchCategories();
     fetchModels();
-    if (token && me?.role === "admin") {
+    if (token && me?.role !== "guest") {
       fetchHistory();
+    }
+    if (token && me?.role === "admin") {
       fetchDatasets();
       fetchEvaluations();
       fetchLogs();
@@ -308,7 +311,7 @@ export default function useAppController() {
   }
 
   async function fetchHistory() {
-    if (!token || me?.role !== "admin") {
+    if (!token || me?.role === "guest") {
       setHistory(loadGuestHistory());
       return;
     }
@@ -317,9 +320,7 @@ export default function useAppController() {
     });
     if (res.ok) {
       const databaseHistory = await res.json();
-      const combined = [...loadGuestHistory(), ...databaseHistory]
-        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-      setHistory(combined);
+      setHistory(databaseHistory);
     }
   }
 
@@ -365,13 +366,10 @@ export default function useAppController() {
   }
 
   function completeAuth(data) {
-    if (data.user?.role !== "admin") {
-      throw new Error("Chỉ quản trị viên mới được đăng nhập");
-    }
     localStorage.setItem("token", data.token);
     setToken(data.token);
     setMe(data.user);
-    setForm({ email: "", password: "" });
+    setForm({ email: "", password: "", full_name: "" });
     setAuthError("");
     navigate("overview");
   }
@@ -381,14 +379,18 @@ export default function useAppController() {
     setLoading(true);
     setAuthError("");
     try {
-      const res = await fetch(`${API_BASE}/admin/login`, {
+      const adminMode = activePage === "admin-login";
+      const endpoint = adminMode ? "/admin/login" : authMode === "register" ? "/register" : "/login";
+      const payload = { email: form.email, password: form.password };
+      if (authMode === "register" && !adminMode) payload.full_name = form.full_name;
+      const res = await fetch(`${API_BASE}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: form.email, password: form.password }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) {
-        setAuthError(data.detail || "Không thể xác thực quản trị viên");
+        setAuthError(data.detail || "Không thể xác thực tài khoản");
         return;
       }
       completeAuth(data);
@@ -400,7 +402,7 @@ export default function useAppController() {
   }
 
   async function updateProfile(fullName) {
-    if (me?.role !== "admin") {
+    if (!token || me?.role === "guest") {
       const normalized = fullName.trim().replace(/\s+/g, " ");
       localStorage.setItem(GUEST_NAME_KEY, normalized);
       const guest = { ...createGuestUser(), full_name: normalized };
@@ -431,7 +433,7 @@ export default function useAppController() {
     body.append("file", file);
     if (selectedCategoryId)
       body.append("scam_category_id", String(selectedCategoryId));
-    const requestHeaders = token && me?.role === "admin"
+    const requestHeaders = token
       ? { Authorization: `Bearer ${token}` }
       : undefined;
     try {
@@ -463,7 +465,7 @@ export default function useAppController() {
     };
     setResult(normalizedResult);
 
-    if (data.storage === "database" && token && me?.role === "admin") {
+    if (data.storage === "database" && token) {
       fetchHistory();
       return;
     }
@@ -471,14 +473,7 @@ export default function useAppController() {
     try {
       const localHistory = loadGuestHistory();
       const updatedLocal = saveGuestHistory([normalizedResult, ...localHistory]);
-      if (me?.role === "admin") {
-        setHistory((current) => [
-          normalizedResult,
-          ...current.filter((item) => item.id !== normalizedResult.id),
-        ]);
-      } else {
-        setHistory(updatedLocal);
-      }
+      setHistory(updatedLocal);
     } catch {
       alert("Trình duyệt đã đầy bộ nhớ lịch sử. Hãy xóa bớt dữ liệu cũ.");
     }
@@ -528,6 +523,13 @@ export default function useAppController() {
       return handleScan(event);
     }
 
+    if (token) {
+      options.headers = {
+        ...(options.headers || {}),
+        Authorization: `Bearer ${token}`,
+      };
+    }
+
     setLoading(true);
     try {
       const res = await fetchWithTimeout(`${API_BASE}${endpoint}`, options, scanMode === "batch" ? 180000 : 90000);
@@ -537,7 +539,11 @@ export default function useAppController() {
         return;
       }
       setBackendStatus((current) => ({ ...current, state: "online", checkedAt: new Date().toISOString() }));
-      if (scanMode === "batch") { setBatchResults(data.results || []); return; }
+      if (scanMode === "batch") {
+        setBatchResults(data.results || []);
+        if (token) fetchHistory();
+        return;
+      }
       finalizeAnalysis(data, fallbackName);
     } catch (error) {
       alert(error.name === "AbortError" ? "Yêu cầu mất quá nhiều thời gian. Vui lòng thử lại với ít nội dung hơn." : "Không kết nối được máy chủ phân tích");
@@ -784,6 +790,8 @@ export default function useAppController() {
     setForm,
     loading,
     authError,
+    authMode,
+    setAuthMode,
     handleAuth,
     updateProfile,
     activePage,

@@ -11,8 +11,8 @@ pinned: false
 # Vietnamese Scam Detection - Multi-source Scanner
 
 Hệ thống hỗ trợ phát hiện dấu hiệu lừa đảo tiếng Việt từ ảnh, mã QR, tin nhắn,
-URL và tài liệu PDF. Người dùng dùng ngay không cần tài khoản; lịch sử được lưu
-trong `localStorage`. MySQL chỉ lưu lịch sử và dữ liệu quản trị của admin.
+URL và tài liệu PDF. Khách có thể dùng ngay và lưu lịch sử trong `localStorage`;
+người dùng đăng nhập được lưu lịch sử riêng theo tài khoản trong database.
 
 ## Cấu trúc project
 
@@ -31,6 +31,30 @@ scam-detector/
 ├── requirements.txt
 └── .env.example
 ```
+
+### Cấu trúc backend
+
+```text
+backend/app/
+├── main.py                 # Khởi tạo FastAPI, middleware và static files
+├── api/
+│   ├── router.py           # Đăng ký toàn bộ feature router
+│   ├── dependencies.py     # Dependency xác thực dùng chung
+│   └── routers/            # auth, scans, history, feedback, devices, admin, system
+├── core/                   # Cấu hình môi trường và bảo mật JWT/mật khẩu
+├── schemas/                # Pydantic request schemas theo từng chức năng
+├── services/               # Pipeline phân tích, runtime info và khởi tạo dữ liệu
+├── db/                     # SQLAlchemy engine, session và ORM models
+├── ai/                     # Model ảnh, URL, VLM và domain intelligence
+├── ocr/                    # OCR và đánh dấu vùng đáng ngờ
+├── risk/                   # Chấm điểm và tạo giải thích
+├── visual/                 # EXIF, ELA, deepfake và QR
+├── document/               # Xử lý PDF
+└── evaluation/             # Benchmark/regression detector
+```
+
+Các URL API cũ được giữ nguyên sau khi tách router. Swagger nhóm API theo chức
+năng tại `http://127.0.0.1:8000/docs`.
 
 ## Cài đặt
 
@@ -94,13 +118,14 @@ uvicorn backend.app.main:app --reload
 Server chạy tại `http://localhost:8000`. Xem docs tự động (Swagger UI) tại
 `http://localhost:8000/docs`.
 
-### 6. Chế độ khách và đăng nhập Admin
+### 6. Tài khoản khách, người dùng và Admin
 
-- Người dùng mở web và kiểm tra ảnh ngay, không đăng nhập hoặc đăng ký.
-- Các kết quả được lưu bằng `localStorage` trên trình duyệt hiện tại, không giới hạn
-  số lượt ở cấp ứng dụng và vẫn còn sau khi đóng/mở lại web.
+- Khách có thể kiểm tra ngay, không cần đăng nhập; kết quả lưu bằng `localStorage`
+  trên trình duyệt hiện tại.
+- Người dùng có thể đăng ký/đăng nhập. Kết quả ảnh, tin nhắn, URL và PDF sau khi
+  đăng nhập được lưu theo `user_id` và xem lại tại trang Lịch sử.
 - Lịch sử khách không đồng bộ sang trình duyệt hoặc thiết bị khác.
-- Chỉ Admin đăng nhập để truy cập Dataset, AI Models, đánh giá và system logs.
+- Chỉ Admin được truy cập Dataset, AI Models, đánh giá và system logs.
 - Tài khoản mặc định cho môi trường demo được tạo lúc backend khởi động; hãy đổi
   mật khẩu và `JWT_SECRET` trước khi triển khai thật.
 
@@ -130,8 +155,8 @@ curl -X POST "http://localhost:8000/check-document" \
 - PDF tối đa 15 MB và xử lý 10 trang đầu. PDF có lớp chữ được trích trực tiếp;
   PDF scan được chuyển thành ảnh để OCR và quét QR.
 
-Kết quả khách do frontend lưu trong `localStorage`. Endpoint lịch sử máy chủ yêu
-cầu token Admin:
+Kết quả khách do frontend lưu trong `localStorage`. Người dùng hoặc Admin đã đăng
+nhập lấy lịch sử tài khoản bằng JWT:
 
 ```bash
 curl -H "Authorization: Bearer <ADMIN_JWT>" \
