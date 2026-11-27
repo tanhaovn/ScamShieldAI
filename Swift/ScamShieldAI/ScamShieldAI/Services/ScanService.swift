@@ -7,6 +7,11 @@ final class ScanService {
         self.apiClient = apiClient
     }
 
+    func backendIsReady() async throws -> Bool {
+        let response: BackendHealth = try await apiClient.request(endpoint: .health)
+        return response.status == "ok"
+    }
+
     func fetchCategories() async throws -> [ScamCategory] {
         try await apiClient.request(endpoint: .scamCategories)
     }
@@ -33,37 +38,26 @@ final class ScanService {
                                    filename: filename, mimeType: "application/pdf")
     }
 
-    func ask(question: String, result: ScanResult) async throws -> String {
-        let body = AssistantRequest(question: question, risk_level: result.riskLevel.rawValue,
-            risk_score: result.riskScore, highlighted_terms: Array(result.highlightedTerms.prefix(30)),
-            urls: Array((result.phishVNURLs ?? []).prefix(20)),
-            suggested_action: String(result.suggestedAction.prefix(3000)),
-            verdict: String(result.explanation.prefix(3000)))
-        let response: AssistantResponse = try await apiClient.request(endpoint: .assistant, body: body)
-        return response.answer
+    func analyzeBatch(input: String) async throws -> BatchResponse {
+        try await apiClient.request(endpoint: .batch, body: ["urls": Array(BatchInput.urls(from: input).prefix(50))])
     }
+
+    func sendFeedback(_ feedback: ScanFeedbackRequest) async throws {
+        let _: FeedbackResponse = try await apiClient.request(endpoint: .feedback, body: feedback)
+    }
+
 }
 
-private struct AssistantRequest: Encodable {
-    let question: String
-    let risk_level: String
-    let risk_score: Int
-    let highlighted_terms: [String]
-    let urls: [PhishVNURLPrediction]
-    let suggested_action: String
-    let verdict: String
-}
-private struct AssistantResponse: Decodable { let answer: String }
-
-/// The four input types supported by the same backend as the web app.
+/// The input types supported by the same backend as the web app.
 enum ScanInputKind: String, CaseIterable, Codable {
-    case image, text, url, pdf
+    case image, text, url, pdf, batch
     var title: String {
         switch self {
-        case .image: return "Ảnh"
-        case .text: return "Tin nhắn"
-        case .url: return "Liên kết"
+        case .image: return L10n.text("Ảnh")
+        case .text: return L10n.text("Tin nhắn")
+        case .url: return L10n.text("Liên kết")
         case .pdf: return "PDF"
+        case .batch: return L10n.text("Nhiều URL")
         }
     }
     var symbol: String {
@@ -72,6 +66,9 @@ enum ScanInputKind: String, CaseIterable, Codable {
         case .text: return "text.bubble"
         case .url: return "link"
         case .pdf: return "doc.richtext"
+        case .batch: return "link.badge.plus"
         }
     }
 }
+
+private struct BackendHealth: Decodable { let status: String }

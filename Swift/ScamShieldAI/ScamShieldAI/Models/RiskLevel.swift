@@ -10,11 +10,11 @@ enum RiskLevel: String, Codable {
     var displayName: String {
         switch self {
         case .safe:
-            return "Rủi ro thấp"
+            return L10n.text("Rủi ro thấp")
         case .suspicious:
-            return "Nghi ngờ"
+            return L10n.text("Nghi ngờ")
         case .dangerous:
-            return "Nguy hiểm"
+            return L10n.text("Nguy hiểm")
         }
     }
 

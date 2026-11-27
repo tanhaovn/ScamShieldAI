@@ -13,17 +13,17 @@ enum APIError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidURL:
-            return "Địa chỉ máy chủ không hợp lệ."
+            return L10n.text("Địa chỉ máy chủ không hợp lệ.")
         case .invalidResponse:
-            return "Máy chủ trả về phản hồi không hợp lệ."
+            return L10n.text("Máy chủ trả về phản hồi không hợp lệ.")
         case .server(let message):
             return message
         case .encoding:
-            return "Không thể chuẩn bị dữ liệu để gửi lên máy chủ."
+            return L10n.text("Không thể chuẩn bị dữ liệu để gửi lên máy chủ.")
         case .decoding:
-            return "Không thể đọc dữ liệu trả về từ máy chủ."
+            return L10n.text("Không thể đọc dữ liệu trả về từ máy chủ.")
         case .transport(let error):
-            return "Không thể kết nối máy chủ: \(error.localizedDescription)"
+            return L10n.choose("Không thể kết nối máy chủ: \(error.localizedDescription)", "Could not connect to server: \(error.localizedDescription)")
         }
     }
 }

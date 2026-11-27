@@ -53,13 +53,13 @@ final class ScanHistoryCell: UITableViewCell {
             self?.unavailableImageLabel.isHidden = didLoadImage || (item.sourceType != nil && item.sourceType != "image")
             self?.thumbnailView.contentMode = didLoadImage ? .scaleAspectFill : .center
         }
-        filenameLabel.text = item.originalFilename ?? "Ảnh kiểm tra #\(item.id)"
-        dateLabel.text = item.createdAt?.backendDateDisplayText ?? "Không rõ thời gian"
+        filenameLabel.text = item.listTitle
+        dateLabel.text = item.createdAt?.backendDateDisplayText ?? L10n.text("Không rõ thời gian")
         scoreLabel.text = "\(item.riskScore) / 100"
         scoreLabel.textColor = AppTheme.color(for: item.riskLevel)
         riskLine.backgroundColor = AppTheme.color(for: item.riskLevel)
         riskBadgeView.configure(level: item.riskLevel)
-        accessibilityLabel = "\(filenameLabel.text ?? "Ảnh kiểm tra"), \(item.riskLevel.displayName), điểm rủi ro \(item.riskScore) trên 100, \(dateLabel.text ?? "")"
+        accessibilityLabel = L10n.choose("\(filenameLabel.text ?? L10n.text("Ảnh kiểm tra")), \(item.riskLevel.displayName), điểm rủi ro \(item.riskScore) trên 100, \(dateLabel.text ?? "")", "\(filenameLabel.text ?? L10n.text("Ảnh kiểm tra")), \(item.riskLevel.displayName), risk score \(item.riskScore) out of 100, \(dateLabel.text ?? "")")
         isAccessibilityElement = true
         accessibilityTraits = .button
     }
@@ -81,7 +81,7 @@ private extension ScanHistoryCell {
         thumbnailView.layer.cornerRadius = 17
         thumbnailView.translatesAutoresizingMaskIntoConstraints = false
 
-        unavailableImageLabel.text = "Ảnh không\ncòn tồn tại"
+        unavailableImageLabel.text = L10n.text("Ảnh không\ncòn tồn tại")
         unavailableImageLabel.font = .systemFont(ofSize: 7.5, weight: .semibold)
         unavailableImageLabel.textColor = AppTheme.secondaryTextColor
         unavailableImageLabel.textAlignment = .center
@@ -121,7 +121,7 @@ private extension ScanHistoryCell {
         topRow.alignment = .center
 
         let scoreCaption = UILabel()
-        scoreCaption.text = "Điểm rủi ro"
+        scoreCaption.text = L10n.text("Điểm rủi ro")
         scoreCaption.font = .preferredFont(forTextStyle: .caption2)
         scoreCaption.adjustsFontForContentSizeCategory = true
         scoreCaption.textColor = AppTheme.secondaryTextColor

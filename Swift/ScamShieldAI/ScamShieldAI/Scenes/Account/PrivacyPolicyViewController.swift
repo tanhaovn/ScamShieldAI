@@ -6,7 +6,7 @@ final class PrivacyPolicyViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        navigationItem.title = "Quyền riêng tư"
+        navigationItem.title = L10n.text("Quyền riêng tư")
         navigationItem.largeTitleDisplayMode = .never
         view.backgroundColor = AppTheme.pageBackgroundColor
 
@@ -18,11 +18,11 @@ final class PrivacyPolicyViewController: UIViewController {
         policyStack.spacing = 18
         policyStack.translatesAutoresizingMaskIntoConstraints = false
 
-        addSection("Dữ liệu được xử lý", "ScamShield AI chỉ xử lý ảnh bạn chủ động chọn để kiểm tra. Ảnh được gửi đến máy chủ ScamShield AI để phân tích. Xóa lịch sử trong app chỉ xóa bản lưu trên thiết bị, không xóa bản ảnh đã gửi lên máy chủ. App không yêu cầu tài khoản và không dùng ảnh cho quảng cáo.")
-        addSection("Dữ liệu lưu trên thiết bị", "Kết quả phân tích và một bản ảnh JPEG được lưu trong vùng dữ liệu riêng của ứng dụng để hiển thị Lịch sử. Bạn có thể xóa từng kết quả hoặc xóa toàn bộ trong mục Cá nhân. Gỡ ứng dụng sẽ xóa dữ liệu cục bộ.")
-        addSection("Quyền truy cập", "Quyền Camera chỉ được hỏi khi bạn chọn chụp ảnh. Ảnh từ thư viện được chọn qua trình chọn ảnh của iOS; bạn có thể từ chối quyền và vẫn dùng các chức năng khác.")
-        addSection("Giới hạn của kết quả", "Điểm rủi ro, giải thích và hành động đề xuất là tín hiệu hỗ trợ, không phải kết luận chắc chắn. Hãy xác minh với kênh chính thức trước khi giao dịch hoặc cung cấp thông tin cá nhân.")
-        addSection("Liên hệ", "Nếu cần yêu cầu hỗ trợ hoặc yêu cầu xóa dữ liệu, hãy liên hệ nhà phát triển qua kênh hỗ trợ được công bố trên trang App Store của ứng dụng.")
+        addSection(L10n.text("Dữ liệu được xử lý"), L10n.text("ScamShield AI chỉ xử lý ảnh bạn chủ động chọn để kiểm tra. Ảnh được gửi đến máy chủ ScamShield AI để phân tích. Gỡ ứng dụng chỉ xóa dữ liệu cục bộ, không xóa bản ảnh đã gửi lên máy chủ. App không yêu cầu tài khoản và không dùng ảnh cho quảng cáo."))
+        addSection(L10n.text("Dữ liệu lưu trên thiết bị"), L10n.text("Kết quả phân tích và một bản ảnh JPEG được lưu trong vùng dữ liệu riêng của ứng dụng để hiển thị Lịch sử. Gỡ ứng dụng sẽ xóa dữ liệu cục bộ."))
+        addSection(L10n.text("Quyền truy cập"), L10n.text("Quyền Camera chỉ được hỏi khi bạn chọn chụp ảnh. Ảnh từ thư viện được chọn qua trình chọn ảnh của iOS; bạn có thể từ chối quyền và vẫn dùng các chức năng khác."))
+        addSection(L10n.text("Giới hạn của kết quả"), L10n.text("Điểm rủi ro, giải thích và hành động đề xuất là tín hiệu hỗ trợ, không phải kết luận chắc chắn. Hãy xác minh với kênh chính thức trước khi giao dịch hoặc cung cấp thông tin cá nhân."))
+        addSection(L10n.text("Liên hệ"), L10n.text("Nếu cần yêu cầu hỗ trợ hoặc yêu cầu xóa dữ liệu, hãy liên hệ nhà phát triển qua kênh hỗ trợ được công bố trên trang App Store của ứng dụng."))
 
         view.addSubview(scrollView)
         scrollView.addSubview(policyStack)
@@ -32,8 +32,9 @@ final class PrivacyPolicyViewController: UIViewController {
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             policyStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 24),
-            policyStack.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor, constant: 20),
-            policyStack.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor, constant: -20),
+            policyStack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -2 * 20),
+            policyStack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: 20),
+            policyStack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -20),
             policyStack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -28)
         ])
     }

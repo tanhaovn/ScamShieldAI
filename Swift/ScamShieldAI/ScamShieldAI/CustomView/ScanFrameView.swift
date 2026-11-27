@@ -37,7 +37,7 @@ final class ScanFrameView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         let path = UIBezierPath()
-        let inset: CGFloat = 16
+        let inset: CGFloat = 3
         let length: CGFloat = 22
         for (x, y, dx, dy) in [(inset, inset, CGFloat(1), CGFloat(1)),
                                (bounds.width - inset, inset, -1, 1),

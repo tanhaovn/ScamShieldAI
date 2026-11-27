@@ -27,7 +27,7 @@ final class RiskBadgeView: UIView {
         titleLabel.text = level.displayName
         titleLabel.textColor = color
         backgroundColor = color.withAlphaComponent(0.12)
-        accessibilityLabel = "Mức rủi ro: \(level.displayName)"
+        accessibilityLabel = L10n.choose("Mức rủi ro: \(level.displayName)", "Risk level: \(level.displayName)")
     }
 }
 

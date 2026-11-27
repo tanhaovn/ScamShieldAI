@@ -24,7 +24,7 @@ final class InformationCardView: CardView {
     // MARK: - Configuration
 
     func configure(text: String, accentColor: UIColor = AppTheme.primaryColor) {
-        bodyLabel.text = text.isEmpty ? "Chưa có dữ liệu." : text
+        bodyLabel.text = text.isEmpty ? L10n.text("Chưa có dữ liệu.") : text
         iconView.tintColor = accentColor
     }
 }

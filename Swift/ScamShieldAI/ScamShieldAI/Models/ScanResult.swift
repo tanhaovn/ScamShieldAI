@@ -26,9 +26,26 @@ struct ScanResult: Codable {
     let phishVNURLs: [PhishVNURLPrediction]?
     let analysisBreakdown: AnalysisBreakdown?
 
+    var imageGradCAM: ImageGradCAM? = nil
+    var visionAnalysis: VisionAnalysis? = nil
+    var imageDimensions: ImageDimensions? = nil
+    var imageAnnotations: [ImageAnnotation]? = nil
+    var domainIntelligence: [DomainIntelligence]? = nil
+    var safeBrowsing: SafeBrowsingEvidence? = nil
+    var phishVNAvailable: Bool? = nil
+    var phishVNModel: String? = nil
+
     // MARK: - Coding Keys
 
     enum CodingKeys: String, CodingKey {
+        case imageGradCAM = "image_model_gradcam"
+        case visionAnalysis = "vlm_analysis"
+        case imageDimensions = "image_dimensions"
+        case imageAnnotations = "image_annotations"
+        case domainIntelligence = "domain_intelligence"
+        case safeBrowsing = "google_safe_browsing"
+        case phishVNAvailable = "phishvn_available"
+        case phishVNModel = "phishvn_model"
         case createdAt = "created_at"
         case sourceType = "source_type"
         case originalFilename = "original_filename"
@@ -61,6 +78,14 @@ struct ScanResult: Codable {
 // Các trường mới là optional ở model cha để vẫn đọc được lịch sử từ API cũ.
 struct AnalysisBreakdown: Codable {
     let components: [AnalysisComponent]?
+    var verdict: AnalysisVerdict? = nil
+    var score_method: String? = nil
+    var limitations: [String]? = nil
+}
+
+struct AnalysisVerdict: Codable {
+    var headline: String?
+    var reason: String?
 }
 
 struct AnalysisComponent: Codable {
@@ -68,15 +93,21 @@ struct AnalysisComponent: Codable {
     let title: String
     let score: Int
     let summary: String?
+    var status_label: String? = nil
+    var findings: [String]? = nil
 }
 
 struct PhishVNURLPrediction: Codable {
     let url: String
     let domain: String?
     let riskScore: Int
+    var label: String? = nil
+    var probability: Double? = nil
+    var suspiciousSignals: [String]? = nil
 
     enum CodingKeys: String, CodingKey {
-        case url, domain
+        case url, domain, label, probability
+        case suspiciousSignals = "suspicious_signals"
         case riskScore = "risk_score"
     }
 }

@@ -21,7 +21,7 @@ final class APIClient {
     func request<Response: Decodable>(
         endpoint: APIEndpoint
     ) async throws -> Response {
-        let request = try makeRequest(endpoint: endpoint, body: nil)
+        let request = try await makeRequest(endpoint: endpoint, body: nil)
         return try await send(request)
     }
 
@@ -37,7 +37,7 @@ final class APIClient {
             throw APIError.encoding(error)
         }
 
-        let request = try makeRequest(
+        let request = try await makeRequest(
             endpoint: endpoint,
             body: bodyData,
             contentType: "application/json"
@@ -64,7 +64,7 @@ final class APIClient {
             data: imageData
         )
 
-        let request = try makeRequest(
+        let request = try await makeRequest(
             endpoint: endpoint,
             body: form.finalizedData(),
             contentType: form.contentType
@@ -81,7 +81,7 @@ private extension APIClient {
         endpoint: APIEndpoint,
         body: Data?,
         contentType: String? = nil
-    ) throws -> URLRequest {
+    ) async throws -> URLRequest {
         guard let url = Constants.apiURL(path: endpoint.path) else {
             throw APIError.invalidURL
         }
@@ -90,6 +90,9 @@ private extension APIClient {
         request.httpMethod = endpoint.method.rawValue
         request.timeoutInterval = endpoint.timeoutInterval
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let token = await MainActor.run(body: { AccountSession.shared.token }) {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
 
         if let body {
             request.httpBody = body
@@ -121,7 +124,7 @@ private extension APIClient {
         guard 200...299 ~= httpResponse.statusCode else {
             let serverError = try? decoder.decode(APIErrorResponse.self, from: data)
             throw APIError.server(
-                message: serverError?.detail ?? "Máy chủ gặp lỗi (\(httpResponse.statusCode))."
+                message: serverError?.detail ?? L10n.choose("Máy chủ gặp lỗi (\(httpResponse.statusCode)).", "Server error (\(httpResponse.statusCode)).")
             )
         }
 

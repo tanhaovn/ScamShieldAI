@@ -4,23 +4,31 @@ struct Constants {
 
     // MARK: - API Environment
 
-    // Debug: dòng trên dành cho Simulator, dòng dưới dành cho iPhone thật.
-    static let simulatorAPIBaseURL = "http://127.0.0.1:8000"
-    static let deviceAPIBaseURL = "http://192.168.0.3:8000"
+    static let fallbackAPIBaseURL = "https://florida-naturals-junction-balance.trycloudflare.com"
+
+    static var defaultAPIBaseURL: String {
+        if let primary = normalizedServerURL(fallbackAPIBaseURL) {
+            return primary
+        }
+        let configured = Bundle.main.object(forInfoDictionaryKey: "SCAMSHIELD_API_BASE_URL") as? String ?? ""
+        return normalizedServerURL(configured) ?? fallbackAPIBaseURL
+    }
 
     static var apiBaseURL: String {
         #if DEBUG
-        #if targetEnvironment(simulator)
-        return simulatorAPIBaseURL
-        #else
-        // iPhone và Mac phải cùng Wi-Fi. Cập nhật IP này nếu Mac đổi mạng.
-        return deviceAPIBaseURL
+        if let override = ProcessInfo.processInfo.environment["SCAMSHIELD_DEBUG_API_BASE_URL"], !override.isEmpty { return override }
         #endif
-        #else
-        let configured = (Bundle.main.object(forInfoDictionaryKey: "SCAMSHIELD_API_BASE_URL") as? String ?? "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        return configured
-        #endif
+        return defaultAPIBaseURL
+    }
+
+    static func normalizedServerURL(_ value: String) -> String? {
+        let normalized = value.trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        guard let components = URLComponents(string: normalized),
+              let host = components.host, !host.isEmpty,
+              components.scheme == "https", components.user == nil, components.password == nil,
+              components.query == nil, components.fragment == nil,
+              components.path.isEmpty else { return nil }
+        return normalized
     }
 
     // MARK: - URL Builder
@@ -34,9 +42,8 @@ struct Constants {
               !apiBaseURL.contains("REPLACE_WITH"), !apiBaseURL.contains("$(") else { return nil }
         var allowed = base.scheme == "https"
         #if DEBUG
-        let deviceHost = URLComponents(string: deviceAPIBaseURL)?.host
         allowed = allowed || (base.scheme == "http" &&
-            (["127.0.0.1", "localhost", "::1"].contains(host) || host == deviceHost))
+            ["127.0.0.1", "localhost", "::1"].contains(host))
         #endif
         guard allowed else { return nil }
         return URL(string: apiBaseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + normalizedPath)

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Lịch sử của chế độ khách chỉ thuộc thiết bị này, không dùng tài khoản máy chủ.
+/// Local scan history. Signed-in history is fetched separately and merged for display.
 final class HistoryService {
 
     // MARK: - Local Storage
@@ -24,8 +24,37 @@ final class HistoryService {
     // MARK: - History
 
     func fetchHistory() async throws -> [ScanHistoryItem] {
-        // Guest history belongs to this device; never fetch another user's history.
         try readRecords()
+    }
+
+    func fetchAccountHistory() async throws -> [ScanHistoryItem] {
+        let rows = try await AccountSession.shared.rows(path: "/scan-history")
+        return rows.compactMap { row in
+            if let data = try? JSONSerialization.data(withJSONObject: row),
+               let item = try? JSONDecoder().decode(ScanHistoryItem.self, from: data) { return item }
+            guard let id = (row["id"] as? NSNumber)?.intValue else { return nil }
+            let score = (row["risk_score"] as? NSNumber)?.intValue ?? 0
+            let level = RiskLevel(rawValue: row["risk_level"] as? String ?? "") ?? .suspicious
+            return ScanHistoryItem(
+                id: id, imageURL: row["image_url"] as? String,
+                originalFilename: row["original_filename"] as? String,
+                riskScore: score, riskLevel: level,
+                scamCategoryID: (row["scam_category_id"] as? NSNumber)?.intValue,
+                extractedText: row["extracted_text"] as? String,
+                explanation: row["explanation"] as? String,
+                suggestedAction: row["suggested_action"] as? String,
+                highlightedRegions: nil, createdAt: row["created_at"] as? String,
+                sourceType: row["source_type"] as? String)
+        }
+    }
+
+    static func merge(local: [ScanHistoryItem], account: [ScanHistoryItem]) -> [ScanHistoryItem] {
+        let remoteIDs = Set(account.map(\.id))
+        let deviceOnly = local.filter { item in
+            guard let scanID = item.result?.scanID else { return true }
+            return !remoteIDs.contains(scanID)
+        }
+        return (account + deviceOnly).sorted { ($0.createdAt ?? "") > ($1.createdAt ?? "") }
     }
 
     func save(result: ScanResult, imageData: Data? = nil) throws {
@@ -37,7 +66,7 @@ final class HistoryService {
         let record = ScanHistoryItem(
             id: max(Int(Date().timeIntervalSince1970 * 1_000_000), (records.first?.id ?? 0) + 1),
             imageURL: imageData == nil ? nil : "local-history/\(filename)",
-            originalFilename: result.originalFilename ?? "Ảnh kiểm tra",
+            originalFilename: result.originalFilename ?? L10n.text("Ảnh kiểm tra"),
             riskScore: result.riskScore,
             riskLevel: result.riskLevel,
             scamCategoryID: result.scamCategoryID,

@@ -10,6 +10,7 @@ for CHECK_NAME in MultiSourceCheck HistoryStorageCheck; do
     "$SOURCE_ROOT"/Services/*.swift \
     "$SOURCE_ROOT"/Models/*.swift \
     "$SOURCE_ROOT"/Utils/Constants.swift \
+    "$SOURCE_ROOT"/Utils/L10n.swift \
     "$CHECK_ROOT/$CHECK_NAME.swift" -o "$CHECK_BUILD/$CHECK_NAME"
   "$CHECK_BUILD/$CHECK_NAME"
 done

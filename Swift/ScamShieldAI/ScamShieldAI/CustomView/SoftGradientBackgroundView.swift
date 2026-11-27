@@ -11,6 +11,9 @@ final class SoftGradientBackgroundView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         configureGradient()
+        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (view: SoftGradientBackgroundView, _) in
+            view.setNeedsLayout()
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -18,11 +21,6 @@ final class SoftGradientBackgroundView: UIView {
     }
 
     // MARK: - Layout
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        setNeedsLayout()
-    }
 
     override func layoutSubviews() {
         super.layoutSubviews()

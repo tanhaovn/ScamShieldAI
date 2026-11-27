@@ -21,9 +21,9 @@ final class RiskTrendCardView: CardView {
     private func setupUI() {
         translatesAutoresizingMaskIntoConstraints = false
 
-        let eyebrow = makeLabel("LỊCH SỬ KIỂM TRA", size: 9, weight: .bold, color: AppTheme.primaryColor)
-        let title = makeLabel("Xu hướng rủi ro", size: 20, weight: .bold, color: AppTheme.titleColor)
-        let subtitle = makeLabel("10 lượt kiểm tra gần nhất · thang điểm 0—100", size: 12, weight: .regular, color: AppTheme.secondaryTextColor)
+        let eyebrow = makeLabel(L10n.text("LỊCH SỬ KIỂM TRA"), size: 9, weight: .bold, color: AppTheme.primaryColor)
+        let title = makeLabel(L10n.text("Xu hướng rủi ro"), size: 20, weight: .bold, color: AppTheme.titleColor)
+        let subtitle = makeLabel(L10n.text("10 lượt kiểm tra gần nhất · thang điểm 0—100"), size: 12, weight: .regular, color: AppTheme.secondaryTextColor)
         subtitle.numberOfLines = 0
         let heading = UIStackView(arrangedSubviews: [eyebrow, title, subtitle])
         heading.axis = .vertical
@@ -40,8 +40,8 @@ final class RiskTrendCardView: CardView {
             liveDot.widthAnchor.constraint(equalToConstant: 6),
             liveDot.heightAnchor.constraint(equalToConstant: 6)
         ])
-        let live = makeLabel("DỮ LIỆU LỊCH SỬ", size: 9, weight: .bold, color: AppTheme.primaryColor)
-        let hint = makeLabel("Điểm càng cao, nguy cơ càng lớn.", size: 10, weight: .regular, color: AppTheme.secondaryTextColor)
+        let live = makeLabel(L10n.text("DỮ LIỆU LỊCH SỬ"), size: 9, weight: .bold, color: AppTheme.primaryColor)
+        let hint = makeLabel(L10n.text("Điểm càng cao, nguy cơ càng lớn."), size: 10, weight: .regular, color: AppTheme.secondaryTextColor)
         hint.textAlignment = .right
         hint.numberOfLines = 0
         let liveStack = UIStackView(arrangedSubviews: [liveDot, live])
@@ -76,9 +76,9 @@ final class RiskTrendCardView: CardView {
 final class RiskDistributionCardView: CardView {
 
     private let donutView = RiskDonutView()
-    private let safeRow = DistributionLegendRow(title: "Rủi ro thấp", color: AppTheme.safeColor)
-    private let suspiciousRow = DistributionLegendRow(title: "Nghi ngờ", color: AppTheme.suspiciousColor)
-    private let dangerousRow = DistributionLegendRow(title: "Nguy hiểm", color: AppTheme.dangerousColor)
+    private let safeRow = DistributionLegendRow(title: L10n.text("Rủi ro thấp"), color: AppTheme.safeColor)
+    private let suspiciousRow = DistributionLegendRow(title: L10n.text("Nghi ngờ"), color: AppTheme.suspiciousColor)
+    private let dangerousRow = DistributionLegendRow(title: L10n.text("Nguy hiểm"), color: AppTheme.dangerousColor)
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -95,16 +95,16 @@ final class RiskDistributionCardView: CardView {
         safeRow.configure(count: safe, total: total)
         suspiciousRow.configure(count: suspicious, total: total)
         dangerousRow.configure(count: dangerous, total: total)
-        accessibilityLabel = "Phân bổ kết quả. Rủi ro thấp \(safe), nghi ngờ \(suspicious), nguy hiểm \(dangerous)."
+        accessibilityLabel = L10n.choose("Phân bổ kết quả. Rủi ro thấp \(safe), nghi ngờ \(suspicious), nguy hiểm \(dangerous).", "Result distribution. Low risk \(safe), suspicious \(suspicious), dangerous \(dangerous).")
     }
 
     private func setupUI() {
         translatesAutoresizingMaskIntoConstraints = false
         isAccessibilityElement = true
 
-        let eyebrow = makeLabel("MỨC ĐỘ RỦI RO", size: 9, weight: .bold, color: AppTheme.primaryColor)
-        let title = makeLabel("Phân bổ kết quả", size: 20, weight: .bold, color: AppTheme.titleColor)
-        let subtitle = makeLabel("Tất cả lượt đã phân tích", size: 12, weight: .regular, color: AppTheme.secondaryTextColor)
+        let eyebrow = makeLabel(L10n.text("MỨC ĐỘ RỦI RO"), size: 9, weight: .bold, color: AppTheme.primaryColor)
+        let title = makeLabel(L10n.text("Phân bổ kết quả"), size: 20, weight: .bold, color: AppTheme.titleColor)
+        let subtitle = makeLabel(L10n.text("Tất cả lượt đã phân tích"), size: 12, weight: .regular, color: AppTheme.secondaryTextColor)
         let heading = UIStackView(arrangedSubviews: [eyebrow, title, subtitle])
         heading.axis = .vertical
         heading.spacing = 5
@@ -164,8 +164,8 @@ private final class RiskLineChartView: UIView {
     func configure(scores: [Int]) {
         self.scores = scores.map { min(max($0, 0), 100) }
         accessibilityLabel = scores.isEmpty
-            ? "Biểu đồ xu hướng chưa có dữ liệu"
-            : "Biểu đồ xu hướng gồm \(scores.count) điểm: \(scores.map(String.init).joined(separator: ", "))"
+            ? L10n.text("Biểu đồ xu hướng chưa có dữ liệu")
+            : L10n.choose("Biểu đồ xu hướng gồm \(scores.count) điểm: \(scores.map(String.init).joined(separator: ", "))", "Trend chart with \(scores.count) scores: \(scores.map(String.init).joined(separator: ", "))")
         needsChartLayout = true
         setNeedsLayout()
     }
@@ -209,7 +209,7 @@ private final class RiskLineChartView: UIView {
 
         guard !scores.isEmpty else {
             let empty = CATextLayer()
-            empty.string = "Thực hiện một lượt kiểm tra để tạo biểu đồ"
+            empty.string = L10n.text("Thực hiện một lượt kiểm tra để tạo biểu đồ")
             empty.font = UIFont.systemFont(ofSize: 11, weight: .medium)
             empty.fontSize = 11
             empty.foregroundColor = AppTheme.secondaryTextColor.cgColor
@@ -337,7 +337,7 @@ private final class RiskDonutView: UIView {
         totalLabel.font = .monospacedDigitSystemFont(ofSize: 27, weight: .bold)
         totalLabel.textColor = AppTheme.titleColor
         totalLabel.textAlignment = .center
-        captionLabel.text = "TỔNG LƯỢT"
+        captionLabel.text = L10n.text("TỔNG LƯỢT")
         captionLabel.font = .systemFont(ofSize: 8, weight: .bold)
         captionLabel.textColor = AppTheme.secondaryTextColor
         captionLabel.textAlignment = .center
@@ -460,6 +460,6 @@ private final class DistributionLegendRow: UIView {
     func configure(count: Int, total: Int) {
         countLabel.text = String(count)
         let percent = total == 0 ? 0 : Int((Double(count) / Double(total) * 100).rounded())
-        percentLabel.text = "\(percent)% kết quả"
+        percentLabel.text = L10n.choose("\(percent)% kết quả", "\(percent)% of results")
     }
 }

@@ -81,7 +81,7 @@ private extension PrimaryButton {
     func updateLoadingState() {
         isEnabled = isLoading ? false : enabledBeforeLoading
         transform = .identity
-        accessibilityValue = isLoading ? "Đang xử lý" : nil
+        accessibilityValue = isLoading ? L10n.text("Đang xử lý") : nil
         setTitle(isLoading ? nil : normalTitle, for: .normal)
 
         if isLoading {

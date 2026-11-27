@@ -19,8 +19,8 @@ extension String {
         guard let date else { return self }
 
         let displayFormatter = DateFormatter()
-        displayFormatter.locale = Locale(identifier: "vi_VN")
-        displayFormatter.dateFormat = "HH:mm • dd/MM/yyyy"
+        displayFormatter.locale = Locale(identifier: L10n.language == "en" ? "en_US" : "vi_VN")
+        displayFormatter.dateFormat = L10n.language == "en" ? "MMM d, yyyy • HH:mm" : "HH:mm • dd/MM/yyyy"
         return displayFormatter.string(from: date)
     }
 }

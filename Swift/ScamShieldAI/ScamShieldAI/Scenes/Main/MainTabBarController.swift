@@ -28,6 +28,15 @@ final class MainTabBarController: UITabBarController, UITabBarControllerDelegate
         fatalError("MainTabBarController chỉ được khởi tạo bằng code.")
     }
 
+    deinit { NotificationCenter.default.removeObserver(self) }
+
+    @objc private func languageChanged() {
+        let selected = selectedIndex
+        let currentScan = (viewControllers?[1] as? UINavigationController)?.viewControllers.first as? ScanViewController
+        configureTabs(previousScan: currentScan)
+        selectedIndex = selected
+    }
+
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
@@ -35,6 +44,7 @@ final class MainTabBarController: UITabBarController, UITabBarControllerDelegate
         configureAppearance()
         configureTabs()
         delegate = self
+        NotificationCenter.default.addObserver(self, selector: #selector(languageChanged), name: L10n.didChange, object: nil)
     }
 }
 
@@ -61,7 +71,7 @@ private extension MainTabBarController {
         }
     }
 
-    func configureTabs() {
+    func configureTabs(previousScan: ScanViewController? = nil) {
         let overviewViewController = OverviewViewController(
             user: user,
             historyService: historyService
@@ -73,35 +83,37 @@ private extension MainTabBarController {
             animateSelectedTab(viewControllers?[1])
         }
 
-        let scanViewController = ScanViewController(scanService: scanService)
-        overviewViewController.onChooseSource = { [weak self, weak scanViewController] kind in
-            self?.selectedIndex = 1
-            (self?.viewControllers?[1] as? UINavigationController)?.popToRootViewController(animated: false)
-            scanViewController?.selectInput(kind)
-        }
+        let scanViewController = previousScan?.isBusy == true ? previousScan! : ScanViewController(scanService: scanService)
+        if scanViewController !== previousScan { previousScan?.transferDraft(to: scanViewController) }
         let historyViewController = HistoryViewController(historyService: historyService)
         let accountViewController = AccountViewController(user: user)
+        let adminViewController = AdminViewController()
 
         viewControllers = [
             makeNavigationController(
                 root: overviewViewController,
-                title: "Tổng quan",
+                title: L10n.text("Tổng quan"),
                 imageName: "shield.checkered"
             ),
-            makeNavigationController(
+            (previousScan?.isBusy == true ? previousScan!.navigationController! : makeNavigationController(
                 root: scanViewController,
-                title: "Kiểm tra",
+                title: L10n.text("Kiểm tra"),
                 imageName: "viewfinder"
-            ),
+            )),
             makeNavigationController(
                 root: historyViewController,
-                title: "Lịch sử",
+                title: L10n.text("Lịch sử"),
                 imageName: "clock.arrow.circlepath"
             ),
             makeNavigationController(
                 root: accountViewController,
-                title: "Cá nhân",
+                title: L10n.text("Cá nhân"),
                 imageName: "person.crop.circle"
+            ),
+            makeNavigationController(
+                root: adminViewController,
+                title: "Admin",
+                imageName: "rectangle.portrait.and.arrow.right"
             )
         ]
     }

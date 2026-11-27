@@ -20,7 +20,6 @@ final class HistoryViewController: UIViewController {
     private var currentState: State = .loading
     private var animatedItemIDs = Set<Int>()
     private var loadTask: Task<Void, Never>?
-    private var deleteTask: Task<Void, Never>?
     private let pushAnimator = SlideInPushAnimator()
     private let searchController = UISearchController(searchResultsController: nil)
 
@@ -40,19 +39,21 @@ final class HistoryViewController: UIViewController {
     }()
 
     private let summaryCard = GradientCardView(colors: [AppTheme.brandDark, AppTheme.brandDeep])
-    private let filterControl = UISegmentedControl(items: ["Tất cả", "Thấp", "Nghi ngờ", "Nguy hiểm"])
+    private let filterControl = UISegmentedControl(items: [L10n.text("Tất cả"), L10n.text("Thấp"), L10n.text("Nghi ngờ"), L10n.text("Nguy hiểm")])
     private var filteredItems: [ScanHistoryItem] {
         let levels: [RiskLevel] = [.safe, .suspicious, .dangerous]
         let index = filterControl.selectedSegmentIndex
         let query = (searchController.searchBar.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         return items.filter { item in
             let matchesLevel = index <= 0 || item.riskLevel == levels[index - 1]
-            let text = [item.originalFilename, item.extractedText, item.explanation, item.createdAt?.backendDateDisplayText]
+            let text = [item.originalFilename, String(item.id)]
                 .compactMap { $0 }.joined(separator: " ")
             return matchesLevel && (query.isEmpty || text.range(of: query, options: [.caseInsensitive, .diacriticInsensitive]) != nil)
         }
     }
     private let countLabel = UILabel()
+    private let statsLabel = UILabel()
+    private let storageHintLabel = UILabel()
 
     private let stateStack = UIStackView()
     private let stateIcon = UIImageView()
@@ -74,7 +75,6 @@ final class HistoryViewController: UIViewController {
 
     deinit {
         loadTask?.cancel()
-        deleteTask?.cancel()
         NotificationCenter.default.removeObserver(self)
     }
 
@@ -84,7 +84,11 @@ final class HistoryViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         configureActions()
-        loadHistory(showLoadingState: true)
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        if isViewLoaded { loadHistory(showLoadingState: items.isEmpty) }
     }
 }
 
@@ -93,13 +97,13 @@ final class HistoryViewController: UIViewController {
 private extension HistoryViewController {
 
     func setupUI() {
-        navigationItem.title = "Lịch sử kiểm tra"
+        navigationItem.title = L10n.text("Lịch sử kiểm tra")
         navigationItem.largeTitleDisplayMode = .never
         view.backgroundColor = AppTheme.pageBackgroundColor
         navigationItem.backButtonDisplayMode = .minimal
         searchController.searchResultsUpdater = self
         searchController.obscuresBackgroundDuringPresentation = false
-        searchController.searchBar.placeholder = "Tìm tên, nội dung hoặc ngày"
+        searchController.searchBar.placeholder = L10n.choose("Tìm theo tên hoặc mã", "Search by name or ID")
         searchController.searchBar.tintColor = AppTheme.primaryColor
         navigationItem.searchController = searchController
         navigationItem.hidesSearchBarWhenScrolling = false
@@ -129,7 +133,7 @@ private extension HistoryViewController {
         stateMessageLabel.numberOfLines = 0
 
         var retryConfiguration = UIButton.Configuration.tinted()
-        retryConfiguration.title = "Thử lại"
+        retryConfiguration.title = L10n.text("Thử lại")
         retryConfiguration.image = UIImage(systemName: "arrow.clockwise")
         retryConfiguration.imagePadding = 7
         retryConfiguration.baseForegroundColor = AppTheme.primaryColor
@@ -183,20 +187,23 @@ private extension HistoryViewController {
         radar.layer.cornerRadius = 22
         radar.translatesAutoresizingMaskIntoConstraints = false
         let eyebrow = UILabel()
-        eyebrow.text = "HOẠT ĐỘNG CỦA BẠN"
+        eyebrow.text = L10n.text("HOẠT ĐỘNG CỦA BẠN")
         eyebrow.font = .systemFont(ofSize: 10, weight: .bold)
         eyebrow.textColor = AppTheme.mintColor
-        countLabel.text = "0 lần kiểm tra"
+        countLabel.text = L10n.text("0 lần kiểm tra")
         countLabel.font = AppTheme.displayFont(size: 24, weight: .bold)
         countLabel.adjustsFontForContentSizeCategory = true
         countLabel.textColor = .white
         countLabel.numberOfLines = 0
-        let hint = UILabel()
-        hint.text = "Lưu riêng trên thiết bị của bạn."
-        hint.font = .systemFont(ofSize: 12)
-        hint.textColor = .white.withAlphaComponent(0.75)
-        hint.numberOfLines = 0
-        let text = UIStackView(arrangedSubviews: [eyebrow, countLabel, hint])
+        storageHintLabel.text = L10n.choose("Lịch sử khách lưu trên thiết bị.", "Guest history stays on this device.")
+        storageHintLabel.font = .systemFont(ofSize: 12)
+        storageHintLabel.textColor = .white.withAlphaComponent(0.75)
+        storageHintLabel.numberOfLines = 0
+        statsLabel.font = .preferredFont(forTextStyle: .footnote)
+        statsLabel.adjustsFontForContentSizeCategory = true
+        statsLabel.textColor = AppTheme.mintColor
+        statsLabel.numberOfLines = 0
+        let text = UIStackView(arrangedSubviews: [eyebrow, countLabel, statsLabel, storageHintLabel])
         text.axis = .vertical
         text.spacing = 6
         let stack = UIStackView(arrangedSubviews: [text, radar])
@@ -215,6 +222,7 @@ private extension HistoryViewController {
     }
 
     func configureActions() {
+        NotificationCenter.default.addObserver(self, selector: #selector(didCompleteScan), name: AccountSession.didChange, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(didCompleteScan), name: .historyDidChange, object: nil)
         tableView.refreshControl?.addTarget(self, action: #selector(didPullToRefresh), for: .valueChanged)
         retryButton.addTarget(self, action: #selector(didTapRetry), for: .touchUpInside)
@@ -246,9 +254,23 @@ private extension HistoryViewController {
             guard let self else { return }
 
             do {
-                let loadedItems = try await historyService.fetchHistory()
+                let local = try await historyService.fetchHistory()
+                var loadedItems = local
+                var hint = L10n.choose("Lịch sử khách lưu trên thiết bị.", "Guest history stays on this device.")
+                if AccountSession.shared.token != nil {
+                    do {
+                        if !AccountSession.shared.isAuthenticated { try await AccountSession.shared.restore() }
+                        let account = try await historyService.fetchAccountHistory()
+                        loadedItems = HistoryService.merge(local: local, account: account)
+                        hint = L10n.choose("Đã tải lịch sử tài khoản từ máy chủ.", "Account history loaded from the server.")
+                    } catch {
+                        hint = L10n.choose("Chưa đồng bộ được với máy chủ. Kéo xuống để thử lại.",
+                                           "Could not sync with the server. Pull to retry.")
+                    }
+                }
                 guard !Task.isCancelled else { return }
                 items = loadedItems
+                storageHintLabel.text = hint
                 tableView.refreshControl?.endRefreshing()
                 tableView.reloadData()
                 updateHistoryControls()
@@ -275,25 +297,30 @@ private extension HistoryViewController {
         case .loading:
             stateIcon.isHidden = true
             stateTitleLabel.isHidden = true
-            stateMessageLabel.text = "Đang tải lịch sử..."
+            stateMessageLabel.text = L10n.text("Đang tải lịch sử...")
             activityIndicator.startAnimating()
         case .content:
             break
         case .empty:
             stateIcon.image = UIImage(systemName: "clock.badge.questionmark")
-            stateTitleLabel.text = items.isEmpty ? "Chưa có lịch sử" : "Chưa có kết quả phù hợp"
-            stateMessageLabel.text = items.isEmpty ? "Ảnh bạn kiểm tra sẽ xuất hiện tại đây." : "Thử đổi từ khóa hoặc chọn một mức rủi ro khác."
+            stateTitleLabel.text = items.isEmpty ? L10n.text("Chưa có lịch sử") : L10n.text("Chưa có kết quả phù hợp")
+            stateMessageLabel.text = items.isEmpty ? L10n.text("Ảnh bạn kiểm tra sẽ xuất hiện tại đây.") : L10n.text("Thử đổi từ khóa hoặc chọn một mức rủi ro khác.")
         case .error:
             stateIcon.image = UIImage(systemName: "wifi.exclamationmark")
-            stateTitleLabel.text = "Không thể tải dữ liệu"
-            stateMessageLabel.text = "Chưa đọc được lịch sử trên thiết bị. Vui lòng thử lại."
+            stateTitleLabel.text = L10n.text("Không thể tải dữ liệu")
+            stateMessageLabel.text = L10n.text("Chưa đọc được lịch sử trên thiết bị. Vui lòng thử lại.")
             retryButton.isHidden = false
         }
     }
 
     func updateHistoryControls() {
-        countLabel.text = "\(items.count) lần kiểm tra"
-        tableView.isUserInteractionEnabled = deleteTask == nil
+        countLabel.text = L10n.choose("\(items.count) lần kiểm tra", "\(items.count) checks")
+        let average = items.isEmpty ? 0 : Int((Double(items.reduce(0) { $0 + $1.riskScore }) / Double(items.count)).rounded())
+        let dangerCount = items.filter { $0.riskLevel == .dangerous }.count
+        statsLabel.text = L10n.choose("Điểm trung bình \(average)/100 · \(dangerCount) cảnh báo cao",
+                                      "Average score \(average)/100 · \(dangerCount) high-risk alerts")
+        statsLabel.isHidden = items.isEmpty
+        tableView.isUserInteractionEnabled = true
     }
 }
 
@@ -320,44 +347,7 @@ private extension HistoryViewController {
         loadHistory(showLoadingState: items.isEmpty)
     }
 
-    func confirmDelete(item: ScanHistoryItem) {
-        let alert = UIAlertController(
-            title: "Xóa kết quả này?",
-            message: item.originalFilename ?? "Ảnh kiểm tra #\(item.id)",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "Hủy", style: .cancel))
-        alert.addAction(UIAlertAction(title: "Xóa", style: .destructive) { [weak self] _ in
-            self?.deleteHistoryItem(id: item.id)
-        })
-        present(alert, animated: true)
-    }
 
-    func deleteHistoryItem(id: Int) {
-        guard deleteTask == nil else { return }
-        tableView.isUserInteractionEnabled = false
-
-        deleteTask = Task { [weak self] in
-            guard let self else { return }
-            defer {
-                deleteTask = nil
-                updateHistoryControls()
-            }
-
-            do {
-                try await historyService.deleteHistoryItem(id: id)
-                guard let index = items.firstIndex(where: { $0.id == id }) else { return }
-                items.remove(at: index)
-                tableView.reloadData()
-                updateHistoryControls()
-                render(state: filteredItems.isEmpty ? .empty : .content)
-                NotificationCenter.default.post(name: .historyDidChange, object: nil)
-                UINotificationFeedbackGenerator().notificationOccurred(.success)
-            } catch {
-                showErrorAlert(message: error.localizedDescription)
-            }
-        }
-    }
 }
 
 // MARK: - Table Data Source
@@ -411,33 +401,10 @@ extension HistoryViewController: UITableViewDelegate {
         // Gán delegate trước khi push để dùng hiệu ứng spring tuỳ chỉnh.
         navigationController?.delegate = self
         let item = filteredItems[indexPath.row]
-        let detail: UIViewController
-        if let result = item.result {
-            let image = item.imageURL.flatMap { Constants.mediaURL(from: $0) }.flatMap { UIImage(contentsOfFile: $0.path) }
-            detail = ScanResultViewController(result: result, image: image)
-        } else { detail = HistoryDetailViewController(item: item) }
-        navigationController?.pushViewController(detail, animated: true)
+        navigationController?.pushViewController(HistoryDetailViewController(item: item), animated: true)
     }
 
-    func tableView(
-        _ tableView: UITableView,
-        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
-    ) -> UISwipeActionsConfiguration? {
-        let item = filteredItems[indexPath.row]
-        let deleteAction = UIContextualAction(
-            style: .destructive,
-            title: "Xóa"
-        ) { [weak self] _, _, completion in
-            // Chưa sửa data source cho tới khi người dùng xác nhận và API xóa thành công.
-            completion(false)
-            self?.confirmDelete(item: item)
-        }
-        deleteAction.image = UIImage(systemName: "trash.fill")
 
-        let configuration = UISwipeActionsConfiguration(actions: [deleteAction])
-        configuration.performsFirstActionWithFullSwipe = false
-        return configuration
-    }
 }
 
 // MARK: - Navigation Transition Delegate

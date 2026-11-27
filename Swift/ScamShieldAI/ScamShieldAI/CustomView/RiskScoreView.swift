@@ -1,52 +1,58 @@
 import UIKit
 
+/// A compact score ring. Its caller drives the same count-up for the number and the arc.
 final class RiskScoreView: UIView {
-
-    // MARK: - Layers
-
     private let trackLayer = CAShapeLayer()
     private let progressLayer = CAShapeLayer()
-
-    // MARK: - UI Components
-
-    private let scoreLabel: UILabel = {
-        let label = UILabel()
-        label.font = .systemFont(ofSize: 34, weight: .bold)
-        label.textColor = AppTheme.titleColor
-        label.textAlignment = .center
-        return label
-    }()
-
-    private let captionLabel: UILabel = {
-        let label = UILabel()
-        label.text = "ĐIỂM RỦI RO"
-        label.font = .systemFont(ofSize: 10, weight: .semibold)
-        label.textColor = AppTheme.secondaryTextColor
-        label.textAlignment = .center
-        return label
-    }()
-
-    // MARK: - Initialization
+    private let scoreLabel = UILabel()
+    private var tint = AppTheme.safeColor
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        setupUI()
+        isAccessibilityElement = true
+
+        for ring in [trackLayer, progressLayer] {
+            ring.fillColor = UIColor.clear.cgColor
+            ring.lineWidth = 6
+            ring.lineCap = .round
+            layer.addSublayer(ring)
+        }
+        scoreLabel.font = .monospacedDigitSystemFont(ofSize: 29, weight: .bold)
+        scoreLabel.textAlignment = .center
+        scoreLabel.isAccessibilityElement = false
+
+        let denominator = UILabel()
+        denominator.text = "/100"
+        denominator.font = .monospacedDigitSystemFont(ofSize: 11, weight: .medium)
+        denominator.textAlignment = .center
+        denominator.textColor = AppTheme.secondaryTextColor
+        denominator.isAccessibilityElement = false
+
+        let stack = UIStackView(arrangedSubviews: [scoreLabel, denominator])
+        stack.axis = .vertical
+        stack.spacing = -2
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(stack)
+        NSLayoutConstraint.activate([
+            widthAnchor.constraint(equalToConstant: 96),
+            heightAnchor.constraint(equalTo: widthAnchor),
+            stack.centerXAnchor.constraint(equalTo: centerXAnchor),
+            stack.centerYAnchor.constraint(equalTo: centerYAnchor)
+        ])
+        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (view: RiskScoreView, _) in
+            view.updateColors()
+        }
     }
 
     required init?(coder: NSCoder) {
-        fatalError("RiskScoreView chỉ được sử dụng bằng code.")
+        fatalError("Use init(frame:)")
     }
-
-    // MARK: - Layout
 
     override func layoutSubviews() {
         super.layoutSubviews()
-
-        let center = CGPoint(x: bounds.midX, y: bounds.midY)
-        let radius = max(0, min(bounds.width, bounds.height) / 2 - 8)
         let path = UIBezierPath(
-            arcCenter: center,
-            radius: radius,
+            arcCenter: CGPoint(x: bounds.midX, y: bounds.midY),
+            radius: max(0, min(bounds.width, bounds.height) / 2 - 5),
             startAngle: -.pi / 2,
             endAngle: .pi * 1.5,
             clockwise: true
@@ -55,52 +61,24 @@ final class RiskScoreView: UIView {
         progressLayer.path = path.cgPath
     }
 
-    // MARK: - Configuration
-
-    func configure(score: Int, level: RiskLevel) {
-        let normalizedScore = min(max(score, 0), 100)
-        let targetProgress = CGFloat(normalizedScore) / 100
-        scoreLabel.text = "\(normalizedScore)"
-        progressLayer.strokeColor = AppTheme.color(for: level).cgColor
-        progressLayer.strokeEnd = targetProgress
-
-        let animation = CABasicAnimation(keyPath: "strokeEnd")
-        animation.fromValue = 0
-        animation.toValue = targetProgress
-        animation.duration = 0.9
-        animation.timingFunction = CAMediaTimingFunction(name: .easeOut)
-        progressLayer.add(animation, forKey: "scoreProgress")
-        accessibilityLabel = "Điểm rủi ro \(normalizedScore) trên 100"
+    func configure(level: RiskLevel, finalScore: Int) {
+        tint = AppTheme.color(for: level)
+        updateColors()
+        accessibilityLabel = L10n.choose("Điểm rủi ro: \(finalScore) trên 100", "Risk score: \(finalScore) out of 100")
     }
-}
 
-// MARK: - Setup UI
+    func display(score: Int, progress: Float) {
+        scoreLabel.text = "\(score)"
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        progressLayer.strokeEnd = CGFloat(progress)
+        CATransaction.commit()
+    }
 
-private extension RiskScoreView {
-
-    func setupUI() {
-        translatesAutoresizingMaskIntoConstraints = false
-
-        [trackLayer, progressLayer].forEach {
-            $0.fillColor = UIColor.clear.cgColor
-            $0.lineWidth = 10
-            $0.lineCap = .round
-            layer.addSublayer($0)
-        }
-        trackLayer.strokeColor = AppTheme.borderColor.cgColor
-
-        let stackView = UIStackView(arrangedSubviews: [scoreLabel, captionLabel])
-        stackView.axis = .vertical
-        stackView.alignment = .fill
-        stackView.spacing = -2
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(stackView)
-
-        NSLayoutConstraint.activate([
-            widthAnchor.constraint(equalToConstant: 142),
-            heightAnchor.constraint(equalToConstant: 142),
-            stackView.centerXAnchor.constraint(equalTo: centerXAnchor),
-            stackView.centerYAnchor.constraint(equalTo: centerYAnchor)
-        ])
+    private func updateColors() {
+        let resolved = tint.resolvedColor(with: traitCollection)
+        scoreLabel.textColor = tint
+        trackLayer.strokeColor = resolved.withAlphaComponent(0.17).cgColor
+        progressLayer.strokeColor = resolved.cgColor
     }
 }

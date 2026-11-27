@@ -6,7 +6,7 @@ final class OverviewViewController: UIViewController {
 
     private enum Layout {
         static let horizontalPadding: CGFloat = 20
-        static let sectionSpacing: CGFloat = 28
+        static let sectionSpacing: CGFloat = 24
         static let tabBarClearance: CGFloat = 108
     }
 
@@ -17,9 +17,9 @@ final class OverviewViewController: UIViewController {
 
     // MARK: - Properties
 
-    var onChooseSource: ((ScanInputKind) -> Void)?
     private let greetingName = UILabel()
     private var adaptiveRows: [UIStackView] = []
+    private weak var heroHeader: UIStackView?
     var onStartScan: (() -> Void)?
     private var loadTask: Task<Void, Never>?
     private var hasAnimatedEntrance = false
@@ -35,16 +35,17 @@ final class OverviewViewController: UIViewController {
         return view
     }()
     private let contentStack = UIStackView()
-    private let totalStat = OverviewStatView(title: "Tổng lượt phân tích", systemImageName: "viewfinder")
-    private let safeStat = OverviewStatView(title: "Kết quả rủi ro thấp", systemImageName: "checkmark.shield")
-    private let suspiciousStat = OverviewStatView(title: "Cần kiểm tra thêm", systemImageName: "waveform.path.ecg")
-    private let dangerStat = OverviewStatView(title: "Cảnh báo nguy hiểm", systemImageName: "exclamationmark.triangle")
+    private let totalStat = OverviewStatView(title: L10n.text("Tổng lượt phân tích"), systemImageName: "viewfinder")
+    private let safeStat = OverviewStatView(title: L10n.text("Kết quả rủi ro thấp"), systemImageName: "checkmark.shield")
+    private let suspiciousStat = OverviewStatView(title: L10n.text("Cần kiểm tra thêm"), systemImageName: "waveform.path.ecg")
+    private let dangerStat = OverviewStatView(title: L10n.text("Cảnh báo nguy hiểm"), systemImageName: "exclamationmark.triangle")
     private let trendCard = RiskTrendCardView()
     private let distributionCard = RiskDistributionCardView()
     private let recentStack = UIStackView()
     private let statusLabel = UILabel()
     private let averageLabel = UILabel()
     private let recordsLabel = UILabel()
+    private weak var radarScore: UILabel?
 
     // MARK: - Initialization
 
@@ -78,6 +79,8 @@ final class OverviewViewController: UIViewController {
 
     private func updateAdaptiveRows() {
         let largeText = traitCollection.preferredContentSizeCategory >= .extraExtraExtraLarge
+        heroHeader?.axis = largeText ? .vertical : .horizontal
+        heroHeader?.alignment = largeText ? .leading : .center
         adaptiveRows.forEach {
             $0.axis = largeText ? .vertical : .horizontal
             $0.distribution = largeText ? .fill : .fillEqually
@@ -86,8 +89,11 @@ final class OverviewViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        let name = UserDefaults.standard.string(forKey: "scamShield.displayName") ?? "bạn"
-        greetingName.text = "Xin chào, \(name)"
+        if let name = UserDefaults.standard.string(forKey: "scamShield.displayName"), !name.isEmpty {
+            greetingName.text = L10n.choose("Xin chào, \(name)", "Hello, \(name)")
+        } else {
+            greetingName.text = L10n.choose("Xin chào, bạn", "Hello there")
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -95,7 +101,6 @@ final class OverviewViewController: UIViewController {
         animateEntranceIfNeeded()
     }
 }
-
 // MARK: - Setup UI
 
 private extension OverviewViewController {
@@ -119,8 +124,7 @@ private extension OverviewViewController {
         scrollView.verticalScrollIndicatorInsets.bottom = Layout.tabBarClearance
         scrollView.refreshControl?.tintColor = AppTheme.primaryColor
 
-        [makeGreetingHeader(), makeQuickSources(), makeProtectionCard(), makeRecentSection(),
-         makeStatisticsSection(), makeAnalyticsSection(), makeSafetyTipCard()]
+        [makeProtectionCard(), makeStatisticsSection(), makePipelineCard(), makeAnalyticsSection(), makeRecentSection()]
             .forEach(contentStack.addArrangedSubview)
 
         installAppBackground()
@@ -132,47 +136,56 @@ private extension OverviewViewController {
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             contentStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 12),
-            contentStack.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor, constant: Layout.horizontalPadding),
-            contentStack.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor, constant: -Layout.horizontalPadding),
+            contentStack.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor, constant: -2 * Layout.horizontalPadding),
+            contentStack.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor, constant: Layout.horizontalPadding),
+            contentStack.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor, constant: -Layout.horizontalPadding),
             contentStack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -24)
         ])
     }
 
-    func makeGreetingHeader() -> UIView {
-        greetingName.text = "Xin chào, bạn"
-        greetingName.font = AppTheme.font(size: 15, weight: .medium, style: .subheadline)
-        greetingName.adjustsFontForContentSizeCategory = true
-        greetingName.textColor = AppTheme.secondaryTextColor
-        greetingName.numberOfLines = 0
-        let title = makeLabel("An tâm hơn,\nmỗi ngày.", size: 32, weight: .bold, color: AppTheme.titleColor)
-        title.accessibilityTraits = .header
-        let text = UIStackView(arrangedSubviews: [greetingName, title])
-        text.axis = .vertical
-        text.spacing = 8
-        let mark = UIImageView(image: UIImage(systemName: "checkmark.shield"))
-        mark.tintColor = AppTheme.primaryColor
-        mark.contentMode = .center
-        mark.preferredSymbolConfiguration = .init(pointSize: 26, weight: .medium)
-        mark.backgroundColor = AppTheme.softColor
-        mark.layer.cornerRadius = 28
-        mark.isAccessibilityElement = false
-        NSLayoutConstraint.activate([
-            mark.widthAnchor.constraint(equalToConstant: 56),
-            mark.heightAnchor.constraint(equalToConstant: 56)
-        ])
-        let header = UIStackView(arrangedSubviews: [text, mark])
-        header.alignment = .center
-        header.spacing = 16
-        return header
-    }
-
     func makeProtectionCard() -> UIView {
         let card = GradientCardView(colors: [AppTheme.brandDark, AppTheme.brandDeep])
-        let title = makeLabel("Một bước kiểm tra.\nThêm một lớp an tâm.", size: 23, weight: .bold, color: .white)
+        greetingName.font = .preferredFont(forTextStyle: .subheadline)
+        greetingName.adjustsFontForContentSizeCategory = true
+        greetingName.textColor = AppTheme.mintColor
+        greetingName.numberOfLines = 0
+
+        let title = makeLabel(L10n.choose("An toàn số bắt đầu từ một lần kiểm tra", "Digital safety starts with one check"),
+                              size: 30, weight: .bold, color: .white)
         title.accessibilityTraits = .header
-        let subtitle = makeLabel("Kiểm tra nội dung đáng ngờ trước khi bạn hành động.", size: 14, weight: .regular, color: .white.withAlphaComponent(0.8))
+        let subtitle = makeLabel(
+            L10n.choose("Kiểm tra chữ, liên kết và hình ảnh trước khi hành động.",
+                        "Review text, links and images before taking action."),
+            size: 14, weight: .regular, color: UIColor.white.withAlphaComponent(0.84)
+        )
+        let copy = UIStackView(arrangedSubviews: [greetingName, title, subtitle])
+        copy.axis = .vertical
+        copy.spacing = 6
+        copy.setCustomSpacing(10, after: title)
+
+        let radar = RadarView()
+        radar.showsCenterIcon = false
+        let radarScore = UILabel()
+        radarScore.font = .monospacedDigitSystemFont(ofSize: 24, weight: .bold)
+        radarScore.textColor = AppTheme.mintColor
+        radarScore.text = "—"
+        radarScore.textAlignment = .center
+        radarScore.translatesAutoresizingMaskIntoConstraints = false
+        radar.addSubview(radarScore)
+        self.radarScore = radarScore
+        NSLayoutConstraint.activate([
+            radar.widthAnchor.constraint(equalToConstant: 108),
+            radar.heightAnchor.constraint(equalTo: radar.widthAnchor),
+            radarScore.centerXAnchor.constraint(equalTo: radar.centerXAnchor),
+            radarScore.centerYAnchor.constraint(equalTo: radar.centerYAnchor)
+        ])
+        let header = UIStackView(arrangedSubviews: [copy, radar])
+        header.alignment = .center
+        header.spacing = 10
+        heroHeader = header
+
         var config = UIButton.Configuration.filled()
-        config.title = "Bắt đầu kiểm tra"
+        config.title = L10n.text("Bắt đầu kiểm tra")
         config.image = UIImage(systemName: "arrow.right")
         config.imagePlacement = .trailing
         config.imagePadding = 12
@@ -190,10 +203,9 @@ private extension OverviewViewController {
         button.enableSoftPressAnimation()
         button.addTarget(self, action: #selector(didTapStartScan), for: .touchUpInside)
         button.accessibilityIdentifier = "overview.startScan"
-        let stack = UIStackView(arrangedSubviews: [title, subtitle, button])
+        let stack = UIStackView(arrangedSubviews: [header, button])
         stack.axis = .vertical
-        stack.spacing = 10
-        stack.setCustomSpacing(18, after: subtitle)
+        stack.spacing = 18
         stack.translatesAutoresizingMaskIntoConstraints = false
         card.addSubview(stack)
         NSLayoutConstraint.activate([
@@ -222,11 +234,11 @@ private extension OverviewViewController {
         averageLabel.textColor = AppTheme.primaryColor
         averageLabel.accessibilityIdentifier = "overview.averageRisk"
         averageLabel.setContentHuggingPriority(.required, for: .horizontal)
-        let averageTitle = makeLabel("Điểm rủi ro trung bình / 100", size: 12, weight: .medium, color: AppTheme.secondaryTextColor)
+        let averageTitle = makeLabel(L10n.text("Điểm rủi ro trung bình / 100"), size: 12, weight: .medium, color: AppTheme.secondaryTextColor)
         averageTitle.numberOfLines = 0
         let averageRow = UIStackView(arrangedSubviews: [averageTitle, averageLabel])
         averageRow.spacing = 12
-        let stack = UIStackView(arrangedSubviews: [makeSectionHeading("GÓC NHÌN CỦA BẠN", title: "Tổng quan rủi ro")] + rows + [averageRow])
+        let stack = UIStackView(arrangedSubviews: [makeSectionHeading(L10n.text("GÓC NHÌN CỦA BẠN"), title: L10n.text("Tổng quan rủi ro"))] + rows + [averageRow])
         stack.axis = .vertical
         stack.spacing = 12
         stack.setCustomSpacing(16, after: stack.arrangedSubviews[0])
@@ -235,7 +247,7 @@ private extension OverviewViewController {
 
     func makeAnalyticsSection() -> UIView {
         let stack = UIStackView(arrangedSubviews: [
-            makeSectionHeading("PHÂN TÍCH", title: "Dữ liệu trực quan"),
+            makeSectionHeading(L10n.text("PHÂN TÍCH"), title: L10n.text("Dữ liệu trực quan")),
             trendCard,
             distributionCard
         ])
@@ -250,47 +262,34 @@ private extension OverviewViewController {
         recordsLabel.font = .monospacedDigitSystemFont(ofSize: 12, weight: .semibold)
         recordsLabel.textColor = AppTheme.primaryColor
         recordsLabel.setContentHuggingPriority(.required, for: .horizontal)
-        let heading = UIStackView(arrangedSubviews: [makeSectionHeading("DÒNG THỜI GIAN", title: "Phân tích gần đây"), recordsLabel])
+        var config = UIButton.Configuration.tinted()
+        config.title = L10n.choose("Kiểm tra mới", "New check")
+        config.baseForegroundColor = AppTheme.primaryColor
+        config.cornerStyle = .capsule
+        let button = UIButton(configuration: config)
+        button.addTarget(self, action: #selector(didTapStartScan), for: .touchUpInside)
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.heightAnchor.constraint(greaterThanOrEqualToConstant: 44).isActive = true
+        let heading = UIStackView(arrangedSubviews: [
+            makeSectionHeading("", title: L10n.choose("Lượt kiểm tra gần nhất", "Recent checks")), button
+        ])
         heading.axis = .horizontal
         heading.alignment = .center
         heading.spacing = 8
-        let stack = UIStackView(arrangedSubviews: [heading, statusLabel, recentStack])
+        let stack = UIStackView(arrangedSubviews: [heading, recordsLabel, statusLabel, recentStack])
         stack.axis = .vertical
         stack.spacing = 16
         return stack
     }
 
-    func makeSafetyTipCard() -> UIView {
-        let card = CardView()
-        card.backgroundColor = AppTheme.softColor
-        card.layer.shadowOpacity = 0
-        let icon = UIImageView(image: UIImage(systemName: "lightbulb.max"))
-        icon.tintColor = AppTheme.primaryColor
-        icon.contentMode = .scaleAspectFit
-        icon.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            icon.widthAnchor.constraint(equalToConstant: 24),
-            icon.heightAnchor.constraint(equalToConstant: 28)
-        ])
-        let title = makeLabel("Một chút cẩn trọng, thêm an tâm", size: 14, weight: .semibold, color: AppTheme.titleColor)
-        title.numberOfLines = 0
-        let message = makeLabel("Kiểm tra tên miền và xác minh người gửi trước khi mở liên kết trong tin nhắn.", size: 13, weight: .regular, color: AppTheme.secondaryTextColor)
-        message.numberOfLines = 0
-        let text = UIStackView(arrangedSubviews: [title, message])
-        text.axis = .vertical
-        text.spacing = 6
-        let row = UIStackView(arrangedSubviews: [icon, text])
-        row.alignment = .top
-        row.spacing = 12
-        row.translatesAutoresizingMaskIntoConstraints = false
-        card.addSubview(row)
-        NSLayoutConstraint.activate([
-            row.topAnchor.constraint(equalTo: card.topAnchor, constant: 18),
-            row.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
-            row.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16),
-            row.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -18)
-        ])
-        return card
+    func makePipelineCard() -> UIView {
+        let pipeline = InformationCardView(title: L10n.choose("Các lớp phân tích", "Analysis layers"),
+                                           systemImageName: "square.stack.3d.up")
+        pipeline.configure(text: L10n.choose(
+            "OCR · Đọc văn bản từ ảnh\nPhishVN và Google · Đối chiếu liên kết\nPhân tích hình ảnh · Tìm dấu hiệu thị giác\nRisk AI · Tổng hợp cảnh báo",
+            "OCR · Reads text from images\nPhishVN and Google · Review links\nVisual analysis · Checks image signals\nRisk AI · Summarizes the warning"
+        ))
+        return pipeline
     }
 
     func makeSectionHeading(_ eyebrow: String, title: String) -> UIView {
@@ -323,7 +322,7 @@ private extension OverviewViewController {
     func loadHistory() {
         loadTask?.cancel()
         statusLabel.isHidden = false
-        statusLabel.text = "Đang cập nhật dữ liệu…"
+        statusLabel.text = L10n.text("Đang cập nhật dữ liệu…")
         let service = historyService
         loadTask = Task { [weak self] in
             do {
@@ -336,7 +335,7 @@ private extension OverviewViewController {
                 guard !Task.isCancelled, let self else { return }
                 scrollView.refreshControl?.endRefreshing()
                 statusLabel.isHidden = false
-                statusLabel.text = "Chưa thể tải dữ liệu mới. Kéo xuống để thử lại."
+                statusLabel.text = L10n.text("Chưa thể tải dữ liệu mới. Kéo xuống để thử lại.")
             }
         }
     }
@@ -356,18 +355,19 @@ private extension OverviewViewController {
             dangerous: dangerCount
         )
         averageLabel.text = items.isEmpty ? "—" : "\(Int((Double(items.reduce(0) { $0 + $1.riskScore }) / Double(items.count)).rounded()))"
-        averageLabel.superview?.accessibilityValue = items.isEmpty ? "Chưa có dữ liệu" : "\(averageLabel.text ?? "") trên 100"
+        averageLabel.superview?.accessibilityValue = items.isEmpty ? L10n.text("Chưa có dữ liệu") : L10n.choose("\(averageLabel.text ?? "") trên 100", "\(averageLabel.text ?? "") out of 100")
 
 
         recentStack.arrangedSubviews.forEach {
             recentStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
-        let recentItems = Array(items.prefix(3))
-        recordsLabel.text = "\(recentItems.count) bản ghi"
+        radarScore?.text = items.isEmpty ? "0" : averageLabel.text
+        let recentItems = Array(items.prefix(5))
+        recordsLabel.text = L10n.choose("\(recentItems.count) bản ghi", "\(recentItems.count) records")
         statusLabel.isHidden = !recentItems.isEmpty
         statusLabel.text = recentItems.isEmpty
-            ? "Chưa có lần kiểm tra nào. Chọn loại nội dung để bắt đầu."
+            ? L10n.text("Chưa có lần kiểm tra nào. Chọn loại nội dung để bắt đầu.")
             : nil
         recentItems.forEach { recentStack.addArrangedSubview(makeRecentRow(item: $0)) }
         if view.window != nil {
@@ -377,18 +377,18 @@ private extension OverviewViewController {
 
     func makeRecentRow(item: ScanHistoryItem) -> UIView {
         let card = CardView()
-        let thumbnail = RemoteImageView()
-        thumbnail.load(url: Constants.mediaURL(from: item.imageURL), placeholder: UIImage(systemName: (ScanInputKind(rawValue: item.sourceType ?? "image") ?? .image).symbol))
-        thumbnail.contentMode = .scaleAspectFill
-        thumbnail.clipsToBounds = true
-        thumbnail.backgroundColor = AppTheme.softColor
-        thumbnail.tintColor = AppTheme.primaryColor
+        let kind = ScanInputKind(rawValue: item.sourceType ?? "") ?? .image
+        let thumbnail = UIImageView(image: UIImage(systemName: kind.symbol))
+        thumbnail.contentMode = .center
+        thumbnail.backgroundColor = AppTheme.color(for: item.riskLevel).withAlphaComponent(0.08)
+        thumbnail.tintColor = AppTheme.color(for: item.riskLevel)
         thumbnail.layer.cornerRadius = 12
-        thumbnail.translatesAutoresizingMaskIntoConstraints = false
+        thumbnail.isAccessibilityElement = false
 
-        let filename = makeLabel(item.originalFilename ?? "Ảnh kiểm tra #\(item.id)", size: 14, weight: .semibold, color: AppTheme.titleColor)
+        let filename = makeLabel(item.listTitle, size: 14, weight: .semibold, color: AppTheme.titleColor)
+        filename.numberOfLines = 2
         filename.lineBreakMode = .byTruncatingMiddle
-        let date = makeLabel(item.createdAt?.backendDateDisplayText ?? "Không rõ thời gian", size: 11, weight: .regular, color: AppTheme.secondaryTextColor)
+        let date = makeLabel(item.createdAt?.backendDateDisplayText ?? L10n.text("Không rõ thời gian"), size: 11, weight: .regular, color: AppTheme.secondaryTextColor)
         let risk = makeLabel(item.riskLevel.displayName, size: 11, weight: .semibold, color: AppTheme.color(for: item.riskLevel))
         let labels = UIStackView(arrangedSubviews: [filename, date, risk])
         labels.axis = .vertical
@@ -403,46 +403,21 @@ private extension OverviewViewController {
         scoreStack.spacing = 2
         scoreStack.setContentHuggingPriority(.required, for: .horizontal)
         scoreStack.setContentCompressionResistancePriority(.required, for: .horizontal)
-        let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
-        chevron.tintColor = AppTheme.secondaryTextColor.withAlphaComponent(0.5)
-        chevron.contentMode = .scaleAspectFit
-        chevron.translatesAutoresizingMaskIntoConstraints = false
-        let row = UIStackView(arrangedSubviews: [thumbnail, labels, scoreStack, chevron])
+        let row = UIStackView(arrangedSubviews: [thumbnail, labels, scoreStack])
         row.axis = .horizontal
         row.alignment = .center
         row.spacing = 11
         row.translatesAutoresizingMaskIntoConstraints = false
         card.addSubview(row)
         NSLayoutConstraint.activate([
-            thumbnail.widthAnchor.constraint(equalToConstant: 54),
-            thumbnail.heightAnchor.constraint(equalToConstant: 62),
-            chevron.widthAnchor.constraint(equalToConstant: 8),
+            thumbnail.widthAnchor.constraint(equalToConstant: 44),
+            thumbnail.heightAnchor.constraint(equalToConstant: 44),
             row.topAnchor.constraint(equalTo: card.topAnchor, constant: 14),
             row.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 13),
             row.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -13),
             row.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -14)
         ])
 
-        // Nút trong suốt giúp cả thẻ mở được chi tiết và được VoiceOver nhận là một hành động.
-        let button = UIButton(type: .system)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.accessibilityLabel = "\(filename.text ?? "Ảnh kiểm tra"), \(item.riskLevel.displayName), \(item.riskScore) trên 100"
-        button.accessibilityHint = "Mở chi tiết lần kiểm tra"
-        button.addAction(UIAction { [weak self] _ in
-            guard let self else { return }
-            if let result = item.result {
-                let image = item.imageURL.flatMap { Constants.mediaURL(from: $0) }.flatMap { UIImage(contentsOfFile: $0.path) }
-                self.navigationController?.pushViewController(ScanResultViewController(result: result, image: image), animated: true)
-            } else { self.navigationController?.pushViewController(HistoryDetailViewController(item: item), animated: true) }
-        }, for: .touchUpInside)
-        row.accessibilityElementsHidden = true
-        card.addSubview(button)
-        NSLayoutConstraint.activate([
-            button.topAnchor.constraint(equalTo: card.topAnchor),
-            button.leadingAnchor.constraint(equalTo: card.leadingAnchor),
-            button.trailingAnchor.constraint(equalTo: card.trailingAnchor),
-            button.bottomAnchor.constraint(equalTo: card.bottomAnchor)
-        ])
         return card
     }
 }
@@ -465,7 +440,7 @@ private extension OverviewViewController {
     @objc func didChangeHistory() { loadHistory() }
 }
 
-private final class OverviewStatView: CardView {
+final class OverviewStatView: CardView {
 
     // MARK: - Properties
 
@@ -569,22 +544,6 @@ private final class OverviewStatView: CardView {
         ])
         isAccessibilityElement = true
         accessibilityLabel = titleLabel.text
-        accessibilityValue = "Đang tải"
-    }
-}
-
-private extension OverviewViewController {
-    func makeQuickSources() -> UIView {
-        let tiles = ScanInputKind.allCases.map { kind in
-            SourceTile(kind: kind) { [weak self] in self?.onChooseSource?(kind) }
-        }
-        let row = UIStackView(arrangedSubviews: tiles)
-        row.distribution = .fillEqually
-        row.spacing = 8
-        adaptiveRows.append(row)
-        let stack = UIStackView(arrangedSubviews: [makeSectionHeading("", title: "Bạn muốn kiểm tra gì?"), row])
-        stack.axis = .vertical
-        stack.spacing = 14
-        return stack
+        accessibilityValue = L10n.text("Đang tải")
     }
 }

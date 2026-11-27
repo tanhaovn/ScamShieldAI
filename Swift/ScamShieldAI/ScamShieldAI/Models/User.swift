@@ -6,7 +6,7 @@ struct User: Codable {
     let fullName: String?
     let role: String
 
-    static let guest = User(id: 0, email: "", fullName: "bạn", role: "guest")
+    static let guest = User(id: 0, email: "", fullName: L10n.text("bạn"), role: "guest")
 
     // MARK: - Coding Keys
 

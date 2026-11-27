@@ -18,13 +18,13 @@ extension UIViewController {
         return backgroundView
     }
 
-    func showErrorAlert(title: String = "Có lỗi xảy ra", message: String) {
+    func showErrorAlert(title: String = L10n.text("Có lỗi xảy ra"), message: String) {
         let alert = UIAlertController(
             title: title,
             message: message,
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "Đã hiểu", style: .default))
+        alert.addAction(UIAlertAction(title: L10n.text("Đã hiểu"), style: .default))
         present(alert, animated: true)
     }
 }

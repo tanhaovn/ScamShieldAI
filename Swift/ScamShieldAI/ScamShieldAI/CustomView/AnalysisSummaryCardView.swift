@@ -5,21 +5,31 @@ final class AnalysisSummaryCardView: CardView {
     private let contentStack = UIStackView()
     private let resultPanel = UIView()
     private let badgeView = RiskBadgeView()
-    private let scoreLabel = UILabel()
+    private let scoreRing = RiskScoreView()
+    private let riskRow = UIStackView()
     private let statusMessageLabel = UILabel()
-    private let progressView = UIProgressView(progressViewStyle: .default)
+    private let verdictNoteLabel = UILabel()
     private let imageView = RemoteImageView()
     private let sourceLabel = UILabel()
     private let filenameLabel = UILabel()
     private let excerptLabel = UILabel()
     private let dateLabel = UILabel()
     private var targetScore = 0
+    private var imageHeight: NSLayoutConstraint?
     private var scoreAnimationTask: Task<Void, Never>?
     private var riskLevel: RiskLevel = .safe
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
+        updateRiskLayout()
+        registerForTraitChanges([UITraitPreferredContentSizeCategory.self]) { (card: AnalysisSummaryCardView, _) in
+            card.updateRiskLayout()
+        }
+        imageHeight = imageView.heightAnchor.constraint(equalToConstant: 140)
+        imageHeight?.priority = .defaultHigh
+        imageHeight?.isActive = true
+        imageView.heightAnchor.constraint(lessThanOrEqualToConstant: 320).isActive = true
         NotificationCenter.default.addObserver(self, selector: #selector(motionPreferenceChanged), name: UIAccessibility.reduceMotionStatusDidChangeNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(showFinalResult), name: UIApplication.willResignActiveNotification, object: nil)
     }
@@ -44,7 +54,8 @@ final class AnalysisSummaryCardView: CardView {
         score: Int,
         level: RiskLevel,
         sourceKind: ScanInputKind = .image,
-        excerpt: String? = nil
+        excerpt: String? = nil,
+        showsPreview: Bool = true
     ) {
         let normalizedScore = min(max(score, 0), 100)
         riskLevel = level
@@ -53,36 +64,47 @@ final class AnalysisSummaryCardView: CardView {
         let tint = AppTheme.color(for: level)
         badgeView.configure(level: level)
         resultPanel.backgroundColor = tint.withAlphaComponent(0.08)
-        scoreLabel.textColor = tint
-        scoreLabel.text = "\(normalizedScore)/100"
-        scoreLabel.accessibilityLabel = "Điểm rủi ro: \(normalizedScore) trên 100"
-        progressView.progressTintColor = tint
-        progressView.trackTintColor = tint.withAlphaComponent(0.14)
-        progressView.setProgress(Float(normalizedScore) / 100, animated: false)
+        scoreRing.configure(level: level, finalScore: normalizedScore)
+        scoreRing.display(score: normalizedScore, progress: Float(normalizedScore) / 100)
         switch level {
-        case .safe: statusMessageLabel.text = "Chưa thấy dấu hiệu rủi ro cao"
-        case .suspicious: statusMessageLabel.text = "Có dấu hiệu cần kiểm tra kỹ"
-        case .dangerous: statusMessageLabel.text = "Nguy cơ lừa đảo cao"
+        case .safe:
+            statusMessageLabel.text = L10n.choose("Chưa thấy dấu hiệu lừa đảo rõ ràng", "No clear signs of a scam")
+            verdictNoteLabel.text = L10n.choose("Hệ thống chưa tìm thấy tín hiệu mạnh. Bạn vẫn nên kiểm tra lại nếu nội dung liên quan đến tiền, mật khẩu hoặc thông tin cá nhân.", "The system has not found strong signals. Still verify content involving money, passwords or personal information.")
+        case .suspicious:
+            statusMessageLabel.text = L10n.choose("Nội dung này có một số điểm đáng ngờ", "This content has some suspicious signs")
+            verdictNoteLabel.text = L10n.choose("Đừng làm theo ngay. Hãy tự liên hệ đơn vị được nhắc đến bằng số điện thoại hoặc website chính thức để xác minh.", "Do not act immediately. Contact the organization using its official phone number or website to verify.")
+        case .dangerous:
+            statusMessageLabel.text = L10n.choose("Cảnh báo: nguy cơ lừa đảo cao", "Warning: high scam risk")
+            verdictNoteLabel.text = L10n.choose("Không bấm đường link, không chuyển tiền và không cung cấp mật khẩu, mã OTP hay thông tin ngân hàng.", "Do not click links, transfer money or share passwords, OTP codes or banking information.")
         }
-        sourceLabel.text = "ĐÃ KIỂM TRA · \(sourceKind.title.uppercased())"
+        sourceLabel.text = L10n.choose("ĐÃ KIỂM TRA · \(sourceKind.title.uppercased())", "CHECKED · \(sourceKind.title.uppercased())")
         filenameLabel.text = filename
         dateLabel.text = dateText
         let text = (excerpt ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         excerptLabel.text = text
-        excerptLabel.isHidden = text.isEmpty || sourceKind == .image
+        excerptLabel.isHidden = text.isEmpty || text == filename || sourceKind == .image
         imageView.cancelLoading()
-        imageView.isHidden = sourceKind != .image
+        imageView.isHidden = sourceKind != .image || !showsPreview
         if sourceKind == .image {
             if let image {
                 imageView.image = image
                 imageView.contentMode = .scaleAspectFit
+                fitImage(image)
             } else {
                 imageView.contentMode = .center
                 imageView.load(url: remoteURL, placeholder: UIImage(systemName: "photo")) { [weak self] loaded in
                     self?.imageView.contentMode = loaded ? .scaleAspectFit : .center
+                    if loaded, let image = self?.imageView.image { self?.fitImage(image) }
                 }
             }
         }
+    }
+
+    private func fitImage(_ image: UIImage) {
+        imageHeight?.isActive = false
+        imageHeight = imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor, multiplier: image.size.height / max(image.size.width, 1))
+        imageHeight?.priority = .defaultHigh
+        imageHeight?.isActive = true
     }
 
     /// Called before presentation so the final score never flashes before the count-up.
@@ -137,14 +159,18 @@ final class AnalysisSummaryCardView: CardView {
     }
 
     private func display(score: Int, progress: Float) {
-        scoreLabel.text = "\(score)/100"
-        progressView.setProgress(progress, animated: false)
-        // VoiceOver always reads the actual saved result, never an intermediate number.
-        scoreLabel.accessibilityLabel = "Điểm rủi ro: \(targetScore) trên 100"
+        scoreRing.display(score: score, progress: progress)
+    }
+
+    private func updateRiskLayout() {
+        let largeText = traitCollection.preferredContentSizeCategory >= .extraExtraExtraLarge
+        riskRow.axis = largeText ? .vertical : .horizontal
+        riskRow.alignment = largeText ? .leading : .center
     }
 
     private func setupUI() {
         translatesAutoresizingMaskIntoConstraints = false
+        layer.cornerRadius = 22
         contentStack.axis = .vertical
         contentStack.spacing = 16
         contentStack.translatesAutoresizingMaskIntoConstraints = false
@@ -155,23 +181,25 @@ final class AnalysisSummaryCardView: CardView {
         let badgeRow = UIStackView(arrangedSubviews: [badgeView, UIView()])
         badgeRow.alignment = .leading
 
-        scoreLabel.font = UIFontMetrics(forTextStyle: .largeTitle).scaledFont(for: .monospacedDigitSystemFont(ofSize: 40, weight: .bold))
-        scoreLabel.adjustsFontForContentSizeCategory = true
-        scoreLabel.numberOfLines = 1
-        scoreLabel.adjustsFontSizeToFitWidth = true
-        scoreLabel.minimumScaleFactor = 0.65
-        let caption = label("Điểm rủi ro · thang 100", style: .subheadline, color: AppTheme.secondaryTextColor)
-        statusMessageLabel.font = .preferredFont(forTextStyle: .headline)
+        let caption = label(L10n.text("Điểm rủi ro"), style: .caption1, color: AppTheme.secondaryTextColor)
+        statusMessageLabel.font = AppTheme.font(size: 18, weight: .bold, style: .headline)
         statusMessageLabel.adjustsFontForContentSizeCategory = true
         statusMessageLabel.textColor = AppTheme.titleColor
         statusMessageLabel.numberOfLines = 0
-        let note = label("Kết quả hỗ trợ tham khảo. Hãy xác minh qua kênh chính thức.", style: .footnote, color: AppTheme.secondaryTextColor)
-        let resultStack = UIStackView(arrangedSubviews: [badgeRow, scoreLabel, caption, progressView, statusMessageLabel, note])
+        verdictNoteLabel.font = .preferredFont(forTextStyle: .footnote)
+        verdictNoteLabel.adjustsFontForContentSizeCategory = true
+        verdictNoteLabel.textColor = AppTheme.secondaryTextColor
+        verdictNoteLabel.numberOfLines = 0
+        let copy = UIStackView(arrangedSubviews: [caption, badgeRow, statusMessageLabel])
+        copy.axis = .vertical
+        copy.spacing = 7
+        riskRow.addArrangedSubview(scoreRing)
+        riskRow.addArrangedSubview(copy)
+        riskRow.spacing = 14
+
+        let resultStack = UIStackView(arrangedSubviews: [riskRow, verdictNoteLabel])
         resultStack.axis = .vertical
-        resultStack.spacing = 10
-        resultStack.setCustomSpacing(2, after: scoreLabel)
-        resultStack.setCustomSpacing(16, after: caption)
-        resultStack.setCustomSpacing(16, after: progressView)
+        resultStack.spacing = 12
         resultStack.translatesAutoresizingMaskIntoConstraints = false
         resultPanel.addSubview(resultStack)
 
@@ -179,7 +207,7 @@ final class AnalysisSummaryCardView: CardView {
         sourceLabel.adjustsFontForContentSizeCategory = true
         sourceLabel.textColor = AppTheme.primaryColor
         sourceLabel.numberOfLines = 0
-        filenameLabel.font = .preferredFont(forTextStyle: .subheadline)
+        filenameLabel.font = AppTheme.font(size: 16, weight: .semibold, style: .subheadline)
         filenameLabel.adjustsFontForContentSizeCategory = true
         filenameLabel.textColor = AppTheme.titleColor
         filenameLabel.numberOfLines = 0
@@ -192,21 +220,17 @@ final class AnalysisSummaryCardView: CardView {
         dateLabel.adjustsFontForContentSizeCategory = true
         dateLabel.textColor = AppTheme.secondaryTextColor
         dateLabel.numberOfLines = 0
-        imageView.backgroundColor = AppTheme.fieldBackgroundColor
+        imageView.backgroundColor = .clear
         imageView.tintColor = AppTheme.secondaryTextColor
         imageView.layer.cornerRadius = 12
         imageView.clipsToBounds = true
         imageView.isAccessibilityElement = true
-        imageView.accessibilityLabel = "Ảnh đã kiểm tra"
-        let imageHeight = imageView.heightAnchor.constraint(equalToConstant: 140)
-        imageHeight.priority = .defaultHigh
-        imageHeight.isActive = true
+        imageView.accessibilityLabel = L10n.text("Ảnh đã kiểm tra")
         let sourceStack = UIStackView(arrangedSubviews: [sourceLabel, filenameLabel, imageView, excerptLabel, dateLabel])
         sourceStack.axis = .vertical
         sourceStack.spacing = 8
         contentStack.addArrangedSubview(resultPanel)
         contentStack.addArrangedSubview(sourceStack)
-        progressView.isAccessibilityElement = false
         NSLayoutConstraint.activate([
             contentStack.topAnchor.constraint(equalTo: topAnchor, constant: 16),
             contentStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
@@ -215,8 +239,7 @@ final class AnalysisSummaryCardView: CardView {
             resultStack.topAnchor.constraint(equalTo: resultPanel.topAnchor, constant: 18),
             resultStack.leadingAnchor.constraint(equalTo: resultPanel.leadingAnchor, constant: 18),
             resultStack.trailingAnchor.constraint(equalTo: resultPanel.trailingAnchor, constant: -18),
-            resultStack.bottomAnchor.constraint(equalTo: resultPanel.bottomAnchor, constant: -18),
-            progressView.heightAnchor.constraint(equalToConstant: 6)
+            resultStack.bottomAnchor.constraint(equalTo: resultPanel.bottomAnchor, constant: -18)
         ])
     }
 
